@@ -35,10 +35,20 @@
 
   /* ---------- Shell ---------- */
   const visibleNav = () => NAV.filter(n => n.route !== "admin" || OEG.canAdmin());
+  const NAV_TOP = ["home", "textbooks", "workbooks", "games", "videos", "blog"];
   function renderNav() {
     const cur = currentRoute();
-    document.getElementById("navDesktop").innerHTML = visibleNav().map(n =>
-      `<a class="nav-link ${cur === n.route ? "active" : ""}" href="#/${n.route === "home" ? "" : n.route}">${t(n.key)}</a>`).join("");
+    const v = visibleNav();
+    const link = (n) => `<a class="nav-link ${cur === n.route ? "active" : ""}" href="#/${n.route === "home" ? "" : n.route}">${t(n.key)}</a>`;
+    const top = v.filter(n => NAV_TOP.includes(n.route));
+    const more = v.filter(n => !NAV_TOP.includes(n.route));
+    document.getElementById("navDesktop").innerHTML = top.map(link).join("") + (more.length ? `
+      <div class="nav-more">
+        <button type="button" class="nav-link nav-more-btn ${more.some(m => m.route === cur) ? "active" : ""}" id="navMoreBtn" aria-haspopup="true">${t("nav.more")} <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="m6 9 6 6 6-6"/></svg></button>
+        <div class="nav-drop">${more.map(link).join("")}</div>
+      </div>` : "");
+    const btn = document.getElementById("navMoreBtn");
+    if (btn) btn.onclick = (e) => { e.stopPropagation(); btn.closest(".nav-more").classList.toggle("open"); };
   }
   function renderSidebar() {
     document.getElementById("sideNav").innerHTML = visibleNav().map(n =>
@@ -255,7 +265,7 @@
     const isReg = mode === "register";
     return `<div class="form-card">
       <h2>${isReg ? "📝 " + t("page.register") : "🔑 " + t("page.login")}</h2>
-      <p class="sub">${OEG.auth.isFirebase() ? "" : t("auth.demo")}</p>
+      <p class="sub">${OEG.auth.isFirebase() ? "" : t("auth.ghMode")}</p>
       <div id="authMsg"></div>
       <form id="authForm">
         ${isReg ? `<div class="field"><label>${t("auth.name")}</label><input name="name" required autocomplete="name"></div>` : ""}
@@ -263,8 +273,11 @@
         <div class="field"><label>${t("auth.password")}</label><input name="password" type="password" required minlength="6" autocomplete="${isReg ? "new-password" : "current-password"}"></div>
         ${isReg ? `<div class="field"><label>${t("auth.role")}</label><select name="role">
           <option value="teacher">${t("auth.teacher")}</option><option value="student">${t("auth.student")}</option><option value="principal">${t("auth.principal")}</option></select></div>` : ""}
+        ${isReg && !OEG.auth.isFirebase() ? `<div class="field"><label>${t("auth.tokenOnce")}</label><input name="token" type="password" placeholder="github_pat_..." autocomplete="off">
+          <small style="display:block;margin-top:6px;color:var(--muted);font-size:.82rem">${t("auth.ownerSetup")}</small></div>` : ""}
         <button class="btn btn-brand" style="width:100%;justify-content:center" type="submit">${isReg ? t("auth.registerBtn") : t("auth.loginBtn")}</button>
       </form>
+      ${isReg && !OEG.auth.isFirebase() ? `<div class="alert alert-info" style="margin-top:14px;text-align:left">${t("auth.contactAdmin")}</div>` : ""}
       <p style="text-align:center;margin-top:16px;font-size:.92rem"><a href="#/${isReg ? "login" : "register"}">${isReg ? t("auth.haveAccount") : t("auth.noAccount")}</a></p>
     </div>`;
   }
@@ -276,7 +289,7 @@
       const msgEl = document.getElementById("authMsg");
       try {
         const user = mode === "register"
-          ? await OEG.auth.register({ name: fd.get("name"), email: fd.get("email"), password: fd.get("password"), role: fd.get("role") })
+          ? await OEG.auth.register({ name: fd.get("name"), email: fd.get("email"), password: fd.get("password"), role: fd.get("role"), token: fd.get("token") })
           : await OEG.auth.login({ email: fd.get("email"), password: fd.get("password") });
         renderAuthArea();
         OEG.toast("👋 " + t("auth.welcome") + ", " + user.name);
@@ -393,6 +406,7 @@
   });
 
   window.addEventListener("hashchange", render);
+  document.addEventListener("click", () => document.querySelectorAll(".nav-more.open").forEach(x => x.classList.remove("open")));
 
   /* ---------- Boot ---------- */
   (async () => {
@@ -402,5 +416,6 @@
     applyTheme();
     applyI18n();
     render();
+    if (OEG.state.configError) OEG.toast("⚠️ data/site-config.json માં JSON errors છે — તપાસો (દા.ત. \"emails\": [\"you@gmail.com\"] — કોટ સાથે)");
   })();
 })();

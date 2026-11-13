@@ -37,9 +37,15 @@ h1,h2,h3,h4{font-family:var(--font-display);line-height:1.25;font-weight:700}
 .logo:hover{text-decoration:none}
 .logo-mark{width:42px;height:42px;border-radius:12px;background:var(--grad);display:grid;place-items:center;color:#fff;font-size:1.3rem;box-shadow:var(--shadow)}
 .logo small{display:block;font-family:var(--font-body);font-size:.62rem;font-weight:600;color:var(--muted);letter-spacing:.08em;text-transform:uppercase}
-.nav-desktop{display:flex;gap:4px;margin-left:10px;flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;flex:1 1 auto;min-width:0}
-.nav-desktop::-webkit-scrollbar{display:none}
+.nav-desktop{display:flex;gap:4px;margin-left:10px;flex-wrap:nowrap;overflow:visible;flex:1 1 auto;min-width:0;align-items:center}
 .nav-link{padding:8px 12px;border-radius:10px;color:var(--muted);font-weight:600;font-size:.92rem;white-space:nowrap;transition:.2s}
+.nav-more{position:relative;flex-shrink:0}
+.nav-more-btn{display:inline-flex;align-items:center;gap:6px;border:none;background:none;font:inherit;cursor:pointer}
+.nav-more-btn svg{width:13px;height:13px;transition:transform .2s}
+.nav-more:hover .nav-more-btn svg,.nav-more.open .nav-more-btn svg{transform:rotate(180deg)}
+.nav-drop{position:absolute;top:calc(100% + 10px);right:0;min-width:230px;background:var(--surface);border:1px solid var(--border);border-radius:14px;box-shadow:var(--shadow-lg);padding:8px;display:flex;flex-direction:column;gap:2px;opacity:0;visibility:hidden;transform:translateY(8px);transition:.22s;z-index:300}
+.nav-more:hover .nav-drop,.nav-more:focus-within .nav-drop,.nav-more.open .nav-drop{opacity:1;visibility:visible;transform:none}
+.nav-drop .nav-link{padding:10px 12px;font-size:.95rem}
 .nav-link:hover{background:var(--surface-2);color:var(--text);text-decoration:none}
 .nav-link.active{background:var(--green-bg);color:var(--green-fg);text-decoration:none}
 .nav-link.active:hover{color:var(--green-fg)}
@@ -240,7 +246,7 @@ h1,h2,h3,h4{font-family:var(--font-display);line-height:1.25;font-weight:700}
   .search-box input{width:150px}
   .search-box input:focus{width:190px}
 }
-@media(max-width:1024px){.nav-desktop{display:none}}
+@media(max-width:1280px){.nav-desktop{display:none}}
 @media(max-width:640px){
   .search-box input{width:130px}.search-box input:focus{width:170px}
   .hero{padding:38px 24px}.form-row{grid-template-columns:1fr}

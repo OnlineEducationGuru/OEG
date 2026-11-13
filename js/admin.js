@@ -94,6 +94,28 @@ OEG.admin = (() => {
         <div id="accMsg" style="margin-top:12px"></div>
       </section>
 
+      <!-- Users -->
+      <section class="panel">
+        <h3>👥 ${OEG.t("admin.users")} <button class="btn btn-outline btn-sm" id="uRefresh" style="margin-left:auto">${OEG.t("admin.refresh")}</button></h3>
+        <div class="alert alert-info">${OEG.t("admin.usersNote")}</div>
+        <div class="form-row">
+          <div class="field"><label>${OEG.t("auth.name")}</label><input id="uName" placeholder="नाम / Name"></div>
+          <div class="field"><label>${OEG.t("auth.email")}</label><input id="uEmail" type="email" placeholder="user@gmail.com"></div>
+        </div>
+        <div class="form-row">
+          <div class="field"><label>${OEG.t("auth.role")}</label><select id="uRole">
+            <option value="teacher">${OEG.t("auth.teacher")}</option>
+            <option value="student">${OEG.t("auth.student")}</option>
+            <option value="principal">${OEG.t("auth.principal")}</option>
+            <option value="admin">${OEG.t("admin.roleAdmin")}</option>
+          </select></div>
+          <div class="field"><label>${OEG.t("auth.password")}</label><input id="uPass" type="text" minlength="6" placeholder="••••••"></div>
+        </div>
+        <button class="btn btn-brand" id="uAdd">➕ ${OEG.t("admin.addUser")}</button>
+        <div id="uMsg" style="margin-top:12px"></div>
+        <div class="file-list" id="uList" style="margin-top:14px"><p style="color:var(--muted)">—</p></div>
+      </section>
+
       <!-- File manager -->
       <section class="panel">
         <h3>📁 ${OEG.t("admin.files")} <button class="btn btn-outline btn-sm" id="fmRefresh" style="margin-left:auto">${OEG.t("admin.refresh")}</button></h3>
@@ -200,6 +222,47 @@ OEG.admin = (() => {
         window.dispatchEvent(new Event("hashchange"));
       } catch (e) { msg("accMsg", OEG.t("admin.error") + " " + e.message, false); }
     };
+
+    /* ---- 👥 Users (GitHub users.json) ---- */
+    async function loadUsers() {
+      const list = $("uList");
+      list.innerHTML = `<p style="color:var(--muted)">…</p>`;
+      const data = await OEG.auth.fetchUsers();
+      const users = data.users || [];
+      list.innerHTML = users.length ? users.map(u => `
+        <div class="file-item"><span>👤</span><code>${OEG.esc(u.email)}</code>
+        <span class="badge">${OEG.esc(u.role || "user")}</span>
+        <span style="color:var(--muted);font-size:.85rem">${OEG.esc(u.name || "")}</span>
+        <button class="btn btn-outline btn-sm" data-rp="${OEG.esc(u.email)}">${OEG.t("admin.resetPw")}</button>
+        <button class="btn btn-danger btn-sm" data-ru="${OEG.esc(u.email)}">${OEG.t("btn.delete")}</button></div>`).join("")
+        : `<p style="color:var(--muted)">${OEG.t("empty.title")}</p>`;
+      list.querySelectorAll("[data-ru]").forEach(b => b.onclick = async () => {
+        if (!needGh()) return;
+        if (OEG.state.user && OEG.state.user.email === b.dataset.ru) { OEG.toast("⛔"); return; }
+        if (!confirm(b.dataset.ru)) return;
+        try { await OEG.auth.removeUser(b.dataset.ru); loadUsers(); } catch (e) { OEG.toast(e.message); }
+      });
+      list.querySelectorAll("[data-rp]").forEach(b => b.onclick = async () => {
+        if (!needGh()) return;
+        const p = prompt(OEG.t("auth.password") + " — " + b.dataset.rp);
+        if (!p || p.length < 6) return;
+        try { await OEG.auth.resetPassword(b.dataset.rp, p); msg("uMsg", "✅ " + OEG.t("admin.saved"), true); } catch (e) { msg("uMsg", OEG.t("admin.error") + " " + e.message, false); }
+      });
+    }
+    $("uAdd").onclick = async () => {
+      if (!needGh()) return;
+      const email = $("uEmail").value.trim().toLowerCase();
+      if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) { msg("uMsg", "❌ " + OEG.t("auth.email"), false); return; }
+      if (($("uPass").value || "").length < 6) { msg("uMsg", "❌ " + OEG.t("auth.password"), false); return; }
+      try {
+        await OEG.auth.addUser({ name: $("uName").value.trim() || email.split("@")[0], email, password: $("uPass").value, role: $("uRole").value });
+        msg("uMsg", "✅ " + OEG.t("admin.saved"), true);
+        ["uName", "uEmail", "uPass"].forEach(id => $(id).value = "");
+        loadUsers();
+      } catch (e) { msg("uMsg", OEG.t("admin.error") + " " + e.message, false); }
+    };
+    $("uRefresh").onclick = loadUsers;
+    loadUsers();
 
     async function loadFiles() {
       const list = $("fmList");

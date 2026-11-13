@@ -20,7 +20,7 @@
 | ▶️ **વિડિયો** | YouTube લિંક → એ જ પેજ પર પ્લેયર (youtube-nocookie embed) |
 | 📰 **બ્લોગ / પોસ્ટ** | ઈમેજ + ડાઉનલોડ બટન સાથે પોસ્ટ |
 | 🔗 **ઉપયોગી લિંક્સ** | GCERT, DIKSHA, GSEB, GSBSTB + લોકપ્રિય શિક્ષક બ્લોગ્સ |
-| 🔐 **Register / Login** | શિક્ષક / વિદ્યાર્થી / આચાર્ય (Firebase Auth) |
+| 🔐 **Register / Login** | શિક્ષક / વિદ્યાર્થી / આચાર્ય — ખાતાં GitHub (users.json) માં, Firebase વગર |
 | 🛠️ **Admin Panel** | GitHub માં ફાઈલ અપલોડ, પોસ્ટ એડિટર, વિડિયો, AdSense સેટિંગ, ફાઈલ મેનેજર |
 | 📤 **શેર** | WhatsApp / Facebook / X / Telegram + લિંક કોપી |
 | 💰 **AdSense** | પોલિસી-સેફ પ્લેસમેન્ટ (લેબલ સાથે, બટનથી દૂર) |
@@ -55,6 +55,9 @@
 > ભરો (GitHub પર ફાઈલ → ✏️ Edit → Commit). પછી સાઈટ પર તે જ ઈમેઈલથી Login કરો —
 > Admin Panel લિંક menu માં આપોઆપ દેખાશે. ટેસ્ટ માટે અસ્થાયીરૂપે `"emails": ["*"]` રાખી શકો (બધાને ખુલ્લું).
 > Admin Panel ના **🔐 એક્સેસ કંટ્રોલ** પેનલમાંથી પણ આ ઈમેઈલ લિસ્ટ બદલી શકાય છે.
+>
+> ⚠️ **JSON માં edit કરતી વખતે દરેક ઈમેઈલ બે ડબલ કોટમાં હોવો જોઈએ:** `"emails": ["you@gmail.com"]` —
+> કોટ ભૂલશો તો આખી ફાઈલ invalid થઈ જાય અને સેટિંગ્સ કામ કરે નહીં (site પર warning તો દેખાશે જ).
 
 1. સાઈટ ખોલો → **Admin Panel** (`#/admin`).
 2. GitHub **Fine-grained PAT** બનાવો: GitHub → Settings → Developer settings → Personal access tokens → **Fine-grained tokens** → Repository access: ફક્ત આ રિપો → Permissions: **Contents: Read and write**.
@@ -67,20 +70,19 @@
 
 ---
 
-## 🔐 Register / Login (Firebase)
+## 🔐 Register / Login (GitHub Users — Firebase ની જરૂર નથી)
 
-GitHub Pages static છે, તેથી વાસ્તવિક એકાઉન્ટ માટે **Firebase Auth** વાપરો:
+બધાં ખાતાં સીધાં **GitHub રિપોની `data/users.json`** ફાઈલમાં સેવ થાય છે — કોઈ server/Firebase નહીં.
 
-1. [Firebase Console](https://console.firebase.google.com) → નવું Project બનાવો.
-2. **Authentication → Sign-in method → Email/Password** ચાલુ કરો.
-3. Project Settings → **Web App** ઉમેરો → `apiKey` મળશે.
-4. `data/site-config.json` (અથવા `js/config.js`) માં ભરો:
-   ```json
-   "firebase": { "apiKey": "તમારી-API-KEY", "authDomain": "xxx.firebaseapp.com" }
-   ```
-5. Firebase Console → **Authentication → Authorized domains** માં તમારું Pages ડોમેન ઉમેરો.
-
-> `apiKey` ખાલી હોય તો **Demo Mode** ચાલશે (localStorage) — માત્ર ટેસ્ટિંગ માટે, વાસ્તવિક સુરક્ષા નથી.
+- **પાસવર્ડ** ક્યારેય plaintext માં સેવતા નથી — દરેક ખાતા માં **SHA-256 hash + અલગ salt** થઈને `users.json` માં લખાય છે.
+- **લોગિન** બધા visitors માટે કામ કરે છે (file માત્ર વંચાય છે — token ની જરૂર નથી).
+- **નવું ખાતું** ફક્ત Admin બનાવી શકે છે (repo માં લખવા token જોઈએ — એ ફક્ત તમારી પાસે):
+  1. વિદ્યાર્થી/શિક્ષક તમારો સંપર્ક કરે (Contact Email: `hm89patel78@gmail.com`)
+  2. Admin Panel → **👥 વપરાશકર્તાઓ** → નામ, ઈમેઈલ, ભૂમિકા, પાસવર્ડ ભરો → **➕ નવું ખાતું ઉમેરો**
+  3. એક જ ક્લિકમાં `data/users.json` GitHub પર commit → વિદ્યાર્થી તરત login કરી શકે.
+- **પ્રથમ વખત (માલિકનું ખાતું):** `#/register` પર તમારું email (જે `admin.emails` માં છે) + પાસવર્ડ + **એકવાર GitHub PAT** ભરો → તમારું admin ખાતું બની જશે, login આપોઆપ થઈ જશે.
+- ⚠️ **મહત્વ:** `users.json` public repo માં છે — વિદ્યાર્થીઓને કહો કે અહીં નાખેલ પાસવર્ડ બીજી કોઈ site પર વાપરે નહીં. (શૈક્ષણિક site માટે પૂરતું; બેંક-લેવલ નહીં.)
+- 🔥 ઈચ્છો તો **Firebase** હજી ચાલુ કરી શકો: `site-config.json` માં `firebase.apiKey` ભરો → એ જ login સિસ્ટમ વપરાશે.
 
 ---
 
@@ -101,7 +103,7 @@ js/
   config.js           — સાઈટ કોન્ફિગ (Firebase/AdSense/GitHub)
   i18n.js             — ગુજરાતી/હિન્દી/English શબ્દકોશ
   catalog.js          — ડેટા લેયર
-  auth.js             — Firebase REST + Demo Mode
+  auth.js             — GitHub users.json આધારિત login (SHA-256) + optional Firebase
   games.js            — 3 બિલ્ટ-ઈન ગેમ્સ
   github.js           — GitHub API (Contents + Git Data)
   admin.js            — Admin Panel
