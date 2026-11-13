@@ -13,6 +13,7 @@ import { fileURLToPath } from "node:url";
 const root = join(dirname(fileURLToPath(import.meta.url)), "..");
 const cfg = JSON.parse(readFileSync(join(root, "data/site-config.json"), "utf8"));
 const cat = JSON.parse(readFileSync(join(root, "data/catalog.json"), "utf8"));
+cat.items = (cat.items || []).filter((i) => !i.hidden);   /* 🙈 Admin માંથી છુપાવેલું SEO પાનાંમાં પણ નહીં */
 const quiz = existsSync(join(root, "data/quiz.json")) ? JSON.parse(readFileSync(join(root, "data/quiz.json"), "utf8")) : { questions: [], cats: [] };
 const BASE = (cfg.siteUrl || "https://onlineeducationguru.github.io/OEG/").replace(/\/$/, "");
 const LANGS = ["gu", "hi", "en"];
