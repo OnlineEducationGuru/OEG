@@ -409,9 +409,11 @@
       <form id="admForm">
         <div class="field"><label>${t("auth.email")}</label><input name="email" type="email" required autocomplete="username" ${setup ? "" : `value="${OEG.esc(adm.email)}"`}></div>
         <div class="field"><label>${t("auth.password")}</label><input name="password" type="password" required minlength="6" autocomplete="current-password"></div>
-        ${setup ? `<div class="field"><label>${t("admin.token")}</label><input name="token" type="password" autocomplete="off">
+        ${setup ? "" : `<button type="button" class="linklike" id="admTokToggle" style="margin-bottom:10px">🔑 ${t("admin.useSecret")}</button>`}
+        <div class="field"${setup ? "" : ` id="admTokWrap" style="display:none"`}><label>${t("admin.token")}</label>
+          <input name="token" type="password" autocomplete="off">
           <button type="button" class="linklike" id="admHelpBtn">${t("admin.howTo")}</button>
-          <div class="help-box" id="admHelp" style="display:none">${t("admin.howBody")}</div></div>` : ""}
+          <div class="help-box" id="admHelp" style="display:none">${t("admin.howBody")}</div></div>
         <button class="btn btn-brand" style="width:100%;justify-content:center" type="submit">🔓 ${t("admin.enterBtn")}</button>
       </form>
     </div>`;
@@ -419,6 +421,15 @@
   function bindAdminLogin() {
     const hb = document.getElementById("admHelpBtn");
     if (hb) hb.onclick = (e) => { e.preventDefault(); const bx = document.getElementById("admHelp"); bx.style.display = bx.style.display === "none" ? "block" : "none"; };
+    const tt = document.getElementById("admTokToggle");
+    if (tt) tt.onclick = (e) => {
+      e.preventDefault();
+      const f = document.getElementById("admTokWrap");
+      if (!f) return;
+      const show = f.style.display === "none";
+      f.style.display = show ? "block" : "none";
+      if (show) f.querySelector("[name=token]").focus();
+    };
     const form = document.getElementById("admForm");
     if (!form) return;
     form.onsubmit = async (e) => {
