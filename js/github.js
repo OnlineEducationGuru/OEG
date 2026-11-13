@@ -1,6 +1,6 @@
 /* ============================================================
    OEG GitHub Client — Contents API + Git Data API
-   Token: fine-grained PAT (Contents: Write). Memory only.
+   Credentials: memory-only for this tab; never persisted anywhere.
    ============================================================ */
 OEG.gh = (() => {
   const api = () => `https://api.github.com/repos/${OEG.state.gh.owner}/${OEG.state.gh.repo}`;

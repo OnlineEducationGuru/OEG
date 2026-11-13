@@ -26,7 +26,9 @@ OEG.admin = (() => {
         <div class="field"><label>${OEG.t("admin.owner")}</label><input id="ghOwner" value="${OEG.esc(gh.owner)}" placeholder="OnlineEducationGuru"></div>
         <div class="field"><label>${OEG.t("admin.repo")}</label><input id="ghRepo" value="${OEG.esc(gh.repo)}" placeholder="OEG"></div>
         <div class="field"><label>${OEG.t("admin.branch")}</label><input id="ghBranch" value="${OEG.esc(gh.branch)}" placeholder="main"></div>
-        <div class="field"><label>${OEG.t("admin.token")}</label><input id="ghToken" type="password" placeholder="github_pat_..." autocomplete="off"></div>
+        <div class="field"><label>${OEG.t("admin.token")}</label><input id="ghToken" type="password" autocomplete="off">
+          <button type="button" class="linklike" id="ghHelpBtn">${OEG.t("admin.howTo")}</button>
+          <div class="help-box" id="ghHelp" style="display:none">${OEG.t("admin.howBody")}</div></div>
         <div class="alert alert-info">${OEG.t("admin.tokenNote")}</div>
         <button class="btn btn-brand" id="ghConnect">${OEG.t("admin.connect")}</button>
         <div id="ghMsg" style="margin-top:12px"></div>
@@ -130,6 +132,7 @@ OEG.admin = (() => {
     const msg = (id, text, ok) => { $(id).innerHTML = `<div class="alert ${ok ? "alert-ok" : "alert-error"}">${OEG.esc(text)}</div>`; };
     const needGh = () => { if (!OEG.gh.connected()) { OEG.toast(OEG.t("admin.notConnected")); return false; } return true; };
 
+    $("ghHelpBtn").onclick = () => { const b = $("ghHelp"); b.style.display = b.style.display === "none" ? "block" : "none"; };
     $("ghConnect").onclick = async () => {
       OEG.state.gh.owner = $("ghOwner").value.trim();
       OEG.state.gh.repo = $("ghRepo").value.trim();
