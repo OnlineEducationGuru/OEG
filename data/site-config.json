@@ -7,7 +7,12 @@
     "publisherId": "",
     "slots": { "homeTop": "", "homeMid": "", "sidebar": "", "contentBottom": "" }
   },
-  "admin": { "emails": ["hm89patel78@gmail.com"] },
   "contactEmail": "hm89patel78@gmail.com",
-  "social": { "youtube": "", "facebook": "", "telegram": "", "whatsapp": "" }
+  "social": {
+    "youtube": "https://www.youtube.com/@EducationGuruOnline",
+    "facebook": "https://www.facebook.com/online.education.gurus",
+    "instagram": "https://www.instagram.com/onlineeducationguru/",
+    "telegram": "",
+    "whatsapp": ""
+  }
 }

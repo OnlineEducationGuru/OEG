@@ -84,12 +84,15 @@ OEG.admin = (() => {
         <div id="adMsg" style="margin-top:12px"></div>
       </section>
 
-      <!-- Access control -->
+      <!-- Admin account -->
       <section class="panel">
-        <h3>🔐 ${OEG.t("admin.access")}</h3>
-        <div class="field"><label>${OEG.t("admin.emails")}</label>
-          <textarea id="adminEmails" rows="2" placeholder="you@gmail.com">${OEG.esc((((cfg.admin || {}).emails) || []).join(", "))}</textarea></div>
-        <div class="alert alert-info">${OEG.t("admin.emailsNote")}</div>
+        <h3>🛡️ ${OEG.t("admin.access")}</h3>
+        <p style="color:var(--muted);font-size:.9rem" id="accNow">…</p>
+        <div class="alert alert-info">${OEG.t("admin.accessNote")}</div>
+        <div class="form-row">
+          <div class="field"><label>${OEG.t("auth.email")}</label><input id="accEmail" type="email" placeholder="you@gmail.com"></div>
+          <div class="field"><label>${OEG.t("admin.newPass")}</label><input id="accPass" type="text" placeholder="••••••" autocomplete="new-password"></div>
+        </div>
         <button class="btn btn-brand" id="accSave">${OEG.t("btn.save")}</button>
         <div id="accMsg" style="margin-top:12px"></div>
       </section>
@@ -210,16 +213,17 @@ OEG.admin = (() => {
       } catch (e) { msg("adMsg", OEG.t("admin.error") + " " + e.message, false); }
     };
 
+    OEG.auth.getAdminFile().then(a => {
+      const el = $("accNow");
+      if (el) el.textContent = a.email ? "📧 " + a.email + " · " + (a.updated || "") : OEG.t("admin.notConfigured");
+    }).catch(() => {});
     $("accSave").onclick = async () => {
       if (!needGh()) return;
       try {
-        const cur = await OEG.gh.getFile("data/site-config.json");
-        const cfg2 = JSON.parse(cur.content);
-        cfg2.admin = { emails: $("adminEmails").value.split(",").map(s => s.trim().toLowerCase()).filter(Boolean) };
-        await OEG.gh.saveSiteConfig(cfg2, "Update admin emails");
-        await OEG.loadConfig();
+        await OEG.auth.setAdminAccount({ email: $("accEmail").value.trim(), password: $("accPass").value });
         msg("accMsg", "✅ " + OEG.t("admin.saved"), true);
-        window.dispatchEvent(new Event("hashchange"));
+        $("accPass").value = "";
+        OEG.auth.getAdminFile().then(a => { const el = $("accNow"); if (el && a.email) el.textContent = "📧 " + a.email; });
       } catch (e) { msg("accMsg", OEG.t("admin.error") + " " + e.message, false); }
     };
 

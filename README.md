@@ -50,39 +50,30 @@
 
 ## 🛠️ Admin Panel વાપરવું
 
-> 🔒 **એક્સેસ નિયંત્રણ:** Admin Panel હવે **ફક્ત માલિક (owner) માટે** છે.
-> ડિફોલ્ટેટ કોઈને એક્સેસ નથી. ચાલુ કરવા: **data/site-config.json** → `"admin": { "emails": ["તમારું-ઈમેઈલ@gmail.com"] }`
-> ભરો (GitHub પર ફાઈલ → ✏️ Edit → Commit). પછી સાઈટ પર તે જ ઈમેઈલથી Login કરો —
-> Admin Panel લિંક menu માં આપોઆપ દેખાશે. ટેસ્ટ માટે અસ્થાયીરૂપે `"emails": ["*"]` રાખી શકો (બધાને ખુલ્લું).
-> Admin Panel ના **🔐 એક્સેસ કંટ્રોલ** પેનલમાંથી પણ આ ઈમેઈલ લિસ્ટ બદલી શકાય છે.
->
-> ⚠️ **JSON માં edit કરતી વખતે દરેક ઈમેઈલ બે ડબલ કોટમાં હોવો જોઈએ:** `"emails": ["you@gmail.com"]` —
-> કોટ ભૂલશો તો આખી ફાઈલ invalid થઈ જાય અને સેટિંગ્સ કામ કરે નહીં (site પર warning તો દેખાશે જ).
+> 🔒 **એક્સેસ:** Admin Panel **ફક્ત એક જ email+પાસવર્ડથી** ખુલે છે, જે `data/admin.json` માં સુરક્ષિત **SHA-256 hash** સ્વરૂપે સેવ છે.
+> Admin નું કોઈ રજિસ્ટ્રેશન નથી — login પણ નહીં. અન્ય કોઈ પણ રીતે panel ખૂલશે નહીં.
+> ⚠️ JSON ફાઈલોમાં edit કરતી વખતે દરેક value `" કોટ "` માં હોવી જોઈએ — ભૂલ થાય તો site પર warning દેખાશે.
 
-1. સાઈટ ખોલો → **Admin Panel** (`#/admin`).
-2. GitHub **Fine-grained PAT** બનાવો: GitHub → Settings → Developer settings → Personal access tokens → **Fine-grained tokens** → Repository access: ફક્ત આ રિપો → Permissions: **Contents: Read and write**.
-3. Owner / Repo / Branch + Token ભરો → **Connect**.
-   - 🔒 ટોકન **ફક્ત આ ટેબની મેમરીમાં** રહે છે — ક્યાંય સેવ થતું નથી, પબ્લિક કોડમાં ક્યારેય ન મૂકો.
-4. **ફાઈલ અપલોડ:** PDF/PPT/DOC/HTML/Image પસંદ કરો → `uploads/...` ફોલ્ડરમાં Git Data API થી commit થશે → URL આપોઆપ ભરાશે.
-5. **પોસ્ટ/મટીરિયલ:** શીર્ષક (3 ભાષા), પ્રકાર, ધોરણ, વિષય, વર્ણન, ઈમેજ, ફાઈલ URL અથવા **YouTube લિંક** → Save → `data/catalog.json` અપડેટ થશે.
-6. **AdSense:** Publisher ID + Slot ID ભરો → Save → `data/site-config.json` અપડેટ.
-7. **ફાઈલ મેનેજર:** `uploads/` ની બધી ફાઈલો જુઓ / ડિલીટ કરો.
+1. સાઈટ ખોલો → menu → **Admin Panel** (અથવા `#/admin`).
+2. **પ્રથમ વખત (setup):** email + તમારો નવો પાસવર્ડ + **એકવાર** GitHub **Fine-grained PAT** ભરો → **દાખલ થાઓ**.
+   - PAT: GitHub → Settings → Developer settings → Personal access tokens → Fine-grained → Repository access: ફક્ત OEG → **Contents: Read and write**
+   - આટલું કરતાં `data/admin.json` રિપોમાં સેવ થશે — હમજીતર Admin ખુલ્લું.
+3. **બીજી વારથી:** ફક્ત email + પાસવર્ડ. ભૂલ કરો તો login page પર જ error દેખાશે.
+4. પછી Panel માં: 🔗 **GitHub Connect** (ટોકન ફરી ભરો — tab memory માં જ રહે, ક્યાંય સેવ નહીં) → 📤 ફાઈલ અપલોડ, ✍️ પોસ્ટ, 💰 AdSense, 👥 વપરાશકર્તાઓ, 📁 ફાઈલ મેનેજર.
+5. પાસવર્ડ બદલવા: Panel → **🛡️ એક્સેસ કંટ્રોલ** → નવો પાસવર્ડ → Save.
 
 ---
 
-## 🔐 Register / Login (GitHub Users — Firebase ની જરૂર નથી)
+## 🔐 વિદ્યાર્થી / શિક્ષક / આચાર્ય Register-Login (Firebase ની જરૂર નથી)
 
-બધાં ખાતાં સીધાં **GitHub રિપોની `data/users.json`** ફાઈલમાં સેવ થાય છે — કોઈ server/Firebase નહીં.
+બધાં વિદ્યાર્થી/શિક્ષક/આચાર્ય/અન્ય નાં ખાતાં **GitHub ની `data/users.json`** માં સેવ થાય છે — કોઈ server/Firebase નહીં.
 
-- **પાસવર્ડ** ક્યારેય plaintext માં સેવતા નથી — દરેક ખાતા માં **SHA-256 hash + અલગ salt** થઈને `users.json` માં લખાય છે.
-- **લોગિન** બધા visitors માટે કામ કરે છે (file માત્ર વંચાય છે — token ની જરૂર નથી).
-- **નવું ખાતું** ફક્ત Admin બનાવી શકે છે (repo માં લખવા token જોઈએ — એ ફક્ત તમારી પાસે):
-  1. વિદ્યાર્થી/શિક્ષક તમારો સંપર્ક કરે (Contact Email: `hm89patel78@gmail.com`)
-  2. Admin Panel → **👥 વપરાશકર્તાઓ** → નામ, ઈમેઈલ, ભૂમિકા, પાસવર્ડ ભરો → **➕ નવું ખાતું ઉમેરો**
-  3. એક જ ક્લિકમાં `data/users.json` GitHub પર commit → વિદ્યાર્થી તરત login કરી શકે.
-- **પ્રથમ વખત (માલિકનું ખાતું):** `#/register` પર તમારું email (જે `admin.emails` માં છે) + પાસવર્ડ + **એકવાર GitHub PAT** ભરો → તમારું admin ખાતું બની જશે, login આપોઆપ થઈ જશે.
-- ⚠️ **મહત્વ:** `users.json` public repo માં છે — વિદ્યાર્થીઓને કહો કે અહીં નાખેલ પાસવર્ડ બીજી કોઈ site પર વાપરે નહીં. (શૈક્ષણિક site માટે પૂરતું; બેંક-લેવલ નહીં.)
-- 🔥 ઈચ્છો તો **Firebase** હજી ચાલુ કરી શકો: `site-config.json` માં `firebase.apiKey` ભરો → એ જ login સિસ્ટમ વપરાશે.
+- **રજિસ્ટ્રેશન** (site પર): નામ+ઈમેઈલ+પાસવર્ડ+ભૂમિકા ભરો → વિનંતી નોંધાય → **"Admin ને મોકલો"** બટન (WhatsApp/Email) → Admin મંજૂર કરે એટલે login ચાલુ.
+  *(Static site માં visitors પોતે GitHub માં લખી શકે નહીં — એટલે મંજૂરી પગલું; અંતે વિગતો GitHub માં જ સેવ થાય.)*
+- **Admin મંજૂરી:** Admin Panel → **👥 વપરાશકર્તાઓ** → વિગત ભરી ➕ → `users.json` commit → વિદ્યાર્થી login કરી શકે.
+- **લોગિન:** બધા માટે free (કોઈ token નહીં) — પાસવર્ડ hash+salt થઈ સેવ, plain text ક્યાંય નહીં.
+- ⚠️ `users.json` public repo માં છે — નબળા/બીજી site ના પાસવર્ડ વાપરવાનું કહો.
+- 🔥 ઈચ્છો તો Firebase પણ ચાલુ રહે છે: `site-config.json` → `firebase.apiKey` ભરો.
 
 ---
 

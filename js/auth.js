@@ -1,21 +1,27 @@
 /* ============================================================
-   OEG Auth — GitHub Users Store (no Firebase needed)
+   OEG Auth — GitHub Files (no Firebase)
    ------------------------------------------------------------
-   બધા એકાઉન્ટ્સ રિપોની data/users.json ફાઈલમાં સેવ થાય છે.
-   પાસવર્ડ ક્યારેય plaintext માં નથી — SHA-256 + per-user salt.
-   Firebase apiKey ભર્યું હોય તો એ માર્ગો વાપરાય છે (optional).
+   સામાન્ય વપરાશકર્તા (વિદ્યાર્થી/શિક્ષક/આચાર્ય/અન્ય):
+     login → data/users.json (Admin panel થી ઉમેરાયેલાં ખાતાં)
+     register → વિનંતી નોંધાય છે; Admin મંજૂર કરે તો login ચાલુ
+   Admin Panel:
+     ફક્ત data/admin.json માં રાખેલ email + પાસવર્ડ થી જ ખુલે
+     (પાસવર્ડ SHA-256 hash સ્વરૂપે સેવ — plaintext નહીં)
    ============================================================ */
 OEG.auth = (() => {
   const LS_USER = "oeg-user";
+  const LS_REQ = "oeg-reg-requests";
+  const SS_ADMIN = "oeg-admin";
   const USERS_FILE = "data/users.json";
+  const ADMIN_FILE = "data/admin.json";
 
   const cfg = () => OEG.state.config || {};
   const apiKey = () => (cfg().firebase && cfg().firebase.apiKey) || "";
   const isFirebase = () => !!apiKey();
+  const norm = (e) => String(e || "").trim().toLowerCase();
 
   const save = (u) => { OEG.state.user = u; try { localStorage.setItem(LS_USER, JSON.stringify(u)); } catch (e) {} };
   const load = () => { try { OEG.state.user = JSON.parse(localStorage.getItem(LS_USER) || "null"); } catch (e) { OEG.state.user = null; } return OEG.state.user; };
-  const norm = (e) => String(e || "").trim().toLowerCase();
 
   /* ---- SHA-256 (pure JS — દરેક environment માં એકજ પરિણામ) ---- */
   const K = [
@@ -73,7 +79,7 @@ OEG.auth = (() => {
     return { id: "u" + Date.now().toString(36), name: String(name || email).slice(0, 60), email: norm(email), role: role || "student", salt, hash: sha256hex(salt + ":" + password), created: new Date().toISOString().slice(0, 10) };
   }
 
-  /* ---- વપરાશકર્તા-લિસ્ટ: પહેલા raw.githubusercontent (તરત અપડેટ), પછી Pages કોપી ---- */
+  /* ---- વપરાશકર્તા-લિસ્ટ: raw.githubusercontent (તરત અપડેટ), પછી Pages કોપી ---- */
   async function fetchUsers() {
     const g = cfg().github || {};
     const urls = [];
@@ -88,11 +94,6 @@ OEG.auth = (() => {
     return { version: 1, users: [] };
   }
 
-  function isAdminEmail(email) {
-    const list = (((cfg().admin || {}).emails) || []).map(norm);
-    return list.includes("*") || list.includes(norm(email));
-  }
-
   /* ---- Firebase (optional — key ભર્યું હોય તો જ) ---- */
   async function firebaseCall(endpoint, body) {
     const r = await fetch(`https://identitytoolkit.googleapis.com/v1/${endpoint}?key=${apiKey()}`, {
@@ -103,33 +104,25 @@ OEG.auth = (() => {
     return j;
   }
 
-  /* ---- રજિસ્ટર ----
-     GitHub-Store મોડમાં: ફક્ત admin.emails લિસ્ટવાળો માલિક જાતે જ એકાઉન્ટ બનાવી શકે
-     (એકવાર GitHub Token ભરીને — users.json રિપોમાં commit થાય).
-     બાકીના સૌ માટે: Admin ને સંપર્ક કરો સંદેશ. */
-  async function register({ name, email, password, role, token }) {
+  /* ---- રજિસ્ટર (વિદ્યાર્થી/શિક્ષક/આચાર્ય/અન્ય) — Admin મંજૂરી વાળો ફ્લો ---- */
+  async function register({ name, email, password, role }) {
     email = norm(email);
     if (isFirebase()) {
       const j = await firebaseCall("accounts:signUp", { email, password, returnSecureToken: true });
       const user = { name, email, role, uid: j.localId, provider: "firebase" };
       save(user); return user;
     }
-    if (!isAdminEmail(email)) { const e = new Error(OEG.t("auth.contactAdmin")); e.code = "need-admin"; throw e; }
-    if (!token || !String(token).trim()) throw new Error(OEG.t("auth.tokenNeeded"));
     const users = await fetchUsers();
     if (users.users.some(u => norm(u.email) === email)) throw new Error(OEG.t("auth.exists"));
-    users.users.push(await makeUserRecord({ name, email, password, role: "admin" }));
-    const prevToken = OEG.state.gh.token;
-    OEG.state.gh.token = String(token).trim();
     try {
-      await OEG.gh.putFile(USERS_FILE, JSON.stringify(users, null, 2), "OEG: register owner account");
-    } catch (err) { OEG.state.gh.token = prevToken; throw err; }
-    /* આ ટેબમાં ટોકન રહે છે — Admin Panel તરત કનેક્ટેડ મળશે */
-    const user = { name, email, role: "admin", provider: "github" };
-    save(user);
-    return user;
+      const l = JSON.parse(localStorage.getItem(LS_REQ) || "[]");
+      l.push({ name, email, role, passLen: String(password).length, at: Date.now() });
+      localStorage.setItem(LS_REQ, JSON.stringify(l));
+    } catch (e) {}
+    return { pending: true, name, email, role };
   }
 
+  /* ---- લોગિન ---- */
   async function login({ email, password }) {
     email = norm(email);
     if (isFirebase()) {
@@ -144,6 +137,47 @@ OEG.auth = (() => {
     const user = { name: u.name, email, role: u.role || "user", provider: "github" };
     save(user);
     return user;
+  }
+
+  /* ============ ADMIN — ફક્ત data/admin.json ના email+password થી ============ */
+  async function getAdminFile() {
+    const g = cfg().github || {};
+    const urls = [];
+    if (g.owner && g.repo) urls.push(`https://raw.githubusercontent.com/${g.owner}/${g.repo}/${g.branch || "main"}/${ADMIN_FILE}`);
+    urls.push(ADMIN_FILE + "?ts=" + Date.now());
+    for (const u of urls) {
+      try { const r = await fetch(u, { cache: "no-store" }); if (r.ok) return await r.json(); } catch (e) {}
+    }
+    return { email: "", passHash: "" };
+  }
+  const unlocked = () => { try { return sessionStorage.getItem(SS_ADMIN) === "1"; } catch (e) { return false; } };
+  const lockAdmin = () => { try { sessionStorage.removeItem(SS_ADMIN); } catch (e) {} };
+
+  async function loginAdmin({ email, password, token }) {
+    const adm = await getAdminFile();
+    if (!adm.email || !adm.passHash) {
+      /* પ્રથમ વખત setup: email + પાસવર્ડ + એકવાર PAT → data/admin.json commit */
+      if (!token || !String(token).trim()) throw new Error(OEG.t("admin.setupNeedToken"));
+      if (!email || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(String(email))) throw new Error(OEG.t("admin.badCred"));
+      if (String(password).length < 6) throw new Error(OEG.t("admin.badCred"));
+      OEG.state.gh.token = String(token).trim();
+      await OEG.gh.putFile(ADMIN_FILE, JSON.stringify({ email: norm(email), passHash: sha256hex(String(password)), updated: new Date().toISOString().slice(0, 10) }, null, 2), "OEG: admin account setup");
+      try { sessionStorage.setItem(SS_ADMIN, "1"); } catch (e) {}
+      return { setup: true };
+    }
+    if (norm(email) !== norm(adm.email)) throw new Error(OEG.t("admin.badCred"));
+    if (sha256hex(String(password)) !== adm.passHash) throw new Error(OEG.t("admin.badCred"));
+    try { sessionStorage.setItem(SS_ADMIN, "1"); } catch (e) {}
+    return { ok: true };
+  }
+  async function setAdminAccount({ email, password }) {
+    const adm = await getAdminFile();
+    const rec = { email: email ? norm(email) : adm.email };
+    if (password) rec.passHash = sha256hex(String(password));
+    else rec.passHash = adm.passHash;
+    rec.updated = new Date().toISOString().slice(0, 10);
+    await OEG.gh.putFile(ADMIN_FILE, JSON.stringify(rec, null, 2), "OEG: update admin account");
+    return true;
   }
 
   /* ---- Admin Panel થી વપરાશકર્તા મેનેજમેન્ટ (GitHub જોડાયેલું હોવું જોઈએ) ---- */
@@ -175,7 +209,7 @@ OEG.auth = (() => {
     return true;
   }
 
-  function logout() { OEG.state.user = null; try { localStorage.removeItem(LS_USER); } catch (e) {} }
+  function logout() { OEG.state.user = null; lockAdmin(); try { localStorage.removeItem(LS_USER); } catch (e) {} }
 
-  return { register, login, logout, load, isFirebase, fetchUsers, makeUserRecord, addUser, removeUser, resetPassword, isAdminEmail, sha256hex };
+  return { register, login, logout, load, isFirebase, fetchUsers, makeUserRecord, addUser, removeUser, resetPassword, sha256hex, getAdminFile, loginAdmin, setAdminAccount, unlocked, lockAdmin };
 })();
