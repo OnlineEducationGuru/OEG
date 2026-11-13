@@ -34,14 +34,16 @@
   }
 
   /* ---------- Shell ---------- */
-  const visibleNav = () => NAV.filter(n => n.route !== "admin" || OEG.canAdmin());
+  const visibleNav = () => NAV; /* Admin બટન હંમેશ દેખાય — ક્લિક પર માલિક-લોગિન માંગશે */
   const NAV_TOP = ["home", "textbooks", "workbooks", "games", "videos", "blog"];
+  const navTopCount = () => window.innerWidth >= 1400 ? 6 : 4;
   function renderNav() {
     const cur = currentRoute();
     const v = visibleNav();
+    const topRoutes = NAV_TOP.slice(0, navTopCount());
     const link = (n) => `<a class="nav-link ${cur === n.route ? "active" : ""}" href="#/${n.route === "home" ? "" : n.route}">${t(n.key)}</a>`;
-    const top = v.filter(n => NAV_TOP.includes(n.route));
-    const more = v.filter(n => !NAV_TOP.includes(n.route));
+    const top = v.filter(n => topRoutes.includes(n.route));
+    const more = v.filter(n => !topRoutes.includes(n.route));
     document.getElementById("navDesktop").innerHTML = top.map(link).join("") + (more.length ? `
       <div class="nav-more">
         <button type="button" class="nav-link nav-more-btn ${more.some(m => m.route === cur) ? "active" : ""}" id="navMoreBtn" aria-haspopup="true">${t("nav.more")} <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="m6 9 6 6 6-6"/></svg></button>
@@ -50,6 +52,8 @@
     const btn = document.getElementById("navMoreBtn");
     if (btn) btn.onclick = (e) => { e.stopPropagation(); btn.closest(".nav-more").classList.toggle("open"); };
   }
+  let navResizeT;
+  window.addEventListener("resize", () => { clearTimeout(navResizeT); navResizeT = setTimeout(renderNav, 180); });
   function renderSidebar() {
     document.getElementById("sideNav").innerHTML = visibleNav().map(n =>
       `<a class="side-link ${currentRoute() === n.route ? "active" : ""}" href="#/${n.route === "home" ? "" : n.route}"><span class="ic">${n.icon}</span>${t(n.key)}</a>`).join("");
@@ -60,10 +64,29 @@
   function renderFooter() {
     document.getElementById("footerLinks").innerHTML = NAV.slice(0, 8).map(n =>
       `<a href="#/${n.route === "home" ? "" : n.route}">${t(n.key)}</a>`).join("");
+    document.getElementById("footerSocial").innerHTML = `<span class="fs-title">${t("follow.title")}</span>` + followButtons();
+  }
+  function followIcon(k) {
+    const i = {
+      instagram: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2.6" y="2.6" width="18.8" height="18.8" rx="5.4"/><circle cx="12" cy="12" r="4.4"/><circle cx="17.4" cy="6.6" r="1.3" fill="currentColor" stroke="none"/></svg>',
+      youtube: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1.6" y="4.4" width="20.8" height="15.2" rx="4.4"/><path d="M10.2 9.1v5.8L15.4 12z" fill="currentColor" stroke="none"/></svg>',
+      facebook: '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M24 12.07C24 5.4 18.63 0 12 0S0 5.4 0 12.07C0 18.1 4.39 23.09 10.13 24v-8.44H7.08v-3.49h3.04V9.41c0-3.02 1.8-4.7 4.54-4.7 1.31 0 2.68.24 2.68.24v2.97h-1.5c-1.5 0-1.96.93-1.96 1.89v2.26h3.32l-.53 3.49h-2.8V24C19.62 23.1 24 18.1 24 12.07"/></svg>',
+      telegram: '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M11.94 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20m4.9 7.2-1.64 7.74c-.12.54-.44.67-.9.42l-2.5-1.84-1.2 1.16c-.13.13-.24.24-.5.24l.18-2.56 4.66-4.2c.2-.18-.04-.28-.31-.1L9.4 13.3l-2.48-.78c-.54-.17-.55-.54.11-.8l9.7-3.74c.44-.16.82.1.68.72z"/></svg>',
+      whatsapp: '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M19.1 4.9A10 10 0 0 0 2.3 17.1L.9 23.4l6.4-1.7a10 10 0 0 0 4.7 1.2h.01a10 10 0 0 0 7.1-17.9m-7.1 19.4a8.3 8.3 0 0 1-4.2-1.2l-.3-.2-3.8 1 1-3.6-.2-.3a8.3 8.3 0 1 1 7.5 4.3m4.6-6.2c-.25-.13-1.5-.74-1.73-.82-.23-.09-.4-.13-.57.12-.17.25-.65.82-.8 1-.15.17-.29.2-.54.06-.25-.12-1.05-.38-2-1.23-.74-.66-1.24-1.47-1.38-1.72-.15-.25-.02-.39.1-.51.11-.11.25-.29.37-.43.13-.15.17-.25.25-.41.09-.17.04-.31-.02-.43-.06-.13-.57-1.38-.79-1.88-.2-.5-.41-.42-.57-.43h-.48a.94.94 0 0 0-.68.32c-.23.25-.89.87-.89 2.13s.91 2.47 1.04 2.64c.13.17 1.8 2.74 4.35 3.84.61.26 1.08.42 1.45.54.61.19 1.16.17 1.6.1.49-.07 1.5-.61 1.71-1.2s.21-1.1.15-1.2c-.06-.11-.23-.17-.48-.3"/></svg>'
+    };
+    return i[k] || "🔗";
+  }
+  function followButtons(extra) {
     const s = OEG.state.config.social || {};
-    const icons = { youtube: s.youtube, facebook: s.facebook, telegram: s.telegram, whatsapp: s.whatsapp };
-    document.getElementById("footerSocial").innerHTML = Object.entries(icons).filter(([, v]) => v).map(([k, v]) =>
-      `<a href="${OEG.esc(v)}" target="_blank" rel="noopener" aria-label="${k}">${socialSvg(k)}</a>`).join("");
+    const defs = [
+      { k: "instagram", url: s.instagram, handle: "@onlineeducationguru" },
+      { k: "youtube", url: s.youtube, handle: "@EducationGuruOnline" },
+      { k: "facebook", url: s.facebook, handle: "online.education.gurus" },
+      { k: "telegram", url: s.telegram, handle: "" },
+      { k: "whatsapp", url: s.whatsapp, handle: "" }
+    ].filter(d => d.url);
+    return `<span class="follow-row ${extra || ""}">` + defs.map(d =>
+      `<a class="follow-btn fb-${d.k}" href="${OEG.esc(d.url)}" target="_blank" rel="noopener" aria-label="${d.k}">${followIcon(d.k)}<span>${t("follow.btn")}${d.handle ? `<small>${OEG.esc(d.handle)}</small>` : ""}</span></a>`).join("") + "</span>";
   }
   function renderAuthArea() {
     const u = OEG.state.user;
@@ -73,8 +96,6 @@
     const lb = document.getElementById("logoutBtn");
     if (lb) lb.onclick = () => { OEG.auth.logout(); renderAuthArea(); OEG.toast(t("auth.logoutOk")); location.hash = "#/"; };
     renderNav(); renderSidebar();
-    const fa = document.getElementById("footerAdminLink");
-    if (fa) fa.style.display = OEG.canAdmin() ? "" : "none";
   }
   function socialSvg(k) {
     const paths = {
@@ -174,14 +195,15 @@
         <div><b>3</b><span>${t("nav.games")}</span></div>
         <div><b>3</b><span>${t("lang.name")}</span></div>
       </div>
+      <div class="follow-strip"><span class="fs-title">👉 ${t("follow.title")}</span>${followButtons("fb-sm")}</div>
     </section>
     ${adSlot("homeTop")}
     <section class="section"><div class="section-head"><div><h2>${t("sec.grades")}</h2><p>${t("sec.gradesSub")}</p></div></div>
       <div class="grid-grades">${GRADES.map(g => `<a class="grade-card reveal" href="#/textbooks?grade=${g}"><div class="g-ic">${GRADE_ICONS[g]}</div><b>${OEG.gradeLabel(g)}</b><span>${t("nav.textbooks")}</span></a>`).join("")}</div>
     </section>
     <section class="section"><div class="section-head"><div><h2>${t("sec.features")}</h2></div></div>
-      <div class="grid">
-        ${NAV.slice(1, 7).map(n => `<a class="card reveal" href="#/${n.route}" style="padding:24px;align-items:flex-start"><div style="font-size:2rem;margin-bottom:8px">${n.icon}</div><h3>${t(n.key)}</h3></a>`).join("")}
+      <div class="grid grid-feat">
+        ${NAV.slice(1, 7).map(n => `<a class="card feature-card reveal" href="#/${n.route}"><span class="feat-ic">${n.icon}</span><h3>${t(n.key)}</h3><span class="feat-go">${t("btn.open")} →</span></a>`).join("")}
       </div>
     </section>
     ${adSlot("homeMid")}
@@ -265,21 +287,33 @@
     const isReg = mode === "register";
     return `<div class="form-card">
       <h2>${isReg ? "📝 " + t("page.register") : "🔑 " + t("page.login")}</h2>
-      <p class="sub">${OEG.auth.isFirebase() ? "" : t("auth.ghMode")}</p>
       <div id="authMsg"></div>
       <form id="authForm">
         ${isReg ? `<div class="field"><label>${t("auth.name")}</label><input name="name" required autocomplete="name"></div>` : ""}
         <div class="field"><label>${t("auth.email")}</label><input name="email" type="email" required autocomplete="email"></div>
         <div class="field"><label>${t("auth.password")}</label><input name="password" type="password" required minlength="6" autocomplete="${isReg ? "new-password" : "current-password"}"></div>
         ${isReg ? `<div class="field"><label>${t("auth.role")}</label><select name="role">
-          <option value="teacher">${t("auth.teacher")}</option><option value="student">${t("auth.student")}</option><option value="principal">${t("auth.principal")}</option></select></div>` : ""}
-        ${isReg && !OEG.auth.isFirebase() ? `<div class="field"><label>${t("auth.tokenOnce")}</label><input name="token" type="password" placeholder="github_pat_..." autocomplete="off">
-          <small style="display:block;margin-top:6px;color:var(--muted);font-size:.82rem">${t("auth.ownerSetup")}</small></div>` : ""}
+          <option value="student">${t("auth.student")}</option><option value="teacher">${t("auth.teacher")}</option><option value="principal">${t("auth.principal")}</option><option value="other">${t("auth.other")}</option></select></div>` : ""}
         <button class="btn btn-brand" style="width:100%;justify-content:center" type="submit">${isReg ? t("auth.registerBtn") : t("auth.loginBtn")}</button>
       </form>
-      ${isReg && !OEG.auth.isFirebase() ? `<div class="alert alert-info" style="margin-top:14px;text-align:left">${t("auth.contactAdmin")}</div>` : ""}
       <p style="text-align:center;margin-top:16px;font-size:.92rem"><a href="#/${isReg ? "login" : "register"}">${isReg ? t("auth.haveAccount") : t("auth.noAccount")}</a></p>
     </div>`;
+  }
+
+  function showRegisterPending(res) {
+    const c = OEG.state.config;
+    const msgTxt = "OEG Registration\nName: " + res.name + "\nEmail: " + res.email + "\nRole: " + res.role;
+    const enc = encodeURIComponent(msgTxt);
+    const msgEl = document.getElementById("authMsg");
+    if (!msgEl) return;
+    msgEl.innerHTML = `<div class="alert alert-ok" style="text-align:left">
+      <b>${t("auth.pendingTitle")}</b>
+      <div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap">
+        <a class="btn btn-sm btn-outline" target="_blank" rel="noopener" href="https://wa.me/${OEG.esc(((c.social || {}).whatsapp || "").replace(/[^0-9]/g, ""))}?text=${enc}">📲 ${t("auth.sendWhatsApp")}</a>
+        ${c.contactEmail ? `<a class="btn btn-sm btn-outline" href="mailto:${OEG.esc(c.contactEmail)}?subject=${encodeURIComponent("OEG Registration Request")}&body=${enc}">📧 ${t("auth.sendEmail")}</a>` : ""}
+      </div></div>`;
+    const f = document.getElementById("authForm");
+    if (f) f.style.display = "none";
   }
 
   function bindAuth(mode) {
@@ -288,11 +322,12 @@
       const fd = new FormData(e.target);
       const msgEl = document.getElementById("authMsg");
       try {
-        const user = mode === "register"
-          ? await OEG.auth.register({ name: fd.get("name"), email: fd.get("email"), password: fd.get("password"), role: fd.get("role"), token: fd.get("token") })
+        const res = mode === "register"
+          ? await OEG.auth.register({ name: fd.get("name"), email: fd.get("email"), password: fd.get("password"), role: fd.get("role") })
           : await OEG.auth.login({ email: fd.get("email"), password: fd.get("password") });
+        if (res && res.pending) { showRegisterPending(res); return; }
         renderAuthArea();
-        OEG.toast("👋 " + t("auth.welcome") + ", " + user.name);
+        OEG.toast("👋 " + t("auth.welcome") + ", " + (res.name || res.email));
         location.hash = "#/";
       } catch (err) {
         msgEl.innerHTML = `<div class="alert alert-error">${OEG.esc(err.message)}</div>`;
@@ -350,7 +385,7 @@
       case "login": html = authPage("login"); after = () => bindAuth("login"); break;
       case "register": html = authPage("register"); after = () => bindAuth("register"); break;
       case "admin":
-        if (!OEG.canAdmin()) { html = adminDeniedPage(); }
+        if (!OEG.canAdmin()) { html = await adminLoginPage(); after = bindAdminLogin; }
         else { html = `<div id="adminMount"></div>`; after = () => OEG.admin.render(document.getElementById("adminMount")); }
         break;
       case "search": html = searchPage(query.q || ""); break;
@@ -364,17 +399,35 @@
     renderNav();
   }
 
-  function adminDeniedPage() {
-    const u = OEG.state.user;
-    return `<div class="container" style="padding:70px 20px">
-      <div class="panel reveal in" style="max-width:620px;margin:0 auto;text-align:center;padding:40px">
-        <div style="font-size:3rem">🔒</div>
-        <h1 style="font-size:1.6rem;margin:10px 0">${t("admin.denied.title")}</h1>
-        <p style="color:var(--muted);font-weight:600">${t("admin.denied.msg")}</p>
-        <div class="alert alert-info" style="text-align:left;margin-top:18px">${t("admin.denied.how")}</div>
-        ${u ? `<p style="margin-top:14px;color:var(--muted);font-size:.9rem">👋 ${OEG.esc(u.name)} — ${OEG.esc(u.email)}</p>`
-             : `<a class="btn btn-brand" style="margin-top:18px" href="#/login">🔑 ${t("admin.denied.login")}</a>`}
-      </div></div>`;
+  async function adminLoginPage() {
+    const adm = await OEG.auth.getAdminFile();
+    const setup = !adm.email || !adm.passHash;
+    return `<div class="form-card" style="margin-top:34px">
+      <h2>🛡️ ${t("admin.loginTitle")}</h2>
+      <p class="sub">${setup ? t("admin.setupNote") : t("admin.loginSub")}</p>
+      <div id="admMsg"></div>
+      <form id="admForm">
+        <div class="field"><label>${t("auth.email")}</label><input name="email" type="email" required autocomplete="username" ${setup ? "" : `value="${OEG.esc(adm.email)}"`}></div>
+        <div class="field"><label>${t("auth.password")}</label><input name="password" type="password" required minlength="6" autocomplete="current-password"></div>
+        ${setup ? `<div class="field"><label>${t("admin.token")}</label><input name="token" type="password" placeholder="github_pat_..." autocomplete="off"></div>` : ""}
+        <button class="btn btn-brand" style="width:100%;justify-content:center" type="submit">🔓 ${t("admin.enterBtn")}</button>
+      </form>
+    </div>`;
+  }
+  function bindAdminLogin() {
+    const form = document.getElementById("admForm");
+    if (!form) return;
+    form.onsubmit = async (e) => {
+      e.preventDefault();
+      const fd = new FormData(e.target);
+      try {
+        await OEG.auth.loginAdmin({ email: fd.get("email"), password: fd.get("password"), token: fd.get("token") });
+        renderAuthArea();
+        render();
+      } catch (err) {
+        document.getElementById("admMsg").innerHTML = `<div class="alert alert-error">${OEG.esc(err.message)}</div>`;
+      }
+    };
   }
 
   /* ---------- Sidebar / theme / lang ---------- */

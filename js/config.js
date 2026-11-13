@@ -35,17 +35,14 @@ window.OEG_CONFIG = {
       contentBottom: ""
     }
   },
-  /* Admin Panel એક્સેસ નિયંત્રણ —
-     ફક્ત આ ઈમેઈલવાળા લોગઈન યુઝર્સ જ Admin Panel ખોલી શકશે.
-     "*" = સૌ કોઈને (માત્ર ટેસ્ટ માટે), ખાલી [] = કોઈને નહીં (ડિફોલ્ટ લોક).
-     Admin Panel → 🔐 એક્સેસ કંટ્રોલ માંથી પણ બદલી શકાય છે. */
-  admin: {
-    emails: []
-  },
-  /* Social links */
+  /* Admin Panel એક્સેસ — ફક્ત data/admin.json માં રાખેલા email+પાસવર્ડથી જ ખુલે.
+     (પ્રથમ વખત #/admin પર email+પાસવર્ડ સેટ કરો — ફાઈલ GitHub પર commit થશે.) */
+  contactEmail: "hm89patel78@gmail.com",
+  /* Social links — footer + home "Follow us" બટનમાં વપરાય છે */
   social: {
-    youtube: "",
-    facebook: "",
+    youtube: "https://www.youtube.com/@EducationGuruOnline",
+    facebook: "https://www.facebook.com/online.education.gurus",
+    instagram: "https://www.instagram.com/onlineeducationguru/",
     telegram: "",
     whatsapp: ""
   }
