@@ -30,7 +30,7 @@ OEG.games = (() => {
       root.innerHTML = `<div class="game-shell"><h3>🧠 ${OEG.t("game.quiz")}</h3>
         <div class="game-score">${OEG.t("game.score")}: ${score} &nbsp;•&nbsp; ${idx + 1}/${order.length}</div>
         <div class="game-q">${OEG.esc(item.q[OEG.state.lang] || item.q.gu)}</div>
-        <div class="game-opts">${item.opts.map((o, i) => `<button class="game-opt" data-i="${i}">${OEG.esc(o)}</button>`).join("")}</div>
+        <div class="game-opts">${shuffle(item.opts.map((_, i) => i)).map((i) => `<button class="game-opt" data-i="${i}">${OEG.esc(item.opts[i])}</button>`).join("")}</div>
         <div class="game-feedback" id="gFb"></div></div>`;
       root.querySelectorAll(".game-opt").forEach(btn => btn.onclick = () => {
         const i = +btn.dataset.i;

@@ -6,6 +6,8 @@
 OEG.quiz = (() => {
   const t = () => OEG.t;
   let bank = { v: 2, passPercent: 60, seconds: 45, cats: [], questions: [] };
+  /* Admin એ જે લખ્યું એ જ Pages પર આવે ત્યાં સુધી local બેંક જ રાખો (નહીં તો નવું ઉમેરાયું ગાયબ) */
+  let writtenText = "";
   let run = null;           /* ચાલતી ક્વિઝની સ્થિતિ */
   let mountEl = null;
   let certCanvas = null;
@@ -16,11 +18,30 @@ OEG.quiz = (() => {
   const isExamCat = (k) => EXAM_KEYS.indexOf(String(k || "").toLowerCase()) >= 0 || /^(10|12)th/.test(String(k || ""));
 
   /* ---------- લોડ ---------- */
+  function markSaved(obj) { try { writtenText = JSON.stringify(obj, null, 2) + "\n"; } catch (e) { writtenText = ""; } }
+  function mergeRemote(remote) {
+    const q = Array.isArray(remote.questions) ? remote.questions : [];
+    const have = [];
+    all().forEach(x => have.push(x.id));
+    const add = q.filter(x => x && have.indexOf(x.id) < 0).map((x) => {
+      const o = Object.assign({}, x);
+      ["q", "ex", "explain"].forEach((k) => { if (o[k] !== undefined) o[k] = fixQ(o[k]); });
+      if (Array.isArray(o.opts)) o.opts = o.opts.map(fixQ);
+      return o;
+    });
+    if (add.length) bank.questions = add.concat(all());
+    ["passPercent", "seconds"].forEach((k) => { if (bank[k] === undefined && remote[k] !== undefined) bank[k] = remote[k]; });
+  }
   async function load() {
     try {
       const r = await fetch("data/quiz.json", { cache: "no-store" });
       if (r.ok) {
-        const j = await r.json();
+        const txt = await r.text();
+        if (writtenText) {
+          if (txt === writtenText) writtenText = "";                    /* Pages પર નવી ફાઈલ આવી ગઈ */
+          else { try { mergeRemote(JSON.parse(txt)); } catch (e) {} return bank; }   /* હજી જૂની — local બેંક રાખો */
+        }
+        const j = JSON.parse(txt);
         if (j && typeof j === "object") {
           bank = Object.assign(bank, j);
           bank.questions = Array.isArray(j.questions) ? j.questions : [];
@@ -51,9 +72,25 @@ OEG.quiz = (() => {
   };
   const flagOf = (key) => { const m = modeOf(key); return { useGrade: m === "grade", useSubject: m === "grade" }; };
   /* કેટેગરી પછી શું દેખાય: "grade" = ધોરણ+વિષય · "sub" = સબ-કેટેગરી · "none" = સીધો ક્વિઝ */
-  const normSubs = (list) => (Array.isArray(list) ? list : [])
-    .map(x => (typeof x === "string" ? { key: x, label: { gu: x, hi: x, en: x } } : (x && x.key ? x : null)))
-    .filter(x => x && /^[\w\-]+$/.test(String(x.key)));
+  /* સાથે જ પડેલી ઉપ-શ્રેણીઓ સામાન્ય રૂપમાં — હવે દરેક નોડ પાસે બાળ (ચેપ્ટર) હોઈ શકે */
+  function normSubs(list, depth) {
+    const d = Number(depth) || 0;
+    const out = (Array.isArray(list) ? list : []).map((x) => {
+      const o = typeof x === "string" ? { key: x } : (x && typeof x === "object" ? x : null);
+      if (!o) return null;
+      const k = String(o.key || "").trim();
+      if (!/^[\w\-]+$/.test(k)) return null;
+      const n = { key: k, icon: o.icon || "", label: o.label || { gu: k, hi: k, en: k } };
+      const num = o.num !== undefined && o.num !== null && String(o.num).trim() !== "" ? String(o.num).trim() : "";
+      if (num) n.num = num;
+      if (o.grade) n.grade = String(o.grade);
+      const kids = d < 2 ? normSubs(o.subs, d + 1) : [];
+      if (kids.length) n.subs = kids;
+      return n;
+    }).filter(Boolean);
+    const seen = [];
+    return out.filter((x) => { if (seen.indexOf(x.key) >= 0) return false; seen.push(x.key); return true; });
+  }
   const modeOf = (key) => {
     const src = catSrc(key);
     if (src.mode === "grade" || src.mode === "sub" || src.mode === "none") return src.mode;
@@ -61,16 +98,40 @@ OEG.quiz = (() => {
     if (src.useGrade === true) return "grade";          /* જૂની data ફાઈલ સાથે સુસંગત */
     return normSubs(src.subs).length ? "sub" : "none";
   };
+  const subOf = (key, sub) => subsOf(key).filter(x => x.key === sub)[0] || null;
+  const subLabel = (key, sub) => { const x = subOf(key, sub); return x ? OEG.taxLabel(x, "subject") : (sub ? OEG.subjectLabel(sub) : ""); };
+  /* 🧩 ઉપ-શ્રેણી (વિષય / સબ-કેટેગરી) — mode=grade હોય ત્યારે taxonomy ના ૭ વિષય પણ સાથે */
   const subsOf = (key) => {
     const out = normSubs(catSrc(key).subs);
     const seen = out.map(x => x.key);
+    const add = (n) => { if (n && n.key && seen.indexOf(n.key) < 0) { out.push(n); seen.push(n.key); } };
+    if (modeOf(key) === "grade") (OEG.tax().gradeSubjects || []).forEach((x) => { if (x && x.key && x.key !== "all") add({ key: x.key, icon: x.icon || "📘", label: x.label || { gu: OEG.subjectLabel(x.key), hi: OEG.subjectLabel(x.key), en: OEG.subjectLabel(x.key) } }); });
     all().forEach((q) => {
-      if ((q.cat || "gk") === key && q.sub && seen.indexOf(q.sub) < 0) { out.push({ key: q.sub, label: { gu: q.sub, hi: q.sub, en: q.sub } }); seen.push(q.sub); }
+      if ((q.cat || "gk") !== key) return;
+      add(q.sub ? { key: q.sub, label: { gu: q.sub, hi: q.sub, en: q.sub } } : null);
+      if (modeOf(key) === "grade") add(subjOf(q) ? { key: subjOf(q), icon: "📘", label: { gu: OEG.subjectLabel(subjOf(q)), hi: OEG.subjectLabel(subjOf(q)), en: OEG.subjectLabel(subjOf(q)) } } : null);
     });
     return out;
   };
-  const subOf = (key, sub) => subsOf(key).filter(x => x.key === sub)[0] || null;
-  const subLabel = (key, sub) => { const x = subOf(key, sub); return x ? OEG.taxLabel(x, "subject") : (sub || ""); };
+  /* 📗 ત્રીજું સ્તર — ચેપ્ટર (નંબર + નામ), દરેક ઉપ-શ્રેણી અંદર */
+  const chapsOf = (key, sub, grade) => {
+    const x = subOf(key, sub);
+    const list = (x && normSubs(x.subs, 1)) || [];
+    return grade && grade !== "all" ? list.filter(c => !c.grade || c.grade === grade) : list;
+  };
+  const chapOf = (key, sub, ch) => chapsOf(key, sub).filter(x => x.key === ch)[0] || null;
+  const guNum = (v) => {
+    const map = { "0": "૦", "1": "૧", "2": "૨", "3": "૩", "4": "૪", "5": "૫", "6": "૬", "7": "૭", "8": "૮", "9": "૯" };
+    return String(v == null ? "" : v).replace(/[0-9]/g, (c) => map[c]);
+  };
+  const chapTitle = (key, sub, ch) => {
+    const c = chapOf(key, sub, ch);
+    if (!c) return ch || "";
+    const pre = OEG.state.lang === "en" ? "Chapter" : "ચેપ્ટર";
+    const nm = OEG.taxLabel(c, "subject");
+    const num = c.num ? (OEG.state.lang === "gu" ? guNum(c.num) : c.num) : "";
+    return pre + (num ? "-" + num : "") + (nm && nm !== num ? " · " + nm : "");
+  };
   /* Admin ની યાદી — taxonomy (ક્રમ/icon) + quiz.json (લેબલ/ફ્લેગ) + પ્રશ્નોની કેટેગરી, બધું ભેગું */
   function cats() {
     const tx = OEG.tax().quizCats || [];
@@ -103,7 +164,9 @@ OEG.quiz = (() => {
   /* પ્રશ્નનો વિષય: સ્પષ્ટ subject field, નહીં તો subject-કેટેગરી પરથી */
   const subjOf = (q) => (q.subject && q.subject !== "all") ? q.subject : (SUB7().indexOf(q.cat) >= 0 ? q.cat : "");
   const subOf_ = (q) => (q.sub && q.sub !== "all") ? q.sub : "";
-  const matches = (q, cat, grade, subject, sub) => {
+  const chapOf_ = (q) => (q.chap && q.chap !== "all") ? q.chap : "";
+  const level2Of = (q, cat) => { const m = modeOf(cat); return m === "grade" ? subjOf(q) : subOf_(q); };
+  const matches = (q, cat, grade, subject, sub, chap) => {
     if (cat && (q.cat || "gk") !== cat) return false;
     const m = cat ? modeOf(cat) : "none";
     if (m === "grade") {
@@ -112,17 +175,31 @@ OEG.quiz = (() => {
         if (gq !== "all" && gq !== grade) return false;
       }
       if (subject && subject !== "all" && subjOf(q) !== subject) return false;
+      if (chap && chap !== "all" && subject && subject !== "all" && chapOf_(q) !== chap) return false;
     } else if (m === "sub") {
       if (sub && sub !== "all" && subOf_(q) !== sub) return false;
+      if (chap && chap !== "all" && sub && sub !== "all" && chapOf_(q) !== chap) return false;
     }
     return true;
   };
-  const countIn = (key, grade, subject, sub) => all().filter(q => matches(q, key, grade || "all", subject || "all", sub || "all")).length;
-  const subCount = (key, sub) => countIn(key, "all", "all", sub);
+  const countIn = (key, grade, subject, sub, chap) => all().filter(q => matches(q, key, grade || "all", subject || "all", sub || "all", chap || "all")).length;
+  const subCount = (key, sub) => countIn(key, "all", "all", sub, "all");
+  const chapCount = (key, sub, chap, grade) => countIn(key, grade || "all", modeOf(key) === "grade" ? sub : "all", modeOf(key) === "grade" ? "all" : sub, chap);
 
-  function pick(cat, grade, subject, n, sub) {
-    let qs = all().filter(q => matches(q, cat, grade || "all", subject || "all", sub || "all")).slice();
-    for (let i = qs.length - 1; i > 0; i--) { const j = (Math.random() * (i + 1)) | 0; const x = qs[i]; qs[i] = qs[j]; qs[j] = x; }
+  /* 🔀 મિશ્રણ (Fisher–Yates) */
+  const mix = (arr) => { const a = arr.slice(); for (let i = a.length - 1; i > 0; i--) { const j = (Math.random() * (i + 1)) | 0; const x = a[i]; a[i] = a[j]; a[j] = x; } return a; };
+  /* 🔀 વિકલ્પ પણ ગડબડ — જેથી "A/B/C/D યાદ રાખવા" કામ ન આપે (સાચું/ખોટું ૨ વિકલ્પ છોડે) */
+  function shuffleOpts(q) {
+    const opts = (q.opts || []).slice(0, 4);
+    const a = Number(q.a != null ? q.a : q.answer);
+    if (opts.length < 3) return q;
+    const at = mix(opts.map((_, i) => i));
+    const na = at.indexOf(Number.isFinite(a) ? a : 0);
+    return Object.assign({}, q, { opts: at.map(i => opts[i]), a: na >= 0 ? na : a });
+  }
+  /* બંને ગડબડ: પ્રશ્નોનો ક્રમ + દરેક પ્રશ્નાના વિકલ્પ */
+  function pick(cat, grade, subject, n, sub, chap) {
+    let qs = mix(all().filter(q => matches(q, cat, grade || "all", subject || "all", sub || "all", chap || "all"))).map(shuffleOpts);
     return n ? qs.slice(0, n) : qs;
   }
 
@@ -136,12 +213,14 @@ OEG.quiz = (() => {
       const c = catOf(opts.cat);
       if (opts.subject) mountEl._sel = Object.assign(mountEl._sel || {}, { subject: opts.subject });
       if (opts.sub) mountEl._sel = Object.assign(mountEl._sel || {}, { sub: opts.sub });
+      if (opts.chap) mountEl._sel = Object.assign(mountEl._sel || {}, { chap: opts.chap });
       const g = c.mode === "grade" ? (opts.grade || "all") : "all";
       const sb = c.mode === "grade" ? (opts.subject || "all") : "all";
       const su = c.mode === "sub" ? (opts.sub || "all") : "all";
+      const cp = opts.chap || "all";
       /* નામ વગર પ્રમાણપત્ર અધૂરું રહે — એટલે પહેલા setup માંથી જ નામ લેવો */
-      if (!curName()) { mountEl._sel = Object.assign(mountEl._sel || {}, { cat: opts.cat, grade: g, subject: mountEl._sel && mountEl._sel.subject || sb, sub: mountEl._sel && mountEl._sel.sub || su, n: opts.n || 10 }); setup(g); return; }
-      start(opts.cat, g, sb, opts.n || 0, su);
+      if (!curName()) { mountEl._sel = Object.assign(mountEl._sel || {}, { cat: opts.cat, grade: g, subject: mountEl._sel && mountEl._sel.subject || sb, sub: mountEl._sel && mountEl._sel.sub || su, chap: mountEl._sel && mountEl._sel.chap || cp, n: opts.n || 10 }); setup(g); return; }
+      start(opts.cat, g, sb, opts.n || 0, su, cp);
     } else setup(opts.grade);
   }
 
@@ -156,7 +235,19 @@ OEG.quiz = (() => {
   const nameSave = (v) => { try { localStorage.setItem("oeg.qname", v); } catch (e) {} OEG.state.quizName = v; };
   const curName = () => (OEG.state.quizName || nameStore() || (OEG.state.user && OEG.state.user.name) || "").trim();
 
-  /* ---------- સેટ-અપ સ્ક્રીન (નામ + કેટેગરી + [ધોરણ] + [વિષય] + ગણતરી) ---------- */
+  const canAdmin = () => { try { return !!(OEG.canAdmin && OEG.canAdmin()); } catch (e) { return false; } };
+  /* 🔑 Admin (જ્યારે quiz પેજ પરથી જ નવું ચેપ્ટર ઉમેરવાનું) */
+  function chapForm(catKey, l2) {
+    const T = t();
+    if (!l2 || l2 === "all") return "";
+    return `<div class="chap-add" data-chapadd="${OEG.esc(catKey)}:${OEG.esc(l2)}">
+      <input class="ca-num" type="text" inputmode="numeric" maxlength="6" placeholder="${T("quiz.chapNum")}">
+      <input class="ca-lab" type="text" maxlength="60" placeholder="${T("quiz.chapName")}">
+      <button type="button" class="btn btn-outline btn-sm ca-go">➕ ${T("quiz.chapAdd")}</button>
+    </div>`;
+  }
+
+  /* ---------- સેટ-અપ સ્ક્રીન (નામ + કેટેગરી + ધોરણ + વિષય/સબ + ચેપ્ટર + ગણતરી) ---------- */
   function setup(gradePreset) {
     const T = t(), C = cats();
     const st = mountEl._sel || (mountEl._sel = {});
@@ -167,13 +258,17 @@ OEG.quiz = (() => {
     if (st.n === undefined) st.n = 10;
     const cur = catOf(st.cat);
     const mode = cur.mode || "none";
-    if (mode !== "sub" && st.sub !== "all") st.sub = "all";
+    if (st.chap === undefined) st.chap = "all";
+    if (mode !== "grade") st.subject = "all";
+    if (mode !== "sub") st.sub = "all";
     const grades = OEG.tax().grades.filter(g => g.key === "balvatika" || /^\d+$/.test(g.key));
-    const subjects = (OEG.tax().gradeSubjects || []).filter(x => x.key !== "all");
-    const subs = cur.subs || [];
-    const avail = countIn(st.cat, mode === "grade" ? st.grade : "all", mode === "grade" ? st.subject : "all", mode === "sub" ? st.sub : "all");
+    const subs = mode === "grade" ? subsOf(st.cat) : (cur.subs || []);
+    const l2 = mode === "grade" ? st.subject : mode === "sub" ? st.sub : "all";
+    const chaps = l2 && l2 !== "all" ? chapsOf(st.cat, l2, mode === "grade" ? st.grade : "all") : [];
+    if (st.chap !== "all" && !chaps.some(c => c.key === st.chap)) st.chap = "all";
+    const avail = countIn(st.cat, mode === "grade" ? st.grade : "all", mode === "grade" ? st.subject : "all", mode === "sub" ? st.sub : "all", st.chap);
     return paint(`<div class="quiz-shell quiz-setup">
-      <div class="quiz-head"><h2>🧠 ${T("quiz.title")}</h2><p>${T("quiz.setupSub")}</p></div>
+      <div class="quiz-head"><h2>🧠 ${T("quiz.title")}</h2><p>${T("quiz.setupSub")}</p><p class="qz-hint">${T("quiz.shuffled")}</p></div>
       <div class="quiz-picks">
         <div class="quiz-block qz-name"><h3>🧑 ${T("quiz.yourName")}</h3>
           <input id="qzName" class="qz-name-in" maxlength="46" placeholder="${T("quiz.namePh")}" value="${OEG.esc(curName())}" autocomplete="off">
@@ -194,13 +289,20 @@ OEG.quiz = (() => {
         ${mode === "grade" ? `<div class="quiz-block"><h3>📖 ${T("quiz.pickSubject")}</h3>
           <div class="chip-row sm" id="qzSubs">
             <button type="button" class="qz-chip ${st.subject === "all" ? "on" : ""}" data-sub="all"><span>🗂️</span><b>${T("quiz.allSubjects")}</b></button>
-            ${subjects.map(x => `<button type="button" class="qz-chip ${x.key === st.subject ? "on" : ""}" data-sub="${OEG.esc(x.key)}"><span>${x.icon || "📘"}</span><b>${OEG.esc(OEG.subjectLabel(x.key))}</b><small>${countIn(st.cat, st.grade, x.key, "all")}</small></button>`).join("")}
+            ${subs.map(x => `<button type="button" class="qz-chip ${x.key === st.subject ? "on" : ""}" data-sub="${OEG.esc(x.key)}"><span>${x.icon || "📘"}</span><b>${OEG.esc(subLabel(st.cat, x.key))}</b><small>${countIn(st.cat, st.grade, x.key, "all", "all")}${chapsOf(st.cat, x.key, st.grade).length ? " · 📗 " + chapsOf(st.cat, x.key, st.grade).length : ""}</small></button>`).join("")}
           </div></div>` : ""}
         ${mode === "sub" ? `<div class="quiz-block"><h3>🏷️ ${T("quiz.pickSub")}</h3>
           ${subs.length ? `<div class="chip-row sm" id="qzSubCats">
-            <button type="button" class="qz-chip ${st.sub === "all" ? "on" : ""}" data-subcat="all"><span>🗂️</span><b>${T("quiz.allSubs")}</b><small>${countIn(st.cat, "all", "all", "all")}</small></button>
-            ${subs.map(x => `<button type="button" class="qz-chip ${x.key === st.sub ? "on" : ""}" data-subcat="${OEG.esc(x.key)}"><span>${x.icon || "🏷️"}</span><b>${OEG.esc(OEG.taxLabel(x, "subject"))}</b><small>${subCount(st.cat, x.key)}</small></button>`).join("")}
+            <button type="button" class="qz-chip ${st.sub === "all" ? "on" : ""}" data-subcat="all"><span>🗂️</span><b>${T("quiz.allSubs")}</b><small>${countIn(st.cat, "all", "all", "all", "all")}</small></button>
+            ${subs.map(x => `<button type="button" class="qz-chip ${x.key === st.sub ? "on" : ""}" data-subcat="${OEG.esc(x.key)}"><span>${x.icon || "🏷️"}</span><b>${OEG.esc(OEG.taxLabel(x, "subject"))}</b><small>${subCount(st.cat, x.key)}${chapsOf(st.cat, x.key, "all").length ? " · 📗 " + chapsOf(st.cat, x.key, "all").length : ""}</small></button>`).join("")}
           </div>` : `<p class="qz-hint">🧠 ${T("quiz.noSubs")}</p>`}
+        </div>` : ""}
+        ${mode === "grade" || mode === "sub" ? `<div class="quiz-block"><h3>📗 ${T("quiz.pickChap")}</h3>
+          ${l2 && l2 !== "all" ? (chaps.length ? `<div class="chip-row sm" id="qzChaps">
+            <button type="button" class="qz-chip ${st.chap === "all" ? "on" : ""}" data-chap="all"><span>🗂️</span><b>${T("quiz.allChaps")}</b><small>${countIn(st.cat, mode === "grade" ? st.grade : "all", mode === "grade" ? st.subject : "all", mode === "sub" ? st.sub : "all", "all")}</small></button>
+            ${chaps.map((c) => `<button type="button" class="qz-chip ${st.chap === c.key ? "on" : ""}" data-chap="${OEG.esc(c.key)}"><span>${c.icon || "📗"}</span><b>${OEG.esc(chapTitle(st.cat, l2, c.key))}</b><small>${chapCount(st.cat, l2, c.key, mode === "grade" ? st.grade : "all")}</small></button>`).join("")}
+          </div>` : `<p class="qz-hint">📗 ${T("quiz.noChaps")}</p>`) : `<p class="qz-hint">👉 ${T("quiz.chapFirst")}</p>`}
+          ${canAdmin() ? chapForm(st.cat, l2) : ""}
         </div>` : ""}
         <div class="quiz-block"><h3>🔢 ${T("quiz.count")}</h3>
           <div class="chip-row sm" id="qzN">
@@ -215,21 +317,22 @@ OEG.quiz = (() => {
   }
 
   /* ---------- ચાલુ ક્વિઝ ---------- */
-  function start(cat, grade, subject, n, sub) {
+  function start(cat, grade, subject, n, sub, chap) {
     const C = t(), c = catOf(cat);
     const m = c.mode || "none";
     const g = m === "grade" ? (grade || "all") : "all";
     const s = m === "grade" ? (subject || "all") : "all";
     const su = m === "sub" ? (sub || "all") : "all";
+    const cp = (s && s !== "all") || (su && su !== "all") ? (chap || "all") : "all";
     const name = curName();
-    const qs = pick(cat, g, s, n, su);
+    const qs = pick(cat, g, s, n, su, cp);
     if (!qs.length) {
       paint(`<div class="quiz-shell panel" style="text-align:center;padding:44px 20px">
         <div style="font-size:2.6rem">📭</div><h3>${C("quiz.noQuestions")}</h3>
         <div style="margin-top:14px"><button class="btn btn-outline" id="qzBack">← ${C("quiz.back")}</button></div></div>`);
       return;
     }
-    run = { cat: cat, grade: g, subject: s, sub: su, name: name, qs: qs, i: 0, marks: [], t0: Date.now(), best: 0, streak: 0, timer: null, left: 0 };
+    run = { cat: cat, grade: g, subject: s, sub: su, chap: cp, name: name, qs: qs, i: 0, marks: [], t0: Date.now(), best: 0, streak: 0, timer: null, left: 0 };
     question();
   }
 
@@ -253,6 +356,7 @@ OEG.quiz = (() => {
           <span class="qz-pill">🏷️ ${OEG.esc(catLabel(catOf(catKey)))}</span>
           ${catOf(catKey).mode === "grade" && q.grade && q.grade !== "all" ? `<span class="qz-pill">🎓 ${OEG.gradeLabel(q.grade)}</span>` : ""}
           ${catOf(catKey).mode === "sub" && q.sub ? `<span class="qz-pill">🏷️ ${OEG.esc(subLabel(catKey, q.sub))}</span>` : ""}
+          ${q.chap && q.chap !== "all" ? `<span class="qz-pill">📗 ${OEG.esc(chapTitle(catKey, catOf(catKey).mode === "grade" ? subjOf(q) : q.sub, q.chap))}</span>` : ""}
           ${sub ? `<span class="qz-pill">📘 ${OEG.esc(OEG.subjectLabel(sub))}</span>` : ""}
           ${q.diff ? `<span class="qz-pill">${C("quiz.level")}: ${C("admin.diff" + q.diff.charAt(0).toUpperCase() + q.diff.slice(1))}</span>` : ""}
           <span class="qz-pill qz-time" id="qzTime">⏱ <b>${run.left}</b>s</span>
@@ -330,7 +434,7 @@ OEG.quiz = (() => {
     const cat = catOf(run.cat);
     const verdict = pct >= 90 ? C("quiz.great") : passed ? C("quiz.good") : C("quiz.keepTrying");
     const cid = certId(run.name, pct);
-    run.last = { right: right, total: total, pct: pct, passed: passed, cid: cid, name: run.name, cat: cat, grade: run.grade, subject: run.subject, sub: run.sub };
+    run.last = { right: right, total: total, pct: pct, passed: passed, cid: cid, name: run.name, cat: cat, grade: run.grade, subject: run.subject, sub: run.sub, chap: run.chap };
     paint(`<div class="quiz-shell quiz-result">
       <div class="qr-top">
         <div class="qr-ring ${passed ? "pass" : "fail"}" style="--p:${pct}"><b>${pct}%</b></div>
@@ -343,7 +447,7 @@ OEG.quiz = (() => {
             <div><span>${C("quiz.passLine")}</span><b>${passPct()}%</b></div>
             <div><span>${C("quiz.streak")}</span><b>${run.best}</b></div>
             <div><span>${C("quiz.time")}</span><b>${Math.floor(secs / 60)}:${String(secs % 60).padStart(2, "0")}</b></div>
-            <div><span>${C("quiz.level")}</span><b>${OEG.esc(catLabel(cat))}${run.sub && run.sub !== "all" ? " · " + OEG.esc(subLabel(run.cat, run.sub)) : ""}</b></div>
+            <div><span>${C("quiz.level")}</span><b>${OEG.esc(catLabel(cat))}${run.sub && run.sub !== "all" ? " · " + OEG.esc(subLabel(run.cat, run.sub)) : ""}${run.subject && run.subject !== "all" ? " · " + OEG.esc(subLabel(run.cat, run.subject)) : ""}${run.chap && run.chap !== "all" ? " · " + OEG.esc(chapTitle(run.cat, run.subject !== "all" ? run.subject : run.sub, run.chap)) : ""}</b></div>
           </div>
           <p class="qr-name">🧑 ${OEG.esc(run.name || C("quiz.certGuest"))}
             <button type="button" class="qz-link" id="qzEditName">✏️ ${C("quiz.changeName")}</button></p>
@@ -378,7 +482,7 @@ OEG.quiz = (() => {
     const cc = bank.cert || {};
     return {
       name: L.name, cat: L.cat, catLabel: catLabel(L.cat), grade: L.grade, subject: L.subject,
-      subjectLabel: L.subject && L.subject !== "all" ? OEG.subjectLabel(L.subject) : (L.sub && L.sub !== "all" ? subLabel(L.cat && L.cat.key, L.sub) : ""),
+      subjectLabel: [L.subject && L.subject !== "all" ? OEG.subjectLabel(L.subject) : (L.sub && L.sub !== "all" ? subLabel(L.cat && L.cat.key, L.sub) : ""), L.chap && L.chap !== "all" ? chapTitle(L.cat && L.cat.key, L.subject !== "all" ? L.subject : L.sub, L.chap) : ""].filter(Boolean).join(" · "),
       subKey: L.sub && L.sub !== "all" ? L.sub : "",
       subjectKey: L.sub && L.sub !== "all" ? L.sub : "",
       right: L.right, total: L.total, pct: L.pct, pass: passPct(), id: L.cid,
@@ -463,26 +567,42 @@ OEG.quiz = (() => {
       b.onclick = () => { st.grade = b.dataset.grade; setup(st.grade); };
     });
     mountEl.querySelectorAll("#qzSubs .qz-chip").forEach(b => {
-      b.onclick = () => { st.subject = b.dataset.sub; setup(st.grade); };
+      b.onclick = () => { st.subject = b.dataset.sub; st.chap = "all"; setup(st.grade); };
     });
     mountEl.querySelectorAll("#qzN .qz-chip").forEach(b => {
       b.onclick = () => { st.n = Number(b.dataset.n); setup(st.grade); };
     });
     mountEl.querySelectorAll("#qzSubCats .qz-chip").forEach(b => {
-      b.onclick = () => { st.sub = b.dataset.subcat; setup(st.grade); };
+      b.onclick = () => { st.sub = b.dataset.subcat; st.chap = "all"; setup(st.grade); };
+    });
+    mountEl.querySelectorAll("#qzChaps .qz-chip").forEach(b => {
+      b.onclick = () => { st.chap = b.dataset.chap; setup(st.grade); };
+    });
+    mountEl.querySelectorAll(".chap-add .ca-go").forEach(b => {
+      b.onclick = async () => {
+        const wrap = b.closest(".chap-add");
+        const parts = String(wrap.dataset.chapadd || "").split(":");
+        const num = (wrap.querySelector(".ca-num").value || "").trim();
+        const lab = (wrap.querySelector(".ca-lab").value || "").trim();
+        if (!num && !lab) { OEG.toast(t()("quiz.chapNeed")); return; }
+        b.disabled = true;
+        try { await addChap(parts[0], parts.slice(1).join(":"), num, lab, "", st.grade || "all"); OEG.toast(t()("quiz.chapAdded")); setup(st.grade); }
+        catch (e) { OEG.toast("⚠️ " + (e && e.message ? e.message : t()("quiz.chapFail"))); }
+        b.disabled = false;
+      };
     });
     const nm = q("#qzName");
     if (nm) nm.oninput = () => { nameSave(nm.value.trim()); };
     if (q("#qzStart")) q("#qzStart").onclick = () => {
       if (nm) nameSave(nm.value.trim());
       const m = c2mode(st.cat);
-      start(st.cat, m === "grade" ? st.grade : "all", m === "grade" ? st.subject : "all", st.n, m === "sub" ? st.sub : "all");
+      start(st.cat, m === "grade" ? st.grade : "all", m === "grade" ? st.subject : "all", st.n, m === "sub" ? st.sub : "all", st.chap || "all");
     };
-    if (q("#qzBack")) q("#qzBack").onclick = () => { mountEl._sel = { cat: run ? run.cat : st.cat, grade: run ? run.grade : st.grade, subject: run ? run.subject : st.subject, sub: run ? run.sub : st.sub, n: st.n }; setup(mountEl._sel.grade); };
+    if (q("#qzBack")) q("#qzBack").onclick = () => { mountEl._sel = { cat: run ? run.cat : st.cat, grade: run ? run.grade : st.grade, subject: run ? run.subject : st.subject, sub: run ? run.sub : st.sub, chap: run ? run.chap : st.chap, n: st.n }; setup(mountEl._sel.grade); };
     if (q("#qzOpts")) mountEl.querySelectorAll("#qzOpts .qz-opt").forEach(b => b.onclick = () => answer(Number(b.dataset.i), false));
     if (q("#qzNext")) q("#qzNext").onclick = next;
     if (q("#qzSkip")) q("#qzSkip").onclick = () => answer(-2, false);
-    if (q("#qzAgain")) q("#qzAgain").onclick = () => start(run.cat, run.grade, run.subject, run.qs.length, run.sub);
+    if (q("#qzAgain")) q("#qzAgain").onclick = () => start(run.cat, run.grade, run.subject, run.qs.length, run.sub, run.chap);
     if (q("#qzReview")) q("#qzReview").onclick = review;
     if (q("#qzCert")) q("#qzCert").onclick = certificate;
     if (q("#qzEditName")) q("#qzEditName").onclick = changeName;
@@ -501,6 +621,120 @@ OEG.quiz = (() => {
   }
   /* Admin ટૂલ: કેટેગરી ફ્લેગ + પ્રશ્નો બદલો (એક જ જગ્યાએથી લખાય) */
   function mutate(fn) { const next = fn(Object.assign({}, bank, { cats: (bank.cats || []).slice(), questions: (bank.questions || []).slice() })) || bank; bank = next; return next; }
+  /* ફાઈલ વાંચ્યા વગર બેંક લાદુ — admin નો ફેરફાર તરત જ દેખાય (Pages રીબિલ્ડની રાહ ન જોઈએ) */
+  function applyBank(j) {
+    if (!j || typeof j !== "object") return bank;
+    bank = Object.assign({}, j);
+    bank.questions = Array.isArray(j.questions) ? j.questions.map((q) => {
+      const o = Object.assign({}, q);
+      ["q", "ex", "explain"].forEach((k) => { if (o[k] !== undefined) o[k] = fixQ(o[k]); });
+      if (Array.isArray(o.opts)) o.opts = o.opts.map(fixQ);
+      return o;
+    }) : [];
+    bank.cats = Array.isArray(j.cats) ? j.cats : [];
+    return bank;
+  }
+  async function persist(msg) { markSaved(bank); await OEG.data.writeJson("data/quiz.json", bank, msg || "quiz: taxonomy"); return bank; }
 
-  return { load, mount, raw, save, mutate, pick, cats, catOf, flagOf, isExamCat, subjOf, countIn, subCount, passPct, seconds, certOn, all, matches, modeOf, subsOf, subLabel, normSubs };
+  /* ---------- 🌳 ૬ સ્તરીય વૃક્ષ: કેટેગરી ▸ ઉપ-શ્રેણી (વિષય) ▸ ચેપ્ટર ---------- */
+  const slug = (v, alt) => {
+    const raw = String(v == null ? "" : v).trim().toLowerCase()
+      .replace(/[\u0ae6-\u0aef]/g, (c) => String(c.charCodeAt(0) - 0x0ae6))
+      .replace(/[^a-z0-9\-]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 20);
+    if (/^[a-z][a-z0-9-]{1,19}$/.test(raw)) return raw;
+    const a = String(alt || "x").replace(/[^a-z0-9]/g, "").slice(0, 8) || "x";
+    return (a + "-" + Date.now().toString(36).slice(-4)).slice(0, 20);
+  };
+  const guToNum = (v) => String(v == null ? "" : v).replace(/[\u0ae6-\u0aef]/g, (c) => String(c.charCodeAt(0) - 0x0ae6)).replace(/[\u09e6-\u09ef]/g, (c) => String(c.charCodeAt(0) - 0x09e6)).replace(/[^0-9.\-]/g, "").trim();
+  const catEntry = (key) => {
+    if (!Array.isArray(bank.cats)) bank.cats = [];
+    bank.cats = bank.cats.map(c => (typeof c === "string" ? { key: c } : (c && typeof c === "object" ? c : null))).filter(Boolean);
+    let c = bank.cats.filter(x => x.key === key)[0];
+    if (!c) { c = { key: key, icon: "🧠", label: { gu: key, hi: key, en: key }, mode: modeOf(key) === "grade" ? "grade" : "sub", subs: [] }; bank.cats.push(c); }
+    if (!Array.isArray(c.subs)) c.subs = [];
+    return c;
+  };
+  const subEntry = (c, subKey) => {
+    let x = c.subs.filter(y => y && y.key === subKey)[0];
+    if (!x) { x = { key: subKey, icon: "🏷️", label: { gu: subKey, hi: subKey, en: subKey }, subs: [] }; c.subs.push(x); }
+    if (!Array.isArray(x.subs)) x.subs = [];
+    return x;
+  };
+  const lab3 = (v, key) => { const t2 = String(v || "").trim(); return t2 ? { gu: t2, hi: t2, en: t2 } : { gu: key, hi: key, en: key }; };
+  const sameLab = (a, b) => { const x = OEG.langField(a && a.label), y = String(b || "").trim(); return !!y && x === y; };
+  const hasQ = (cat, l2) => all().some(q => (q.cat || "gk") === cat && (modeOf(cat) === "grade" ? subjOf(q) === l2 : subOf_(q) === l2));
+
+  /* ઉપ-શ્રેણી (વિષય / સબ-કેટેગરી) ઉમેરો — key ખાલી હોય તો નામ પરથી બનાવો */
+  async function addSub(catKey, key, label, icon) {
+    const lab = String(label || "").trim();
+    const k = String(key || "").trim().toLowerCase();
+    if (!lab && !k) throw new Error(t()("admin.needLabel"));
+    const c = catEntry(catKey);
+    const nk = slug(k || lab, catKey);
+    if (normSubs(c.subs).some(x => x.key === nk || sameLab(x, lab))) throw new Error(t()("admin.dupExists"));
+    c.subs.push({ key: nk, icon: icon || "🏷️", label: lab3(lab || nk, nk) });
+    if (c.mode === "none") c.mode = "sub";
+    return persist("quiz: subcategory added");
+  }
+  /* ઉપ-શ્રેણી રદ → નીચેના બધા ચેપ્ટર + એમના પ્રશ્નો પણ રદ (ઉપર તરફ કંઈ થતું નથી) */
+  async function delSub(catKey, subKey) {
+    const c = catEntry(catKey);
+    c.subs = normSubs(c.subs).filter(x => x.key !== subKey);
+    bank.questions = all().filter(q => !((q.cat || "gk") === catKey && (modeOf(catKey) === "grade" ? subjOf(q) : subOf_(q)) === subKey));
+    return persist("quiz: subcategory removed");
+  }
+  /* ચેપ્ટર (ત્રીજું સ્તર) ઉમેરો — નંબર + નામ */
+  async function addChap(catKey, subKey, num, label, icon, grade) {
+    const n = guToNum(num), lab = String(label || "").trim();
+    if (!n && !lab) throw new Error(t()("quiz.chapNeed"));
+    const c = catEntry(catKey);
+    const x = subEntry(c, subKey);
+    const nk = n ? "ch" + n.replace(/\./g, "-").slice(0, 8) : slug(lab, "ch");
+    if (normSubs(x.subs, 1).some(y => y.key === nk || sameLab(y, lab))) throw new Error(t()("admin.dupExists"));
+    const node = { key: nk, icon: icon || "📗", label: lab3(lab || (n ? "ચેપ્ટર " + n : nk), nk) };
+    if (n) node.num = n;
+    const gg = String(grade || "").trim();
+    if (gg && gg !== "all") node.grade = gg;
+    x.subs.push(node);
+    x.subs = normSubs(x.subs, 1);
+    if (c.mode === "none") c.mode = modeOf(catKey) === "grade" ? "grade" : "sub";
+    return persist("quiz: chapter added");
+  }
+  /* ચેપ્ટર રદ → ફક્ત એ જ ચેપ્ટર (બાકી રહે) */
+  async function delChap(catKey, subKey, chapKey) {
+    const c = catEntry(catKey);
+    const x = subEntry(c, subKey);
+    x.subs = normSubs(x.subs, 1).filter(y => y.key !== chapKey);
+    if (!x.subs.length) delete x.subs;
+    bank.questions = all().filter(q => !((q.cat || "gk") === catKey && chapOf_(q) === chapKey && (modeOf(catKey) === "grade" ? subjOf(q) : subOf_(q)) === subKey));
+    return persist("quiz: chapter removed");
+  }
+  /* ચેપ્ટરનું નામ/નંબર બદલો */
+  async function setChap(catKey, subKey, chapKey, num, label, icon, grade) {
+    const c = catEntry(catKey);
+    const x = subEntry(c, subKey);
+    const node = subEntry({ subs: x.subs }, chapKey);
+    if (label !== undefined) node.label = lab3(label, chapKey);
+    if (icon) node.icon = icon;
+    const n = guToNum(num);
+    if (n) node.num = n; else delete node.num;
+    const gg = String(grade || "").trim();
+    if (gg && gg !== "all") node.grade = gg; else delete node.grade;
+    x.subs = normSubs(x.subs, 1);
+    return persist("quiz: chapter updated");
+  }
+  /* કેટેગરી રદ → અંદરની બધી ઉપ-શ્રેણી + ચેપ્ટર + પ્રશ્નો રદ */
+  async function delCat(catKey) {
+    bank.cats = (bank.cats || []).filter(c => c.key !== catKey);
+    bank.questions = all().filter(q => (q.cat || "gk") !== catKey);
+    return persist("quiz: category removed");
+  }
+  async function setMode(catKey, mode) {
+    const c = catEntry(catKey);
+    c.mode = mode;
+    if (mode !== "sub") c.subs = normSubs(c.subs);
+    return persist("quiz: category mode " + mode);
+  }
+
+  return { load, mount, raw, save, mutate, applyBank, markSaved, persist, pick, cats, catOf, flagOf, isExamCat, subjOf, countIn, subCount, chapCount, passPct, seconds, certOn, all, matches, modeOf, subsOf, subOf, subLabel, chapsOf, chapOf, chapTitle, guNum, normSubs, addSub, delSub, addChap, delChap, setChap, delCat, setMode };
 })();

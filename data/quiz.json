@@ -15,7 +15,30 @@
       "mode": "grade",
       "useGrade": true,
       "useSubject": true,
-      "subs": []
+      "subs": [
+        {
+          "key": "english",
+          "icon": "📘",
+          "label": {
+            "gu": "અંગ્રેજી",
+            "hi": "अंग्रेज़ी",
+            "en": "English"
+          },
+          "subs": [
+            {
+              "key": "ch1",
+              "num": "1",
+              "grade": "8",
+              "icon": "📗",
+              "label": {
+                "gu": "Who is this?",
+                "hi": "Who is this?",
+                "en": "Who is this?"
+              }
+            }
+          ]
+        }
+      ]
     },
     {
       "key": "gk",
@@ -1321,7 +1344,8 @@
         "en": "With 'she' we use 'goes'."
       },
       "marks": 1,
-      "subject": "english"
+      "subject": "english",
+      "chap": "ch1"
     },
     {
       "id": "q-sanskrit-01",

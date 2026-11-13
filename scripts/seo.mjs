@@ -85,6 +85,7 @@ const T = {
   level: { gu: "ધોરણ", hi: "कक्षा", en: "Class" },
   type: { gu: "પ્રકાર", hi: "प्रकार", en: "Type" },
   subject: { gu: "વિષય", hi: "विषय", en: "Subject" },
+  chapters: { gu: "ચેપ્ટર પ્રમાણે", hi: "अध्याय अनुसार", en: "By chapter" },
   about: { gu: "આ પાનું Online Education Guru ના ડિજિટલ કેમ્પસ પરથી — બાલવાટિકાથી ધોરણ ૮ સુધીનું GCERT મટિરિયલ, વિડિયો પાઠ અને ક્વિઝ.", hi: "यह पृष्ठ Online Education Guru के डिजिटल कैंपस से — बालवाटिका से कक्षा 8 तक की GCERT सामग्री, वीडियो पाठ और क्विज़।", en: "This page is from the Online Education Guru digital campus — GCERT material, video lessons and quizzes from Balvatika to Class 8." },
   nosave: { gu: "ફાઈલ ડાઉનલોડ થતી નથી — બધું પેજ પર જ વંચાય/ચાલે.", hi: "फ़ाइल डाउनलोड नहीं होती — सब कुछ पेज पर ही पढ़ा/चलाया जाता है।", en: "Nothing is downloaded — everything is read and played on the page." },
   follow: { gu: "અમને ફોલો કરો", hi: "हमें फ़ॉलो करें", en: "Follow us" },
@@ -129,23 +130,19 @@ ${LANGS.map((l) => `<link rel="alternate" hreflang="${l}" href="${esc(url)}?lang
 <style>
 body{background:var(--bg)}
 .seo-wrap{max-width:900px;margin:0 auto;padding:22px 18px 60px}
-.seo-nav{display:flex;gap:4px;flex-wrap:wrap;align-items:center;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:8px 10px;margin-bottom:16px;font-weight:600;font-size:.85rem;box-shadow:var(--shadow)}
-.seo-nav a{text-decoration:none;color:var(--text-2);padding:5px 9px;border-radius:var(--radius-sm)}
-.seo-nav a:hover{background:var(--surface-3);color:var(--text)}
-.seo-nav b{padding:5px 9px;border-radius:var(--radius-sm);background:var(--surface-3);color:var(--text)}
+.seo-nav{display:flex;gap:12px;flex-wrap:wrap;align-items:center;background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:10px 14px;margin-bottom:16px;font-weight:700;font-size:.9rem}
+.seo-nav a{text-decoration:none}
 .seo-crumb{color:var(--muted);font-size:.85rem;margin-bottom:10px}
-.seo-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow);padding:24px;margin-bottom:16px}
-.seo-card h1{font-size:1.45rem;letter-spacing:-.02em;margin-bottom:6px}
+.seo-card{background:var(--surface);border:1px solid var(--border);border-radius:18px;box-shadow:var(--shadow);padding:22px;margin-bottom:16px}
+.seo-card h1{font-size:1.5rem;margin-bottom:6px}
 .seo-meta{display:flex;gap:8px;flex-wrap:wrap;margin:8px 0}
-.seo-meta span{background:var(--surface-2);border:1px solid var(--border);border-radius:6px;padding:2px 8px;font-size:.75rem;font-weight:650;color:var(--muted)}
+.seo-meta span{background:var(--surface-2);border-radius:999px;padding:4px 11px;font-size:.78rem;font-weight:700}
 .seo-lang{border-top:1px dashed var(--border);margin-top:14px;padding-top:10px}
 .seo-lang h2{font-size:.95rem;margin:10px 0 4px}
 .seo-lang p{color:var(--muted);font-size:.94rem}
-.seo-img{width:100%;border-radius:var(--radius);border:1px solid var(--border);margin:12px 0;display:block}
+.seo-img{width:100%;border-radius:14px;margin:12px 0;display:block}
 .seo-list{display:grid;gap:10px;grid-template-columns:repeat(auto-fill,minmax(210px,1fr))}
-.seo-list a{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:11px 13px;border:1px solid var(--border);border-radius:var(--radius-sm);background:var(--surface-2);text-decoration:none;font-weight:600;font-size:.9rem;color:var(--text-2)}
-.seo-list a:hover{border-color:var(--border-2);background:var(--surface);color:var(--text)}
-.seo-list a small{color:var(--muted);font-size:.76rem;font-variant-numeric:tabular-nums}
+.seo-list a{display:block;padding:12px 14px;border:1px solid var(--border);border-radius:12px;background:var(--surface-2);text-decoration:none;font-weight:700}
 .seo-cta{display:flex;gap:10px;flex-wrap:wrap;margin-top:14px}
 .seo-foot{color:var(--muted);font-size:.82rem;text-align:center;margin-top:22px}
 </style>
@@ -277,6 +274,23 @@ for (const key of quizCats) {
         return `<a href="../#/quiz?cat=grade&subject=${x.key}">${x.icon || "📘"} ${esc(labelOf(x))} <small>${n} ${tr("qs", "gu")}</small></a>`;
       }).join("\n      ")}</div>` : "";
   const opts = sample ? sample.opts.map((o, i) => `<li>${"ABCD"[i]}. ${esc(field(o))}${i === sample.a ? " ✅" : ""}</li>`).join("") : "";
+  /* 📗 ચેપ્ટર (ત્રીજું સ્તર) — quiz.json ના cats[].subs[].subs માંથી */
+  const kidsOf = (list) => (Array.isArray(list) ? list : []).filter((x) => x && x.key);
+  const nodes = kidsOf(cc.subs && cc.subs.length ? cc.subs : (bankCats.find((b) => b.key === key) || {}).subs || []);
+  const chapRows = [];
+  for (const node of nodes) {
+    for (const ch of kidsOf(node.subs)) {
+      const inCat = (quiz.questions || []).filter((q) => (q.cat || "gk") === key);
+      const n = inCat.filter((q) => q.chap === ch.key && (key === "grade" ? (q.subject || "") === node.key : (q.sub || "") === node.key)).length;
+      const mid = key === "grade" ? `subject=${node.key}` : `sub=${node.key}`;
+      const href = `../#/quiz?cat=${key}&${mid}${ch.grade ? `&grade=${ch.grade}&` : "&"}chap=${ch.key}`;
+      const nm = [ch.num ? `ચેપ્ટર ${ch.num}` : "", labelOf(ch)].filter(Boolean).join(" · ");
+      chapRows.push(`<a href="${href}">📗 ${esc(nm)} <small>${n} ${tr("qs", "gu")}</small></a>`);
+    }
+  }
+  const chapBlock = chapRows.length
+    ? `<h2 style="margin-top:14px">📗 ${esc(tr("chapters", "gu"))}</h2><div class="seo-list">${chapRows.join("\n      ")}</div>`
+    : "";
   put(`q/${c.key}.html`, shell({
     title: `🧠 ${label} — ${tr("quiz", "gu")} | ${cfg.siteName}`,
     desc: `${label}: ${qs.length} ${tr("qs", "gu")}. ${tr("quizSub", "gu")}`,
@@ -294,6 +308,7 @@ for (const key of quizCats) {
       <p>${esc(tr("quizSub", "gu"))}</p>
       <div class="seo-meta"><span>${qs.length} ${esc(tr("qs", "gu"))}</span><span>${esc(tr("pass", "gu"))} ${quiz.passPercent || 60}%</span><span>⏱ ${quiz.seconds || 45}s</span><span>${cc.mode === "grade" ? "🎓 ધોરણ + 📘 વિષય પસંદગી" : cc.mode === "sub" ? "🧩 સબ-કેટેગરી મુજબ" : "🚫 બધા પ્રશ્નો એકસાથે"}</span></div>
       ${subLinks}
+      ${chapBlock}
       <p class="seo-lang">🏅 પાસ માર્ક સુધી પહોંચો તો <b>Online Education Guru પ્રમાણપત્ર</b> — નામ સાથે, PDF કે ઇમેજ સ્વરૂપે ડાઉનલોડ કરી શકાય (WhatsApp/શાળા બંનેમાં ચાલે).</p>
       ${sample ? `<h2 style="margin-top:14px">${esc(tr("quiz", "en"))}: ${esc(field(sample.q))}</h2><ul>${opts}</ul><p class="seo-lang">${langBlock(sample.ex)}</p>` : ""}
       <div class="seo-cta"><a class="btn btn-brand" href="../#/quiz?cat=${c.key}">▶ ${esc(tr("open", "gu"))}</a></div>
