@@ -12,7 +12,9 @@
         "hi": "कक्षा अनुसार",
         "en": "By grade"
       },
-      "mode": "grade"
+      "mode": "grade",
+      "useGrade": true,
+      "useSubject": true
     },
     {
       "key": "gk",
