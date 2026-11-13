@@ -17,7 +17,17 @@
   const GRADES = () => OEG.tax().grades.filter(g => g.key !== "all").map(g => g.key);
   const REAL_GRADES = () => GRADES().filter(k => k === "balvatika" || /^\d+$/.test(k));
   const SUBJECTS = () => OEG.tax().subjects.map(s => s.key);
-  const NAV_TOP = ["home", "textbooks", "workbooks", "quiz", "videos", "blog"];
+  /* 🧭 ટોચની મેનુ: હોમ + વિદ્યાર્થી + શિક્ષક + ઓફિસ — બાકીનું બધું હોવર સબમેનુ માં */
+  const NAV_GROUP_OF = {
+    textbooks: "student", workbooks: "student", quiz: "student", games: "student", videos: "student", students: "student", grade: "student",
+    teachers: "teacher", blog: "teacher",
+    office: "office", links: "office", admin: "office"
+  };
+  const NAV_GROUPS = [
+    { key: "student", icon: "🎓", label: "nav.grp.student" },
+    { key: "teacher", icon: "🧑\u200d🏫", label: "nav.grp.teacher" },
+    { key: "office", icon: "🗂️", label: "nav.grp.office" }
+  ];
 
   const $app = () => document.getElementById("app");
   const t = OEG.t;
@@ -41,28 +51,93 @@
 
   /* ---------- Shell ---------- */
   const visibleNav = NAV; /* Admin બટન હંમેશ દેખાય — ક્લિક પર માલિક-લોગિન માંગશે */
-  const navTopCount = () => window.innerWidth >= 1400 ? 6 : 4;
 
+  /* ▸ એક ધોરણ-યાદી (ઉપમેનુ માટે) */
+  const gradeKids = (cat) => REAL_GRADES().map(k => ({
+    label: OEG.gradeLabel(k), icon: OEG.gradeIcon(k),
+    href: "#/grade/" + k + (cat ? "?cat=" + cat : "")
+  }));
+  const quizCatKids = (onlyExam) => {
+    let C = [];
+    try { C = (OEG.quiz && OEG.quiz.cats ? OEG.quiz.cats() : []).slice(); } catch (e) { C = []; }
+    if (onlyExam) C = C.filter(c => c.key !== "grade");
+    if (!C.length) C = (OEG.tax().quizCats || []).map(c => ({ key: c.key, icon: c.icon, label: c.label, count: 0 }));
+    return C.map((c) => {
+      /* ત્રીજું સ્તર: mode=grade → વિષય · mode=sub → સબ-કેટેગરી */
+      let kids = [];
+      try {
+        if (c.mode === "grade") kids = (OEG.tax().gradeSubjects || []).filter(x => x && x.key && x.key !== "all").map(x => ({ label: OEG.subjectLabel(x.key), icon: x.icon || "📘", href: "#/quiz?cat=" + encodeURIComponent(c.key) + "&subject=" + encodeURIComponent(x.key) }));
+        else if (c.mode === "sub") kids = (c.subs || []).map(x => ({ label: OEG.taxLabel(x, "subject"), icon: x.icon || "🏷️", href: "#/quiz?cat=" + encodeURIComponent(c.key) + "&sub=" + encodeURIComponent(x.key) }));
+      } catch (e) { kids = []; }
+      return { label: OEG.taxLabel(c, "subject"), icon: c.icon || "🧠", href: "#/quiz?cat=" + encodeURIComponent(c.key), note: c.count ? c.count + " " + t("grade.items") : "", kids: kids };
+    });
+  };
+  /* ▸ મેનુ વૃક્ષ: ગ્રુપ → આઇટમ → ઉપ-આઇટમ (બધું taxonomy/quiz માંથી જીવંત) */
+  function navTree() {
+    const v = visibleNav().filter(n => n.route !== "home");
+    const G = {};
+    NAV_GROUPS.forEach(g => { G[g.key] = { key: g.key, icon: g.icon, label: t(g.label), kids: [] }; });
+    const nodeOf = (n) => ({ label: n.label || t(n.key), icon: n.icon || "📄", route: n.route, href: "#/" + n.route, kids: [] });
+    const byRoute = {};
+    v.forEach((n) => { byRoute[n.route] = nodeOf(n); });
+    const gradeNode = { label: t("nav.byGrade"), icon: "🎓", href: "#/grade", kids: gradeKids("") };
+    if (byRoute.textbooks) byRoute.textbooks.kids = gradeKids("textbook");
+    if (byRoute.workbooks) byRoute.workbooks.kids = gradeKids("workbook");
+    if (byRoute.quiz) byRoute.quiz.kids = [{ label: t("quiz.pickCat"), icon: "🗂️", href: "#/quiz", kids: [] }].concat(quizCatKids(false));
+    const put = (route, grp) => { const n = byRoute[route]; if (n) { (G[grp] || G.student).kids.push(n); delete byRoute[route]; } };
+    Object.keys(NAV_GROUP_OF).forEach(r => put(r, NAV_GROUP_OF[r]));
+    Object.keys(byRoute).forEach(r => { G.student.kids.push(byRoute[r]); });   /* નવું ઉમેરાયેલું ક્યાંય ખોવાય નહીં */
+    if (G.student.kids.length) G.student.kids.push(gradeNode);
+    const teach = G.teacher;
+    teach.kids.push({ label: t("nav.quizCats"), icon: "🧠", href: "#/quiz", kids: quizCatKids(true) });
+    return NAV_GROUPS.map(g => G[g.key]).filter(g => g.kids.length);
+  }
+  const navItem = (n, depth) => {
+    const kids = (n.kids || []).filter(Boolean);
+    const cur = currentRoute();
+    const on = n.route ? cur === n.route : false;
+    const body = `<span class="ni-ic">${n.icon || "📄"}</span><b>${OEG.esc(n.label || "")}</b>${n.note ? `<small>${OEG.esc(n.note)}</small>` : ""}${kids.length ? `<span class="ni-ar">›</span>` : ""}`;
+    if (!kids.length) return `<a class="nav-item ${on ? "on" : ""}" href="${n.href || "#/"}">${body}</a>`;
+    return `<div class="nav-sub" data-depth="${Math.min(3, depth || 1)}">
+      <a class="nav-item has-kids ${on ? "on" : ""}" href="${n.href || "#/"}" aria-haspopup="true">${body}</a>
+      <div class="nav-fly">${kids.map(k => navItem(k, (depth || 1) + 1)).join("")}</div>
+    </div>`;
+  };
   function renderNav() {
     const cur = currentRoute();
-    const v = visibleNav();
-    const topRoutes = NAV_TOP.slice(0, navTopCount());
-    const link = (n) => `<a class="nav-link ${cur === n.route ? "active" : ""}" href="#/${n.route === "home" ? "" : n.route}">${OEG.esc(n.label || t(n.key))}</a>`;
-    const top = v.filter(n => topRoutes.includes(n.route));
-    const more = v.filter(n => !topRoutes.includes(n.route));
-    document.getElementById("navDesktop").innerHTML = top.map(link).join("") + (more.length ? `
-      <div class="nav-more">
-        <button type="button" class="nav-link nav-more-btn ${more.some(m => m.route === cur) ? "active" : ""}" id="navMoreBtn" aria-haspopup="true">${t("nav.more")} <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="m6 9 6 6 6-6"/></svg></button>
-        <div class="nav-drop">${more.map(link).join("")}</div>
-      </div>` : "");
-    const btn = document.getElementById("navMoreBtn");
-    if (btn) btn.onclick = (e) => { e.stopPropagation(); btn.closest(".nav-more").classList.toggle("open"); };
+    const tree = navTree();
+    const el = document.getElementById("navDesktop");
+    if (!el) return;
+    el.innerHTML = `<a class="nav-link ${cur === "home" ? "active" : ""}" href="#/">${t("nav.home")}</a>` + tree.map(g =>
+      `<div class="nav-grp" data-grp="${g.key}">
+        <button type="button" class="nav-link nav-gbtn ${g.kids.some(k => (k.route || "") === cur) ? "active" : ""}" aria-haspopup="true">${g.icon} ${OEG.esc(g.label)} <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="m6 9 6 6 6-6"/></svg></button>
+        <div class="nav-drop nav-drop-lg">${g.kids.map(k => navItem(k, 1)).join("")}</div>
+      </div>`).join("");
+    el.querySelectorAll(".nav-gbtn").forEach(btn => {
+      btn.onclick = (e) => { e.stopPropagation(); const g = btn.closest(".nav-grp"); const open = g.classList.contains("open"); el.querySelectorAll(".nav-grp.open").forEach(x => x.classList.remove("open")); if (!open) g.classList.add("open"); };
+    });
+    el.querySelectorAll(".nav-sub > .nav-item.has-kids").forEach(a => {
+      a.onclick = (e) => { if (window.matchMedia("(hover: none)").matches) { e.preventDefault(); a.parentNode.classList.toggle("open"); } };
+    });
   }
   let navResizeT;
   window.addEventListener("resize", () => { clearTimeout(navResizeT); navResizeT = setTimeout(renderNav, 180); });
+  const sideItem = (n, depth) => {
+    const kids = (n.kids || []).filter(Boolean);
+    if (!kids.length) return `<a class="side-link sd${depth} ${n.route && currentRoute() === n.route ? "active" : ""}" href="${n.href || "#/"}"><span class="ic">${n.icon || "📄"}</span>${OEG.esc(n.label || "")}</a>`;
+    return `<div class="side-branch">
+      <a class="side-link ${n.route && currentRoute() === n.route ? "active" : ""}" href="${n.href || "#/"}"><span class="ic">${n.icon || "📄"}</span>${OEG.esc(n.label || "")}<i class="side-ar">▾</i></a>
+      <button type="button" class="side-open" aria-label="open">＋</button>
+      <div class="side-kids">${kids.map(k => sideItem(k, depth + 1)).join("")}</div>
+    </div>`;
+  };
   function renderSidebar() {
-    document.getElementById("sideNav").innerHTML = visibleNav().map(n =>
-      `<a class="side-link ${currentRoute() === n.route ? "active" : ""}" href="#/${n.route === "home" ? "" : n.route}"><span class="ic">${n.icon}</span>${OEG.esc(n.label || t(n.key))}</a>`).join("");
+    const tree = navTree();
+    document.getElementById("sideNav").innerHTML = `<a class="side-link ${currentRoute() === "home" ? "active" : ""}" href="#/"><span class="ic">🏠</span>${t("nav.home")}</a>`
+      + tree.map(g => `<div class="side-grp"><span class="side-cap">${g.icon} ${OEG.esc(g.label)}</span>${g.kids.map(k => sideItem(k, 1)).join("")}</div>`).join("");
+    document.querySelectorAll("#sideNav .side-open").forEach(b => {
+      b.onclick = (e) => { e.preventDefault(); e.stopPropagation(); b.closest(".side-branch").classList.toggle("open"); };
+    });
     /* ધોરણ — હવે પેજ પર બધાં પ્રકારનું મટિરિયલ દેખાય (ફક્ત પાઠ્યપુસ્તક નહીં) */
     document.getElementById("sideGrades").innerHTML = REAL_GRADES().map(g =>
       `<a class="side-link ${gradeInUrl() === g ? "active" : ""}" href="#/grade/${g}"><span class="ic">${OEG.gradeIcon(g)}</span>${OEG.esc(OEG.gradeLabel(g))}<small>${countOfGrade(g)}</small></a>`).join("");
@@ -179,7 +254,7 @@
     const thumb = OEG.thumbnail(item);
     const img = thumb
       ? `<div class="card-img${kind === "video" || OEG.youtubeId(item.fileUrl) ? " has-play" : ""}"><img src="${OEG.esc(thumb)}" alt="" loading="lazy" draggable="false">${kind === "video" || OEG.youtubeId(item.fileUrl) ? '<span class="play-badge">▶</span>' : ""}</div>`
-      : `<div class="card-img is-icon"><span class="ci">${icon}</span></div>`;
+      : `<div class="card-img">${icon}</div>`;
     const isVid = !!OEG.youtubeId(item.fileUrl);
     const action = `<a class="btn ${item.fileUrl ? "btn-brand" : "btn-outline"} btn-sm" href="#/view/${item.id}">${isVid ? "▶ " + t("btn.play") : item.fileUrl ? t("btn.view") : t("btn.readMore")}</a>`;
     return `<article class="card reveal glow">${img}<div class="card-body">
@@ -630,7 +705,7 @@
       }; break;
       case "quiz": html = quizPage(query); after = () => {
         const u = OEG.state.user || {};
-        OEG.quiz.mount(document.getElementById("quizMount"), { grade: query.grade, cat: query.cat, sub: query.sub, subject: query.subject || u.subject || "" });
+        OEG.quiz.mount(document.getElementById("quizMount"), { grade: query.grade, cat: query.cat, sub: query.sub, subject: query.subject || u.subject || "", chap: query.chap });
       }; break;
       case "grade": html = gradePage(seg[1], query); break;
       case "videos": html = videosPage(query); after = () => {
@@ -769,6 +844,9 @@
 
   function applyTheme() {
     document.documentElement.dataset.theme = OEG.state.theme;
+    /* mobile browser bar પણ થીમ પ્રમાણે રહે */
+    const tc = document.getElementById("themeColor") || document.querySelector('meta[name="theme-color"]');
+    if (tc) tc.setAttribute("content", OEG.state.theme === "dark" ? "#0d0f1a" : "#4f46e5");
     const acc = uiCfg().accent;
     if (acc && /^#[0-9a-fA-F]{6}$/.test(acc)) {
       document.documentElement.style.setProperty("--brand", acc);
@@ -777,9 +855,6 @@
       document.documentElement.style.removeProperty("--brand");
       document.documentElement.style.removeProperty("--brand-2");
     }
-    /* બ્રાઉઝર-બારનો રંગ થીમ સાથે બદલાય */
-    const tc = document.getElementById("themeColor");
-    if (tc) tc.setAttribute("content", OEG.state.theme === "dark" ? "#0e1014" : (acc && /^#[0-9a-fA-F]{6}$/.test(acc) ? acc : "#2b4fd8"));
     document.getElementById("themeToggle").textContent = OEG.state.theme === "dark" ? "☀️" : "🌙";
   }
   document.getElementById("themeToggle").onclick = () => {
@@ -825,7 +900,7 @@
     await render();
   };
   OEG.render = render;
-  document.addEventListener("click", () => document.querySelectorAll(".nav-more.open").forEach(x => x.classList.remove("open")));
+  document.addEventListener("click", () => document.querySelectorAll(".nav-grp.open, .nav-sub.open").forEach(x => x.classList.remove("open")));
 
   /* ---------- Boot ---------- */
   (async () => {

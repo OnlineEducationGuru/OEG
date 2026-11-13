@@ -123,7 +123,7 @@ OEG.admin = (() => {
         </div>
         <div class="form-row">
           <div class="field"><label>${OEG.t("admin.logoIcon")}</label><input id="stLogo" maxlength="4" value="${OEG.esc(((cfg.ui || {}).logoEmoji) || "🎓")}"></div>
-          <div class="field"><label>${OEG.t("admin.accent")}</label><input id="stAccent" type="color" value="${OEG.esc(((cfg.ui || {}).accent) || "#2b4fd8")}"></div>
+          <div class="field"><label>${OEG.t("admin.accent")}</label><input id="stAccent" type="color" value="${OEG.esc(((cfg.ui || {}).accent) || "#4f46e5")}"></div>
           <div class="field"><label>${OEG.t("admin.defLang")}</label><select id="stLang">${[["gu", "ગુજરાતી"], ["hi", "हिन्दी"], ["en", "English"]].map(x => `<option value="${x[0]}" ${((cfg.ui || {}).defaultLang) === x[0] ? "selected" : ""}>${x[1]}</option>`).join("")}<option value="" ${!(cfg.ui || {}).defaultLang ? "selected" : ""}>${OEG.t("admin.keepUser")}</option></select></div>
           <div class="field"><label>${OEG.t("admin.defTheme")}</label><select id="stTheme"><option value="" ${!["light", "dark"].includes(((cfg.ui || {}).defaultTheme)) ? "selected" : ""}>${OEG.t("admin.keepUser")}</option><option value="light" ${((cfg.ui || {}).defaultTheme) === "light" ? "selected" : ""}>☀️ Light</option><option value="dark" ${((cfg.ui || {}).defaultTheme) === "dark" ? "selected" : ""}>🌙 Dark</option></select></div>
         </div>
@@ -274,8 +274,8 @@ OEG.admin = (() => {
             <button class="btn btn-brand btn-sm" id="taxAddQz">➕ ${OEG.t("admin.addQuizCat")}</button>
           </div>
         </div>
-        <h4 style="margin:20px 0 6px">🧩 ${OEG.t("admin.subCats")}</h4>
-        <p class="adm-sec-note">${OEG.t("admin.subNote")}</p>
+        <h4 style="margin:20px 0 6px">🧩 ${OEG.t("admin.subCats")} ▸ ${OEG.t("admin.chapters")}</h4>
+        <p class="adm-sec-note">${OEG.t("admin.subNote")}<br>🌳 ${OEG.t("admin.taxTreeNote")}</p>
         <div id="taxSubs" class="sub-mgr"></div>
         <div id="taxMsg" style="margin-top:12px"></div>
       </section>
@@ -288,6 +288,7 @@ OEG.admin = (() => {
           <div class="field" id="qzGradeField"><label>${OEG.t("admin.qGrade")}</label><select id="qzGrade">${qzGradeOpts("all")}</select></div>
           <div class="field" id="qzSubField"><label>${OEG.t("quiz.pickSubject")}</label><select id="qzSub">${qzSubjOpts("all")}</select></div>
           <div class="field" id="qzSubCatField"><label>${OEG.t("admin.qSubCat")}</label><select id="qzSubCat"></select></div>
+          <div class="field" id="qzChapField"><label>${OEG.t("admin.chapters")}</label><select id="qzChap"></select></div>
         </div>
         <div class="help-box" id="qzCatHint"></div>
         <div class="form-row">
@@ -736,24 +737,43 @@ OEG.admin = (() => {
     };
 
     /* ---------- 🧠 Quiz questions ---------- */
+    const say = (box, kind, html) => {
+      if (box) box.innerHTML = `<div class="alert alert-${kind}">${html}</div>`;
+      else OEG.toast(String(html).replace(/<[^>]*>/g, ""));
+    };
     async function saveBank(next, okMsg, msgId) {
       if (!needGh()) return;
-      const box = $(msgId || "qzMsg") || $("qzMsg");
+      const box = $(msgId) || $("qzMsg") || $("taxMsg");
       try {
         const cur = await OEG.gh.getFile("data/quiz.json");
         const bank = JSON.parse(cur.content);
-        await OEG.data.writeJson("data/quiz.json", next(bank), "quiz: update");
-        await OEG.quiz.load();
-        box.innerHTML = `<div class="alert alert-ok">✅ ${OEG.esc(okMsg)}</div>`;
+        const out = next(bank) || bank;
+        await OEG.data.writeJson("data/quiz.json", out, "quiz: update");
+        /* Pages ની સ્ટૅટિક ફાઈલ હજી જૂની હોઈ શકે — એટલે load() નહીં, લખેલી બેંક જ માની લો */
+        OEG.quiz.applyBank(out);
+        if (OEG.quiz.markSaved) OEG.quiz.markSaved(out);
         dirty();
         renderAll();
-      } catch (e) { box.innerHTML = `<div class="alert alert-error">❌ ${OEG.esc(e.message)}</div>`; }
+        say(box, "ok", "✅ " + OEG.esc(okMsg));
+      } catch (e) { say(box, "error", "❌ " + OEG.esc(e && e.message ? e.message : String(e))); }
+    }
+    /* 🌳 taxonomy (કેટેગરી / ઉપ-શ્રેણી / ચેપ્ટર) — quiz.js ના helper થી લખાય, એક જ રસ્તો */
+    async function taxGo(fn, okMsg) {
+      const box = $("taxMsg");
+      if (!OEG.gh.connected()) { say(box, "error", "❌ " + OEG.esc(OEG.t("admin.notConnected"))); return false; }
+      try {
+        await fn();
+        dirty(); renderAll();
+        say(box, "ok", "✅ " + OEG.esc(okMsg));
+        return true;
+      } catch (e) { say(box, "error", "❌ " + OEG.esc(e && e.message ? e.message : String(e))); return false; }
     }
     $("qzAdd").onclick = async () => {
       const cat = $("qzCat").value, mode = OEG.quiz.modeOf(cat);
       const grade = mode === "grade" ? $("qzGrade").value : "all";
       const subject = mode === "grade" && $("qzSub") ? $("qzSub").value : "all";
       const sub = mode === "sub" ? ($("qzSubCat") || {}).value || "all" : "";
+      const chap = ($("qzChap") || {}).value || "all";
       if (mode === "sub") {
         const box0 = $("qzMsg");
         if (!OEG.quiz.subsOf(cat).length) { box0.innerHTML = `<div class="alert alert-error">❌ ${OEG.esc(OEG.t("admin.qNeedSub"))}</div>`; return; }
@@ -784,6 +804,7 @@ OEG.admin = (() => {
           });
           if (subject && subject !== "all") bank.questions[0].subject = subject;
           if (sub && sub !== "all") bank.questions[0].sub = sub;
+          if (chap && chap !== "all") bank.questions[0].chap = chap;
           bank.passPercent = Number($("qzPass").value) || bank.passPercent || 60;
           bank.seconds = Number($("qzSec").value) || bank.seconds || 45;
           return bank;
@@ -803,6 +824,29 @@ OEG.admin = (() => {
     }, OEG.t("admin.taxSaved"));
 
     /* ---------- કેટેગરી પ્રમાણે ધોરણ/વિષય ફિલ્ડ ચાલુ-બંધ ---------- */
+    /* વિષય / ઉપ-શ્રેણી dropdown = taxonomy + admin એ ઉમેરેલી ઉપ-શ્રેણીઓ (એક જ સ્રોત) */
+    function fillQzSubSel(cat) {
+      const el = $("qzSub");
+      if (!el) return;
+      const key = cat || (($("qzCat") || {}).value);
+      const list = OEG.quiz.subsOf(key);
+      const v = el.value;
+      el.innerHTML = `<option value="all">${OEG.t("quiz.allSubjects")}</option>` + list.map(x =>
+        `<option value="${OEG.esc(x.key)}">${x.icon || "📘"} ${OEG.esc(OEG.quiz.subLabel(key, x.key))} · ${OEG.quiz.countIn(key, "all", x.key, "all", "all")}</option>`).join("");
+      if (Array.prototype.some.call(el.options, o => o.value === v)) el.value = v;
+    }
+    function fillChapSel(cat) {
+      const el = $("qzChap");
+      if (!el) return;
+      const key = cat || ($("qzCat") || {}).value;
+      const mode = OEG.quiz.modeOf(key);
+      const l2 = mode === "grade" ? (($("qzSub") || {}).value || "all") : (($("qzSubCat") || {}).value || "all");
+      const chaps = l2 && l2 !== "all" ? OEG.quiz.chapsOf(key, l2) : [];
+      const v = el.value;
+      el.innerHTML = `<option value="all">📗 ${OEG.t("quiz.allChaps")}</option>` + chaps.map(x =>
+        `<option value="${OEG.esc(x.key)}">${OEG.esc(OEG.quiz.chapTitle(key, l2, x.key))} · ${OEG.quiz.chapCount(key, l2, x.key, "all")}</option>`).join("");
+      if (Array.prototype.some.call(el.options, o => o.value === v)) el.value = v;
+    }
     function fillSubSel(cat) {
       const el = $("qzSubCat");
       if (!el) return;
@@ -825,10 +869,20 @@ OEG.admin = (() => {
       }
       if (sc) sc.style.display = mode === "sub" ? "" : "none";
       fillSubSel(sel.value);
+      fillQzSubSel(sel.value);
+      const cf = $("qzChapField");
+      if (cf) cf.style.display = mode === "none" ? "none" : "";
+      fillChapSel(sel.value);
       if (hint) hint.textContent = mode === "grade"
         ? "🎓 + 📖 " + OEG.t("admin.qHintGrade")
         : mode === "sub" ? "🧩 " + OEG.t("admin.qHintSub") : "🚫 " + OEG.t("admin.qHintNone");
     }
+    const qzCatSel0 = $("qzCat");
+    if (qzCatSel0) qzCatSel0.addEventListener("change", () => { fillQzSubSel(($("qzCat") || {}).value); fillChapSel(($("qzCat") || {}).value); });
+    const qzSubSel0 = $("qzSub");
+    if (qzSubSel0) qzSubSel0.onchange = () => fillChapSel(($("qzCat") || {}).value);
+    const qzSubCatSel0 = $("qzSubCat");
+    if (qzSubCatSel0) qzSubCatSel0.onchange = () => fillChapSel(($("qzCat") || {}).value);
     const CAT_MODES = [["grade", "🎓 " + OEG.t("admin.modeGrade")], ["sub", "🧩 " + OEG.t("admin.modeSub")], ["none", "🚫 " + OEG.t("admin.modeNone")]];
     function renderFlags(r) {
       const box = (r || root).querySelector("#qzFlags");
@@ -1362,77 +1416,145 @@ OEG.admin = (() => {
       const box = $("taxSubs");
       if (!box) return;
       const cats = OEG.quiz.cats();
-      box.innerHTML = cats.map((c) => `<div class="sub-cat">
+      box.innerHTML = cats.map((c) => {
+        const mode = c.mode || "none";
+        const subs = OEG.quiz.subsOf(c.key);
+        const nCh = subs.reduce((a2, x) => a2 + OEG.quiz.chapsOf(c.key, x.key).length, 0);
+        return `<div class="sub-cat" data-catkey="${OEG.esc(c.key)}">
           <div class="sub-cat-head">
             <b>${c.icon || "🧠"} ${OEG.esc(OEG.taxLabel(c, "subject"))}</b>
             <code>${OEG.esc(c.key)}</code>
-            <select data-cmode="${OEG.esc(c.key)}">${MODES.map(m => `<option value="${m[0]}" ${(c.mode || "none") === m[0] ? "selected" : ""}>${m[1]}</option>`).join("")}</select>
+            <span class="badge">📚 ${subs.length} · 📗 ${nCh}</span>
+            <select data-cmode="${OEG.esc(c.key)}">${MODES.map(m => `<option value="${m[0]}" ${mode === m[0] ? "selected" : ""}>${m[1]}</option>`).join("")}</select>
+            <button type="button" class="btn btn-danger btn-sm" data-catdel="${OEG.esc(c.key)}">🗑 ${OEG.t("admin.delCat")}</button>
           </div>
-          <div class="sub-list">${(c.subs || []).length ? (c.subs || []).map(x =>
-            `<span class="sub-pill">${x.icon || "🏷️"} ${OEG.esc(OEG.taxLabel(x, "subject"))}<small>${OEG.quiz.subCount(c.key, x.key)}</small><button type="button" class="sub-x" data-subdel="${OEG.esc(c.key)}:${OEG.esc(x.key)}" title="${OEG.t("admin.delete")}">🗑</button></span>`).join("")
-            : `<span class="sub-none">${OEG.t("admin.noSubsYet")}</span>`}</div>
-          ${(c.mode || "none") === "sub" ? `<div class="sub-add">
-            <input data-subkey="${OEG.esc(c.key)}" placeholder="history" maxlength="20">
+          <div class="sub-list">${subs.length ? subs.map(x => subNode(c.key, x, mode)).join("") : `<span class="sub-none">${OEG.t("admin.noSubsYet")}</span>`}</div>
+          <div class="sub-add">
+            <input data-subkey="${OEG.esc(c.key)}" placeholder="${OEG.t("admin.subKeyOpt")}" maxlength="20">
             <input data-sublabel="${OEG.esc(c.key)}" placeholder="${OEG.t("admin.newLabel")}">
-            <input data-subicon="${OEG.esc(c.key)}" placeholder="🏛️" maxlength="4">
+            <input data-subicon="${OEG.esc(c.key)}" placeholder="🏷️" maxlength="4">
             <button type="button" class="btn btn-brand btn-sm" data-subadd="${OEG.esc(c.key)}">➕ ${OEG.t("admin.addSub")}</button>
-          </div>` : ""}
-        </div>`).join("");
+          </div>
+        </div>`;
+      }).join("");
       Array.prototype.forEach.call(box.querySelectorAll("[data-cmode]"), (sel) => {
-        sel.onchange = () => window.OEG_admin_cat_mode(sel.dataset.cmode, sel.value);
+        sel.onchange = () => { window.OEG_admin_cat_mode(sel.dataset.cmode, sel.value); };
       });
-      Array.prototype.forEach.call(box.querySelectorAll("[data-subadd]"), (b) => {
-        b.onclick = () => {
-          const at = (nm) => box.querySelector('[data-' + nm + '="' + b.dataset.subadd + '"]');
-          const key = (at("subkey") || {}).value || "";
-          const label = (at("sublabel") || {}).value || "";
-          const icon = (at("subicon") || {}).value || "";
-          window.OEG_admin_sub_add(b.dataset.subadd, key.trim().toLowerCase(), label.trim(), icon.trim());
+      Array.prototype.forEach.call(box.querySelectorAll("[data-subadd]"), (b2) => {
+        b2.onclick = () => {
+          const at = (nm) => box.querySelector('[data-' + nm + '="' + b2.dataset.subadd + '"]');
+          const key = ((at("subkey") || {}).value || "").trim().toLowerCase();
+          const label = ((at("sublabel") || {}).value || "").trim();
+          const icon = ((at("subicon") || {}).value || "").trim();
+          window.OEG_admin_sub_add(b2.dataset.subadd, key, label, icon);
         };
       });
-      Array.prototype.forEach.call(box.querySelectorAll("[data-subdel]"), (b) => {
-        b.onclick = () => { const p = b.dataset.subdel.split(":"); window.OEG_admin_sub_del(p[0], p.slice(1).join(":")); };
+      Array.prototype.forEach.call(box.querySelectorAll("[data-subdel]"), (b2) => {
+        b2.onclick = () => { const p = b2.dataset.subdel.split(":"); window.OEG_admin_sub_del(p[0], p.slice(1).join(":")); };
+      });
+      Array.prototype.forEach.call(box.querySelectorAll("[data-chapnew]"), (b2) => {
+        b2.onclick = () => {
+          const f = b2.closest(".sub-node") && b2.closest(".sub-node").querySelector(".kid-add");
+          if (!f) return;
+          delete f.dataset.edit;
+          f.classList.toggle("on");
+          f.classList.remove("is-edit");
+          const g = f.querySelector(".ka-go"); if (g) g.innerHTML = "➕ " + OEG.t("admin.addChap");
+          const i = f.querySelector(".ka-num"); if (i) i.focus();
+        };
+      });
+      Array.prototype.forEach.call(box.querySelectorAll("[data-chapedit]"), (b2) => {
+        b2.onclick = () => {
+          const node = b2.closest(".sub-node"), f = node && node.querySelector(".kid-add");
+          if (!f) return;
+          const p = b2.dataset.chapedit.split(":");
+          const ch = OEG.quiz.chapOf(p[0], p[1], p[2]);
+          f.classList.add("on", "is-edit");
+          f.dataset.edit = p[2];
+          f.querySelector(".ka-num").value = (ch && ch.num) || String(p[2]).replace(/^ch/, "");
+          f.querySelector(".ka-lab").value = OEG.langField((ch && ch.label) || {}) || "";
+          const gs = f.querySelector(".ka-gr"); if (gs) gs.value = (ch && ch.grade) || "all";
+          f.querySelector(".ka-go").innerHTML = "💾 " + OEG.t("btn.save");
+          f.querySelector(".ka-num").focus();
+        };
+      });
+      Array.prototype.forEach.call(box.querySelectorAll(".ka-cancel"), (b2) => {
+        b2.onclick = () => { const f = b2.closest(".kid-add"); if (f) { f.classList.remove("on", "is-edit"); delete f.dataset.edit; } };
+      });
+      Array.prototype.forEach.call(box.querySelectorAll(".ka-go"), (b2) => {
+        b2.onclick = () => {
+          const f = b2.closest(".kid-add");
+          const p = String(f.dataset.kidform || "").split(":");
+          const cat = p[0], sub = p.slice(1).join(":");
+          const num = (f.querySelector(".ka-num").value || "").trim();
+          const lab = (f.querySelector(".ka-lab").value || "").trim();
+          const gr = ((f.querySelector(".ka-gr") || {}).value || "all").trim();
+          if (f.dataset.edit) window.OEG_admin_chap_edit(cat, sub, f.dataset.edit, num, lab, gr);
+          else window.OEG_admin_chap_add(cat, sub, num, lab, gr);
+        };
+      });
+      Array.prototype.forEach.call(box.querySelectorAll("[data-chapdel]"), (b2) => {
+        b2.onclick = () => { const p = b2.dataset.chapdel.split(":"); window.OEG_admin_chap_del(p[0], p[1], p.slice(2).join(":")); };
+      });
+      Array.prototype.forEach.call(box.querySelectorAll("[data-catdel]"), (b2) => {
+        b2.onclick = () => window.OEG_admin_cat_del(b2.dataset.catdel);
       });
     }
-    window.OEG_admin_cat_mode = (key, mode) => {
-      saveBank((bank) => {
-        bank.cats = (Array.isArray(bank.cats) ? bank.cats : []).map(c => (typeof c === "string" ? { key: c } : c));
-        let c = bank.cats.filter(x => x.key === key)[0];
-        if (!c) { c = { key: key, icon: "🧠", label: { gu: key, hi: key, en: key } }; bank.cats.push(c); }
-        c.mode = mode;
-        if (mode !== "sub") c.subs = c.subs || [];
-        return bank;
-      }, OEG.t("admin.taxSaved") + " · " + key + " → " + mode);
-    };
+    /* બીજું સ્તર (વિષય / સબ-કેટેગરી) + એની અંદર ત્રીજું સ્તર (ચેપ્ટર નંબર + નામ) */
+    function subNode(catKey, x, mode) {
+      const chaps = OEG.quiz.chapsOf(catKey, x.key);
+      const cnt = mode === "grade" ? OEG.quiz.countIn(catKey, "all", x.key, "all", "all") : OEG.quiz.subCount(catKey, x.key);
+      return `<div class="sub-node">
+        <div class="sub-node-head">
+          <span class="sn-ic">${x.icon || "🏷️"}</span><b>${OEG.esc(OEG.quiz.subLabel(catKey, x.key))}</b><code>${OEG.esc(x.key)}</code>
+          <span class="badge">${cnt} ${OEG.t("admin.qCount")}</span>
+          <button type="button" class="btn btn-outline btn-sm" data-chapnew="${OEG.esc(catKey)}:${OEG.esc(x.key)}">📗 ${OEG.t("admin.addChap")}</button>
+          <button type="button" class="btn btn-danger btn-sm sub-x" data-subdel="${OEG.esc(catKey)}:${OEG.esc(x.key)}" title="${OEG.t("admin.removeSub")}">🗑</button>
+        </div>
+        <div class="sub-kids">${chaps.length ? chaps.map((ch) => `<div class="kid-row">
+            <span class="kid-num">📗 ${OEG.esc(ch.num ? OEG.quiz.guNum(ch.num) : "•")}</span>
+            <b>${OEG.esc(OEG.taxLabel(ch, "subject"))}</b><code>${OEG.esc(ch.key)}</code>${ch.grade ? `<span class="badge">🎓 ${OEG.esc(OEG.gradeLabel(ch.grade))}</span>` : ""}
+            <span class="badge">${OEG.quiz.chapCount(catKey, x.key, ch.key, "all")}</span>
+            <button type="button" class="btn btn-outline btn-sm" data-chapedit="${OEG.esc(catKey)}:${OEG.esc(x.key)}:${OEG.esc(ch.key)}" title="${OEG.t("admin.edit")}">✏️</button>
+            <button type="button" class="btn btn-danger btn-sm sub-x" data-chapdel="${OEG.esc(catKey)}:${OEG.esc(x.key)}:${OEG.esc(ch.key)}" title="${OEG.t("admin.delete")}">🗑</button>
+          </div>`).join("") : `<span class="sub-none">${OEG.t("quiz.noChaps")}</span>`}</div>
+        <div class="kid-add" data-kidform="${OEG.esc(catKey)}:${OEG.esc(x.key)}">
+          <input class="ka-num" placeholder="${OEG.t("admin.chapNum")}" maxlength="6" inputmode="numeric">
+          <input class="ka-lab" placeholder="${OEG.t("admin.chapName")}" maxlength="60">
+          <select class="ka-gr"><option value="all">${OEG.t("quiz.allGrades")}</option>${OEG.tax().grades.filter(g => g.key === "balvatika" || /^\d+$/.test(g.key)).map(g => `<option value="${OEG.esc(g.key)}">${OEG.esc(OEG.gradeLabel(g.key))}</option>`).join("")}</select>
+          <button type="button" class="btn btn-brand btn-sm ka-go">➕ ${OEG.t("admin.addChap")}</button>
+          <button type="button" class="btn btn-outline btn-sm ka-cancel">${OEG.t("btn.cancel")}</button>
+        </div>
+      </div>`;
+    }
+    window.OEG_admin_cat_mode = (key, mode) => taxGo(() => OEG.quiz.setMode(key, mode), OEG.t("admin.taxSaved") + " · " + key + " → " + mode);
     window.OEG_admin_sub_add = (catKey, key, label, icon) => {
-      const box = $("taxMsg");
-      if (!/^[a-z][a-z0-9-]{1,19}$/.test(key)) { if (box) box.innerHTML = `<div class="alert alert-error">❌ ${OEG.esc(OEG.t("admin.newKey"))}: a–z, 0–9, -</div>`; return; }
-      const have = OEG.quiz.subsOf(catKey).some(x => x.key === key || OEG.langField(x.label) === label && label);
-      if (have) { if (box) box.innerHTML = `<div class="alert alert-info">⚠️ ${OEG.esc(OEG.t("admin.dupExists"))}</div>`; return; }
-      saveBank((bank) => {
-        bank.cats = (Array.isArray(bank.cats) ? bank.cats : []).map(c => (typeof c === "string" ? { key: c } : c));
-        let c = bank.cats.filter(x => x.key === catKey)[0];
-        if (!c) { c = { key: catKey, icon: "🧠", label: { gu: catKey, hi: catKey, en: catKey }, mode: "sub" }; bank.cats.push(c); }
-        c.subs = normSubs(c.subs);
-        c.subs.push({ key: key, icon: icon || "🏷️", label: { gu: label || key, hi: label || key, en: label || key } });
-        if (!c.mode || c.mode === "none") c.mode = "sub";
-        return bank;
-      }, OEG.t("admin.subAdded") + " · " + (label || key));
+      if (!label && !key) { say($("taxMsg"), "error", "❌ " + OEG.esc(OEG.t("admin.needLabel"))); return; }
+      taxGo(() => OEG.quiz.addSub(catKey, key, label, icon), OEG.t("admin.subAdded") + " · " + (label || key));
     };
     window.OEG_admin_sub_del = (catKey, subKey) => {
       const n = OEG.quiz.subCount(catKey, subKey);
       const lab = OEG.quiz.subLabel(catKey, subKey);
-      if (!confirm(OEG.t("admin.delConfirm") + " — " + lab + (n ? ` · ${n} ${OEG.t("admin.qCount")}` : ""))) return;
-      saveBank((bank) => {
-        bank.cats = (Array.isArray(bank.cats) ? bank.cats : []).map(c => (typeof c === "string" ? { key: c } : c));
-        const c = bank.cats.filter(x => x.key === catKey)[0];
-        if (c) c.subs = normSubs(c.subs).filter(x => x.key !== subKey);
-        bank.questions = (bank.questions || []).filter(q => !((q.cat || "gk") === catKey && (q.sub || "") === subKey));
-        return bank;
-      }, OEG.t("admin.subDeleted") + " · " + lab + (n ? ` (${n} ${OEG.t("admin.qCount")})` : ""));
+      const kids = OEG.quiz.chapsOf(catKey, subKey).length;
+      if (!confirm(OEG.t("admin.delConfirm") + " — " + lab + (kids ? ` · 📗 ${kids}` : "") + (n ? ` · ${n} ${OEG.t("admin.qCount")}` : ""))) return;
+      taxGo(() => OEG.quiz.delSub(catKey, subKey), OEG.t("admin.subDeleted") + " · " + lab + (n ? ` (${n} ${OEG.t("admin.qCount")})` : ""));
     };
-    /* quiz.js નો normSubs જ વાપરો — બંને તરફ એક જ નિયમ રહે */
-    const normSubs = (list) => (OEG.quiz.normSubs ? OEG.quiz.normSubs(list) : (Array.isArray(list) ? list : []));
+    window.OEG_admin_chap_add = (catKey, subKey, num, label, grade) => taxGo(() => OEG.quiz.addChap(catKey, subKey, num, label, "", grade), OEG.t("admin.chapAdded") + " · " + (label || num));
+    window.OEG_admin_chap_edit = (catKey, subKey, chapKey, num, label, grade) => taxGo(() => OEG.quiz.setChap(catKey, subKey, chapKey, num, label, "", grade), OEG.t("admin.taxSaved") + " · " + (label || chapKey));
+    window.OEG_admin_chap_del = (catKey, subKey, chapKey) => {
+      const lab = OEG.quiz.chapTitle(catKey, subKey, chapKey);
+      const n = OEG.quiz.chapCount(catKey, subKey, chapKey, "all");
+      if (!confirm(OEG.t("admin.delConfirm") + " — " + lab + (n ? ` · ${n} ${OEG.t("admin.qCount")}` : ""))) return;
+      taxGo(() => OEG.quiz.delChap(catKey, subKey, chapKey), OEG.t("admin.chapDeleted") + " · " + lab);
+    };
+    window.OEG_admin_cat_del = (catKey) => {
+      const c = OEG.quiz.catOf(catKey);
+      const lab = OEG.langField((c && c.label) || {}) || catKey;
+      const n = (c && c.count) || 0;
+      const kids = ((c && c.subs) || []).length;
+      if (!confirm(OEG.t("admin.delConfirm") + " — " + lab + ` · 📚 ${kids} · ${n} ${OEG.t("admin.qCount")}`)) return;
+      taxGo(() => OEG.quiz.delCat(catKey), OEG.t("admin.catDeleted") + " · " + lab);
+    };
     const chipRow = (list, kind, removable) => (list || []).map(x => `
       <div class="tax-row"><span>${x.icon || "•"}</span><b>${OEG.esc(OEG.taxLabel(x, kind === "grades" ? "grade" : kind === "qz" ? "subject" : "type"))}</b><code>${OEG.esc(x.key)}</code>
       ${x.route ? `<small>/${OEG.esc(x.route)}</small>` : ""}
@@ -1658,7 +1780,7 @@ OEG.admin = (() => {
           };
           c.ui = Object.assign({}, c.ui || {}, {
             logoEmoji: $("stLogo").value.trim() || "🎓",
-            accent: $("stAccent").value.trim() || "#2b4fd8",
+            accent: $("stAccent").value.trim() || "#4f46e5",
             defaultLang: $("stLang").value || "", defaultTheme: $("stTheme").value || "",
             tagline: tag, heroTitle: hero, heroSub: hsub, footerAbout: about,
             footerNote: $("stNote").value.trim(),
