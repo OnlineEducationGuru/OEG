@@ -50,6 +50,12 @@
 
 ## 🛠️ Admin Panel વાપરવું
 
+> 🔒 **એક્સેસ નિયંત્રણ:** Admin Panel હવે **ફક્ત માલિક (owner) માટે** છે.
+> ડિફોલ્ટેટ કોઈને એક્સેસ નથી. ચાલુ કરવા: **data/site-config.json** → `"admin": { "emails": ["તમારું-ઈમેઈલ@gmail.com"] }`
+> ભરો (GitHub પર ફાઈલ → ✏️ Edit → Commit). પછી સાઈટ પર તે જ ઈમેઈલથી Login કરો —
+> Admin Panel લિંક menu માં આપોઆપ દેખાશે. ટેસ્ટ માટે અસ્થાયીરૂપે `"emails": ["*"]` રાખી શકો (બધાને ખુલ્લું).
+> Admin Panel ના **🔐 એક્સેસ કંટ્રોલ** પેનલમાંથી પણ આ ઈમેઈલ લિસ્ટ બદલી શકાય છે.
+
 1. સાઈટ ખોલો → **Admin Panel** (`#/admin`).
 2. GitHub **Fine-grained PAT** બનાવો: GitHub → Settings → Developer settings → Personal access tokens → **Fine-grained tokens** → Repository access: ફક્ત આ રિપો → Permissions: **Contents: Read and write**.
 3. Owner / Repo / Branch + Token ભરો → **Connect**.

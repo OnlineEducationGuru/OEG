@@ -84,6 +84,16 @@ OEG.admin = (() => {
         <div id="adMsg" style="margin-top:12px"></div>
       </section>
 
+      <!-- Access control -->
+      <section class="panel">
+        <h3>🔐 ${OEG.t("admin.access")}</h3>
+        <div class="field"><label>${OEG.t("admin.emails")}</label>
+          <textarea id="adminEmails" rows="2" placeholder="you@gmail.com">${OEG.esc((((cfg.admin || {}).emails) || []).join(", "))}</textarea></div>
+        <div class="alert alert-info">${OEG.t("admin.emailsNote")}</div>
+        <button class="btn btn-brand" id="accSave">${OEG.t("btn.save")}</button>
+        <div id="accMsg" style="margin-top:12px"></div>
+      </section>
+
       <!-- File manager -->
       <section class="panel">
         <h3>📁 ${OEG.t("admin.files")} <button class="btn btn-outline btn-sm" id="fmRefresh" style="margin-left:auto">${OEG.t("admin.refresh")}</button></h3>
@@ -176,6 +186,19 @@ OEG.admin = (() => {
         await OEG.loadConfig();
         msg("adMsg", "✅ " + OEG.t("admin.saved"), true);
       } catch (e) { msg("adMsg", OEG.t("admin.error") + " " + e.message, false); }
+    };
+
+    $("accSave").onclick = async () => {
+      if (!needGh()) return;
+      try {
+        const cur = await OEG.gh.getFile("data/site-config.json");
+        const cfg2 = JSON.parse(cur.content);
+        cfg2.admin = { emails: $("adminEmails").value.split(",").map(s => s.trim().toLowerCase()).filter(Boolean) };
+        await OEG.gh.saveSiteConfig(cfg2, "Update admin emails");
+        await OEG.loadConfig();
+        msg("accMsg", "✅ " + OEG.t("admin.saved"), true);
+        window.dispatchEvent(new Event("hashchange"));
+      } catch (e) { msg("accMsg", OEG.t("admin.error") + " " + e.message, false); }
     };
 
     async function loadFiles() {

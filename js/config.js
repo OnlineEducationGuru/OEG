@@ -35,6 +35,13 @@ window.OEG_CONFIG = {
       contentBottom: ""
     }
   },
+  /* Admin Panel એક્સેસ નિયંત્રણ —
+     ફક્ત આ ઈમેઈલવાળા લોગઈન યુઝર્સ જ Admin Panel ખોલી શકશે.
+     "*" = સૌ કોઈને (માત્ર ટેસ્ટ માટે), ખાલી [] = કોઈને નહીં (ડિફોલ્ટ લોક).
+     Admin Panel → 🔐 એક્સેસ કંટ્રોલ માંથી પણ બદલી શકાય છે. */
+  admin: {
+    emails: []
+  },
   /* Social links */
   social: {
     youtube: "",

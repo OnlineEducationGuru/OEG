@@ -34,13 +34,14 @@
   }
 
   /* ---------- Shell ---------- */
+  const visibleNav = () => NAV.filter(n => n.route !== "admin" || OEG.canAdmin());
   function renderNav() {
     const cur = currentRoute();
-    document.getElementById("navDesktop").innerHTML = NAV.map(n =>
+    document.getElementById("navDesktop").innerHTML = visibleNav().map(n =>
       `<a class="nav-link ${cur === n.route ? "active" : ""}" href="#/${n.route === "home" ? "" : n.route}">${t(n.key)}</a>`).join("");
   }
   function renderSidebar() {
-    document.getElementById("sideNav").innerHTML = NAV.map(n =>
+    document.getElementById("sideNav").innerHTML = visibleNav().map(n =>
       `<a class="side-link ${currentRoute() === n.route ? "active" : ""}" href="#/${n.route === "home" ? "" : n.route}"><span class="ic">${n.icon}</span>${t(n.key)}</a>`).join("");
     document.getElementById("sideGrades").innerHTML = GRADES.map(g =>
       `<a class="side-link" href="#/textbooks?grade=${g}"><span class="ic">${GRADE_ICONS[g]}</span>${OEG.gradeLabel(g)}</a>`).join("");
@@ -61,6 +62,9 @@
       : `<a class="btn btn-outline btn-sm" href="#/login">${t("nav.login")}</a> <a class="btn btn-brand btn-sm" href="#/register">${t("nav.register")}</a>`;
     const lb = document.getElementById("logoutBtn");
     if (lb) lb.onclick = () => { OEG.auth.logout(); renderAuthArea(); OEG.toast(t("auth.logoutOk")); location.hash = "#/"; };
+    renderNav(); renderSidebar();
+    const fa = document.getElementById("footerAdminLink");
+    if (fa) fa.style.display = OEG.canAdmin() ? "" : "none";
   }
   function socialSvg(k) {
     const paths = {
@@ -332,7 +336,10 @@
       case "post": html = postPage(seg[1]); break;
       case "login": html = authPage("login"); after = () => bindAuth("login"); break;
       case "register": html = authPage("register"); after = () => bindAuth("register"); break;
-      case "admin": html = `<div id="adminMount"></div>`; after = () => OEG.admin.render(document.getElementById("adminMount")); break;
+      case "admin":
+        if (!OEG.canAdmin()) { html = adminDeniedPage(); }
+        else { html = `<div id="adminMount"></div>`; after = () => OEG.admin.render(document.getElementById("adminMount")); }
+        break;
       case "search": html = searchPage(query.q || ""); break;
       default: html = homePage();
     }
@@ -342,6 +349,19 @@
     const io = new IntersectionObserver(es => es.forEach(e => e.isIntersecting && e.target.classList.add("in")), { threshold: .08 });
     app.querySelectorAll(".reveal").forEach(el => io.observe(el));
     renderNav();
+  }
+
+  function adminDeniedPage() {
+    const u = OEG.state.user;
+    return `<div class="container" style="padding:70px 20px">
+      <div class="panel reveal in" style="max-width:620px;margin:0 auto;text-align:center;padding:40px">
+        <div style="font-size:3rem">🔒</div>
+        <h1 style="font-size:1.6rem;margin:10px 0">${t("admin.denied.title")}</h1>
+        <p style="color:var(--muted);font-weight:600">${t("admin.denied.msg")}</p>
+        <div class="alert alert-info" style="text-align:left;margin-top:18px">${t("admin.denied.how")}</div>
+        ${u ? `<p style="margin-top:14px;color:var(--muted);font-size:.9rem">👋 ${OEG.esc(u.name)} — ${OEG.esc(u.email)}</p>`
+             : `<a class="btn btn-brand" style="margin-top:18px" href="#/login">🔑 ${t("admin.denied.login")}</a>`}
+      </div></div>`;
   }
 
   /* ---------- Sidebar / theme / lang ---------- */
