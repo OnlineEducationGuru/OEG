@@ -298,6 +298,47 @@
   ],
   "questions": [
     {
+      "id": "q-grade-16-5rnm",
+      "cat": "grade",
+      "grade": "1",
+      "diff": "medium",
+      "q": {
+        "gu": "જેસલમેર ક્યા રાજ્યમાં આવેલું છે?",
+        "hi": "जैसलमेर किस राज्य में स्थित है?",
+        "en": "Jaisalmer is located in which state?"
+      },
+      "opts": [
+        {
+          "gu": "રાજસ્થાન",
+          "hi": "राजस्थान",
+          "en": "Rajasthan"
+        },
+        {
+          "gu": "ગુજરાત",
+          "hi": "गुजरात",
+          "en": "Gujarat"
+        },
+        {
+          "gu": "મહારાષ્ટ્ર",
+          "hi": "महाराष्ट्र",
+          "en": "Maharashtra"
+        },
+        {
+          "gu": "અસમ",
+          "hi": "असम",
+          "en": "Assam"
+        }
+      ],
+      "a": 0,
+      "ex": {
+        "gu": "",
+        "hi": "",
+        "en": ""
+      },
+      "marks": 1,
+      "subject": "gujarati"
+    },
+    {
       "id": "q-gk-01",
       "cat": "gk",
       "grade": "all",
