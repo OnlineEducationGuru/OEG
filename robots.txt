@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://onlineeducationguru.github.io/OEG/sitemap.xml

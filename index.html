@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="gu" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Online Education Guru — શિક્ષણનું ડિજિટલ પ્લેટફોર્મ | Balvatika to Std 8</title>
+<meta name="description" content="બાલવાટિકાથી ધોરણ 8 સુધીનું સંપૂર્ણ શૈક્ષણિક મટીરિયલ — પાઠ્યપુસ્તકો, સ્વાધ્યાયપોથીઓ, શૈક્ષણિક ગેમ્સ, વિડિયો પાઠ અને Office Documents. ગુજરાતી, હિન્દી, English.">
+<meta name="keywords" content="GCERT, પાઠ્યપુસ્તક, સ્વાધ્યાયપોથી, શૈક્ષણિક ગેમ, Balvatika, ધોરણ 1, ધોરણ 8, Online Education Guru, DIKSHA">
+<meta name="author" content="Online Education Guru">
+<meta property="og:title" content="Online Education Guru — શિક્ષણનું ડિજિટલ પ્લેટફોર્મ">
+<meta property="og:description" content="બાલવાટિકાથી ધોરણ 8 સુધીનું સંપૂર્ણ મટીરિયલ — પાઠ્યપુસ્તકો, ગેમ્સ, વિડિયો અને Office Documents.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://onlineeducationguru.github.io/OEG/">
+<meta name="theme-color" content="#4f46e5">
+<link rel="icon" type="image/svg+xml" href="favicon.svg">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="stylesheet" href="assets/fonts/noto-sans-gujarati/index.css">
+<link rel="stylesheet" href="assets/fonts/noto-sans-devanagari/index.css">
+<link rel="stylesheet" href="assets/fonts/inter/index.css">
+<link rel="stylesheet" href="assets/fonts/baloo-bhai-2/gujarati-400.css">
+<link rel="stylesheet" href="assets/fonts/baloo-bhai-2/gujarati-500.css">
+<link rel="stylesheet" href="assets/fonts/baloo-bhai-2/gujarati-600.css">
+<link rel="stylesheet" href="assets/fonts/baloo-bhai-2/gujarati-700.css">
+<link rel="stylesheet" href="assets/fonts/baloo-bhai-2/gujarati-800.css">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<!-- ================= HEADER ================= -->
+<header class="header">
+  <div class="header-inner">
+    <button class="hamburger" id="hamburger" aria-label="Menu" aria-expanded="false">
+      <span></span><span></span><span></span>
+    </button>
+    <a class="logo" href="#/">
+      <span class="logo-mark">🎓</span>
+      <span class="logo-text">Online Education Guru<small data-i18n="hero.title">શિક્ષણનું ડિજિટલ પ્લેટફોર્મ</small></span>
+    </a>
+    <nav class="nav-desktop" id="navDesktop" aria-label="Main"></nav>
+    <div class="header-actions">
+      <div class="search-box">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
+        <input type="search" id="globalSearch" data-i18n-ph="nav.search" placeholder="શોધો...">
+      </div>
+      <select class="lang-select" id="langSelect" aria-label="Language">
+        <option value="gu">ગુજરાતી</option>
+        <option value="hi">हिन्दी</option>
+        <option value="en">English</option>
+      </select>
+      <button class="icon-btn" id="themeToggle" aria-label="Dark mode">🌙</button>
+      <span id="authArea"></span>
+    </div>
+  </div>
+</header>
+
+<!-- ================= SIDEBAR ================= -->
+<div class="scrim" id="scrim"></div>
+<aside class="sidebar" id="sidebar" aria-label="Sidebar">
+  <h3 data-i18n="menu">મેનુ</h3>
+  <div id="sideNav"></div>
+  <h3 data-i18n="sec.grades">ધોરણ મુજબ મટીરિયલ</h3>
+  <div id="sideGrades"></div>
+  <h3 data-i18n="share.title">શેર કરો</h3>
+  <div class="share-row" id="sideShare" style="margin:0 4px"></div>
+</aside>
+
+<!-- ================= MAIN ================= -->
+<main class="main" id="app" aria-live="polite"></main>
+
+<!-- ================= FOOTER ================= -->
+<footer class="footer">
+  <div class="footer-grid">
+    <div>
+      <h4>🎓 Online Education Guru</h4>
+      <p style="color:var(--muted);font-size:.92rem" data-i18n="footer.about">બાલવાટિકાથી ધોરણ 8 સુધીના વિદ્યાર્થીઓ, શિક્ષકો અને આચાર્યો માટે મફત શૈક્ષણિક સંસાધનો.</p>
+      <div class="social-row" id="footerSocial"></div>
+    </div>
+    <div>
+      <h4 data-i18n="footer.quick">ઝડપી લિંક્સ</h4>
+      <div id="footerLinks"></div>
+    </div>
+    <div>
+      <h4 data-i18n="footer.contact">સંપર્ક</h4>
+      <a href="https://gcert.gujarat.gov.in/gcert/" target="_blank" rel="noopener">GCERT</a>
+      <a href="https://diksha.gov.in/" target="_blank" rel="noopener">DIKSHA</a>
+      <a href="#/admin" data-i18n="nav.admin">Admin Panel</a>
+    </div>
+  </div>
+  <div class="footer-bottom" data-i18n="footer.rights">© 2026 Online Education Guru. સર્વ હક્કો સુરક્ષિત.</div>
+</footer>
+
+<div class="toast" id="toast" role="status"></div>
+
+<script src="js/config.js"></script>
+<script src="js/i18n.js"></script>
+<script src="js/catalog.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/games.js"></script>
+<script src="js/github.js"></script>
+<script src="js/admin.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>
