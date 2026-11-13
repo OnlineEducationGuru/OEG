@@ -186,9 +186,11 @@ OEG.admin = (() => {
       <section class="panel">
         <h3>🧠 ${OEG.t("admin.qManager")} <button class="btn btn-outline btn-sm" id="qzRefresh" style="margin-left:auto">${OEG.t("admin.refresh")}</button></h3>
         <div class="form-row">
-          <div class="field"><label>${OEG.t("admin.qCat")}</label><select id="qzCat">${opts((OEG.tax().quizCats || []).map(c => c.key), "gk")}</select></div>
-          <div class="field"><label>${OEG.t("admin.qGrade")}</label><select id="qzGrade">${gradeOpts("all")}</select></div>
+          <div class="field"><label>${OEG.t("admin.qCat")}</label><select id="qzCat">${opts(OEG.quiz.cats().map(c => c.key), "gk")}</select></div>
+          <div class="field" id="qzGradeField"><label>${OEG.t("admin.qGrade")}</label><select id="qzGrade">${gradeOpts("all")}</select></div>
+          <div class="field" id="qzSubField"><label>${OEG.t("quiz.pickSubject")}</label><select id="qzSub">${subjOpts("all")}</select></div>
         </div>
+        <div class="help-box" id="qzCatHint"></div>
         <div class="form-row">
           <div class="field"><label>${OEG.t("quiz.difficulty")}</label><select id="qzDiff"><option value="easy">${OEG.t("admin.diffEasy")}</option><option value="medium">${OEG.t("admin.diffMedium")}</option><option value="hard">${OEG.t("admin.diffHard")}</option></select></div>
           <div class="field"><label>${OEG.t("admin.passMark")}</label><input id="qzPass" type="number" min="1" max="100" value="60"></div>
@@ -209,6 +211,18 @@ OEG.admin = (() => {
         <div id="qzTrOut" class="help-box" style="display:none"></div>
         <div id="qzMsg" style="margin-top:12px"></div>
         <div class="file-list" id="qzList" style="margin-top:12px"><p style="color:var(--muted)">—</p></div>
+        <h4 style="margin:16px 0 6px">${OEG.t("admin.qCatFlags")}</h4>
+        <div class="help-box">${OEG.t("admin.qNoGradeNote")}</div>
+        <div class="file-list" id="qzFlags" style="margin-top:8px"></div>
+        <h4 style="margin:16px 0 6px">${OEG.t("admin.qBulk")}</h4>
+        <div class="help-box">${OEG.t("admin.qCols")}</div>
+        <div class="form-row" style="align-items:flex-end">
+          <div class="field" style="flex:2"><label>.xlsx / .csv</label><input type="file" id="qzFile" accept=".xlsx,.xls,.csv"></div>
+          <div class="field"><button type="button" class="btn btn-outline" id="qzPreview" style="width:100%;justify-content:center">${OEG.t("admin.qImport")}</button></div>
+          <div class="field"><button type="button" class="btn btn-outline" id="qzTpl" style="width:100%;justify-content:center">${OEG.t("admin.qTemplate")}</button></div>
+        </div>
+        <label class="chk" style="display:block;margin:4px 0 8px"><input type="checkbox" id="qzTrRows"> ${OEG.t("admin.qTranslate")}</label>
+        <div id="qzImp" style="margin-top:8px"></div>
       </section>
 
       <!-- 💰 AdSense + 🔎 SEO -->
@@ -566,11 +580,14 @@ OEG.admin = (() => {
         await OEG.data.writeJson("data/quiz.json", next(bank), "quiz: update");
         await OEG.quiz.load();
         box.innerHTML = `<div class="alert alert-ok">✅ ${OEG.esc(okMsg)}</div>`;
-        renderQuiz(root);
+        renderQuiz(root); renderFlags(root);
       } catch (e) { box.innerHTML = `<div class="alert alert-error">❌ ${OEG.esc(e.message)}</div>`; }
     }
     $("qzAdd").onclick = async () => {
-      const cat = $("qzCat").value, grade = $("qzGrade").value, diff = $("qzDiff").value;
+      const cat = $("qzCat").value, f = OEG.quiz.flagOf(cat);
+      const grade = f.useGrade ? $("qzGrade").value : "all";
+      const subject = (f.useGrade && f.useSubject && $("qzSub")) ? $("qzSub").value : "";
+      const diff = $("qzDiff").value;
       const src = ($("qzSrc") || {}).value || "gu";
       const stem = $("qzText").value.trim();
       const opt = [1, 2, 3, 4].map(i => $("qzOpt" + i).value.trim());
@@ -593,6 +610,7 @@ OEG.admin = (() => {
             id: "q-" + cat + "-" + String(same.length + 1).padStart(2, "0") + "-" + stamp,
             cat, grade, diff, q: tStem, opts: tOpts, a, ex: tEx, marks: 1
           });
+          if (subject && subject !== "all") bank.questions[0].subject = subject;
           bank.passPercent = Number($("qzPass").value) || bank.passPercent || 60;
           bank.seconds = Number($("qzSec").value) || bank.seconds || 45;
           return bank;
@@ -610,6 +628,288 @@ OEG.admin = (() => {
       bank.seconds = Number($("qzSec").value) || 45;
       return bank;
     }, OEG.t("admin.taxSaved"));
+
+    /* ---------- કેટેગરી પ્રમાણે ધોરણ/વિષય ફિલ્ડ ચાલુ-બંધ ---------- */
+    function syncCat() {
+      const sel = $("qzCat");
+      if (!sel) return;
+      const f = OEG.quiz.flagOf(sel.value);
+      const gf = $("qzGradeField"), sf = $("qzSubField"), hint = $("qzCatHint");
+      if (gf) gf.style.display = f.useGrade ? "" : "none";
+      if (sf) { sf.style.display = (f.useGrade && f.useSubject) ? "" : "none"; if (sf.style.display === "none") $("qzSub").value = "all"; }
+      if (hint) hint.textContent = f.useGrade
+        ? (f.useSubject ? "🎓 + 📖 આ કેટેગરીમાં વિદ્યાર્થી પહેલા ધોરણ પછી વિષય પસંદ કરે." : "🎓 આ કેટેગરીમાં ફક્ત ધોરણ પસંદ થાય.")
+        : "🚫 " + OEG.t("admin.qNoGradeNote");
+    }
+    function renderFlags(r) {
+      const box = (r || root).querySelector("#qzFlags");
+      if (!box) return;
+      const list = OEG.quiz.cats();
+      box.innerHTML = list.map((c) => `<div class="file-item">
+          <b>${c.icon || "🧠"} ${OEG.esc(OEG.taxLabel(c, "subject"))}</b>
+          <code>${OEG.esc(c.key)}</code>
+          <span class="badge">${c.count} ${OEG.t("grade.items")}</span>
+          <label class="chk"><input type="checkbox" data-qf="${OEG.esc(c.key)}" data-qk="useGrade" ${c.useGrade ? "checked" : ""}> ${OEG.t("admin.qUseGrade")}</label>
+          <label class="chk"><input type="checkbox" data-qf="${OEG.esc(c.key)}" data-qk="useSubject" ${c.useSubject ? "checked" : ""} ${c.useGrade ? "" : "disabled"}> ${OEG.t("admin.qUseSubject")}</label>
+        </div>`).join("");
+      box.querySelectorAll("[data-qf]").forEach(b => { b.onchange = () => window.OEG_admin_qz_flag(b.dataset.qf, b.checked, b.dataset.qk); });
+    }
+    window.OEG_admin_qz_flag = (key, on, kind) => {
+      saveBank((bank) => {
+        bank.cats = (Array.isArray(bank.cats) ? bank.cats : []).map(c => (typeof c === "string" ? { key: c } : c));
+        let c = bank.cats.filter(x => x.key === key)[0];
+        if (!c) { c = { key: key, icon: "🧠", label: { gu: key, hi: key, en: key }, useGrade: true, useSubject: false }; bank.cats.push(c); }
+        c[kind] = on;
+        if (kind === "useGrade" && !on) c.useSubject = false;
+        return bank;
+      }, OEG.t("admin.taxSaved"));
+    };
+
+    /* ---------- 📥 Excel / CSV થી બધા પ્રશ્નો (4 વિકલ્પ + સાચો જવાબ) ---------- */
+    let impRows = [];
+    const XLSX_SRC = "assets/vendor/xlsx.mini.js";
+    let libPromise = null;
+    function loadLib() {
+      if (window.XLSX) return Promise.resolve(window.XLSX);
+      if (!libPromise) libPromise = new Promise((res, rej) => {
+        const el = document.createElement("script");
+        el.src = XLSX_SRC; el.async = true;
+        el.onload = () => window.XLSX ? res(window.XLSX) : rej(new Error(OEG.t("admin.qNeedLib")));
+        el.onerror = () => { libPromise = null; rej(new Error(OEG.t("admin.qNeedLib"))); };
+        document.head.appendChild(el);
+      });
+      return libPromise;
+    }
+    const LANG_TOK = { gu: ["gu", "guj", "gujarati", "ગુ", "ગુજરાતી", "गु", "गुजराती"], hi: ["hi", "hin", "hindi", "हि", "हिन्दी", "हिंदी"], en: ["en", "eng", "english", "અં", "અંગ્રેજી", "इं", "अंग्रेजी"] };
+    const hnorm = (h) => String(h == null ? "" : h).replace(/\u00a0/g, " ").trim().toLowerCase().replace(/[():.]/g, " ").replace(/\s+/g, " ").trim();
+    const hlang = (h) => { const tk = hnorm(h).split(" "); const ks = Object.keys(LANG_TOK); for (const k of ks) if (LANG_TOK[k].some(x => tk.indexOf(x) >= 0)) return k; return ""; };
+    /* "Question (en)" નું ક્ષેત્ર shodhવા ભાષા-token દૂર કરો */
+    const LANG_ALL = ["gu", "guj", "gujarati", "ગુ", "ગુજરાતી", "गु", "गुजराती", "hi", "hin", "hindi", "हि", "हिन्दी", "हिंदी", "en", "eng", "english", "અં", "અંગ્રેજી", "इं", "अंग्रेजी"];
+    const hstrip = (h) => hnorm(h).split(" ").filter(tk => LANG_ALL.indexOf(tk) < 0).join(" ").trim();
+    const ABC = { a: "1", b: "2", c: "3", d: "4" };
+    function hfield(h) {
+      const t = hstrip(h);
+      if (!t) return "";
+      const op = /^(option|opt|વિકલ્પ|विकल्प|choice)\s*([1-4abcd])/.exec(t);
+      if (op) return "o" + (ABC[op[2]] || op[2]);
+      if (/^[abcd]$/.test(t)) return "o" + ABC[t];
+      if (/^(q|question|પ્રશ્ન|प्रश्न|stem|query)$/.test(t)) return "q";
+      if (/^(options|વિકલ્પો|विकल्प|choices)$/.test(t)) return "opts";
+      if (/^(answer|ans|right|correct|સાચો|साचा|উত্তর|उत्तर|जवाब)/.test(t)) return "a";
+      if (/^(ex|explain|explanation|reason|સમજૂતી|व्याख्या|કારણ)/.test(t)) return "ex";
+      if (/^(cat|category|શ્રેણી|કેટેગરી|श्रेणी|quiz cat|type)$/.test(t)) return "cat";
+      if (/^(grade|class|standard|std|ધોરણ|कक्षा)$/.test(t)) return "grade";
+      if (/^(subject|વિષય|विषय)$/.test(t)) return "subject";
+      if (/^(diff|difficulty|level|અઘણતા|અઘણુ|स्तर|સ્તર)$/.test(t)) return "diff";
+      if (/^(marks|mark|ગુણ|अंक)$/.test(t)) return "marks";
+      return "";
+    }
+    const cell = (row, i) => (i == null ? "" : String(row[i] == null ? "" : row[i]).trim());
+    const guessLang = (v) => /[\u0a80-\u0aff]/.test(v) ? "gu" : /[\u0900-\u097f]/.test(v) ? "hi" : "en";
+    /* એક જ કૉલમ → ત્રણેય ભાષામાં એ જ લખાણ (ખાલી જગ્યા રહે નહીં); 🌐 tick કરો તો અનુવાદ થાય */
+    const obj3 = (v) => { const s = String(v || "").trim(); return { gu: s, hi: s, en: s }; };
+    const slug = (v) => String(v || "").trim().toLowerCase().replace(/\s+/g, "-").replace(/[^a-z0-9\u0a80-\u0aff\u0900-\u097f-]/g, "").replace(/^-+|-+$/g, "");
+    function catKeyFor(val) {
+      const raw = String(val || "").trim();
+      if (!raw) return { key: "gk", isNew: false };
+      const norm = raw.toLowerCase();
+      const hit = OEG.quiz.cats().filter(c => c.key.toLowerCase() === norm || Object.keys(c.label || {}).some(k => String(c.label[k]).toLowerCase() === norm))[0];
+      if (hit) return { key: hit.key, isNew: false };
+      const k = /^[a-z0-9][a-z0-9_-]{1,18}$/.test(norm.replace(/\s+/g, "-")) ? norm.replace(/\s+/g, "-") : slug(raw).slice(0, 18);
+      return { key: k || ("cat-" + Date.now().toString(36).slice(-4)), isNew: true, label: raw };
+    }
+    function gradeFor(val) {
+      const raw = String(val || "").trim();
+      if (!raw) return "all";
+      if (/બાલ|balv|bal/i.test(raw)) return "balvatika";
+      const n = (raw.match(/\d+/) || [])[0];
+      const keys = OEG.tax().grades.map(g => g.key);
+      if (n && keys.indexOf(n) >= 0) return n;
+      if (keys.indexOf(raw.toLowerCase()) >= 0) return raw.toLowerCase();
+      return "all";
+    }
+    function diffFor(val) {
+      const t = String(val || "").trim().toLowerCase();
+      if (/hard|કઠિન|कठिन|મુશ્કેલ/.test(t)) return "hard";
+      if (/med|medium|મધ્યમ|अधिम|ઊંચા/.test(t)) return "medium";
+      if (/easy|સરળ|आसान|कठिन/.test(t)) return "easy";
+      return "easy";
+    }
+    function subjFor(val) {
+      const t = String(val || "").trim().toLowerCase();
+      if (!t) return "";
+      const hit = OEG.tax().subjects.filter(s => s.key.toLowerCase() === t || Object.keys(s.label || {}).some(k => String(s.label[k]).toLowerCase() === t))[0];
+      return hit ? hit.key : "";
+    }
+    const IND = { "૧": 1, "૨": 2, "૩": 3, "૪": 4, "१": 1, "२": 2, "३": 3, "४": 4 };
+    const fixDigits = (v) => String(v).replace(/[૧૨૩૪१२३४]/g, (c) => String(IND[c]));
+    function answerFor(val, opts) {
+      const t = fixDigits(String(val || "")).trim().replace(/[).\s]+$/, "").replace(/^(option|opt|વિકલ્પ|विकल्प)\s*/i, "").trim();
+      if (!t) return -1;
+      if (/^[abcd]$/i.test(t)) return "ABCD".indexOf(t.toUpperCase());
+      if (/^[1-4]$/.test(t)) return Number(t) - 1;
+      if (/^[abcd](?=[)\s]|$)/i.test(t)) return "ABCD".indexOf(t[0].toUpperCase());
+      const n = t.toLowerCase().replace(/^[abcd][).:\s]+/i, "");
+      const i = opts.findIndex(o => String(o).trim().toLowerCase().replace(/^[abcd][).:\s]+/i, "") === n && n);
+      return i;
+    }
+    function parseRows(rows) {
+      const head = rows[0] || [];
+      const cols = {}, lcols = {};
+      head.forEach((h, i) => {
+        const f = hfield(h);
+        if (!f) return;
+        const lg = hlang(h);
+        if (lg && !lcols[f + "@" + lg]) lcols[f + "@" + lg] = i;
+        if (!cols[f]) cols[f] = i;
+      });
+      const out = [];
+      (rows.slice(1) || []).forEach((row, ri) => {
+        if (!row || !row.some(c => String(c == null ? "" : c).trim())) return;
+        const n = ri + 2;
+        const g = (f, lg) => (lg && lcols[f + "@" + lg] != null ? cell(row, lcols[f + "@" + lg]) : "");
+        const get = (f) => cell(row, cols[f]);
+        /* કોઈ ફીલ્ડ માટે ભાષા-કૉલમ હોય તો એ લો, નહીં તો base કૉલમનું લખાણ ત્રણેય ભાષામાં */
+        const field3 = (f, fallback) => {
+          const has = ["gu", "hi", "en"].some((lg) => lcols[f + "@" + lg] != null);
+          const base = String(fallback == null ? "" : fallback).trim();
+          if (!has) return obj3(base);
+          const o = { gu: g(f, "gu"), hi: g(f, "hi"), en: g(f, "en") };
+          ["gu", "hi", "en"].forEach((k) => { if (!o[k]) o[k] = base; });
+          return o;
+        };
+        const stem = get("q");
+        let opts = [1, 2, 3, 4].map(i => get("o" + i));
+        if (opts.filter(Boolean).length < 4 && get("opts")) opts = get("opts").split(/\s*[|;\n]\s*/);
+        opts = opts.slice(0, 4).map(o => String(o || "").trim());
+        const errs = [];
+        if (!stem) errs.push("q");
+        if (opts.filter(Boolean).length < 4) errs.push("4 × option");
+        const a = answerFor(get("a"), opts);
+        if (a < 0) errs.push("answer");
+        if (errs.length) { out.push({ n: n, err: errs.join(", ") }); return; }
+        const cc = catKeyFor(get("cat"));
+        out.push({
+          n: n,
+          obj: {
+            id: "q-" + cc.key + "-" + n + "-" + Date.now().toString(36).slice(-4),
+            cat: cc.key, grade: gradeFor(get("grade")), subject: subjFor(get("subject")),
+            diff: diffFor(get("diff")),
+            q: field3("q", stem),
+            opts: opts.map((o, j) => field3("o" + (j + 1), o)),
+            a: a, ex: field3("ex", get("ex")),
+            marks: Number(get("marks")) || 1
+          },
+          raw: { q: stem, opts: opts, ex: get("ex") }
+        });
+      });
+      return { cols: cols, rows: out };
+    }
+    window.OEG_admin_qz_parse = parseRows;
+    /* ભાષા-સ્લોટ ભરો: ખાલી હોય એ જ ભરાય (વિદ્યાર્થીએ ભરેલું ક્યારેય ન કૂચોળાય) */
+    async function langFill(base, src, existing) {
+      const have = Object.assign({ gu: "", hi: "", en: "" }, existing || {});
+      const s = String(src || "").trim();
+      if (!s) return have;
+      const t = await fillLangs({ [guessLang(s)]: s }, true);
+      const keep = guessLang(s);
+      ["gu", "hi", "en"].forEach((k) => { if (k !== keep && (!have[k] || have[k] === s)) have[k] = t[k] || s; });
+      return have;
+    }
+    async function translateRows(rows) {
+      const box = $("qzImp");
+      for (let i = 0; i < rows.length; i++) {
+        const r = rows[i];
+        if (r.err) continue;
+        r.obj.q = await langFill("q", r.raw.q, r.obj.q);
+        r.obj.ex = await langFill("ex", r.raw.ex, r.obj.ex);
+        for (let j = 0; j < 4; j++) r.obj.opts[j] = await langFill("o" + (j + 1), r.raw.opts[j], r.obj.opts[j]);
+        if (i % 6 === 0 && box) box.innerHTML = `<p style="color:var(--muted)">🌐 ${i + 1}/${rows.length} …</p>`;
+      }
+    }
+    function paintImport() {
+      const box = $("qzImp");
+      if (!box) return;
+      const okRows = impRows.filter(r => !r.err), bad = impRows.filter(r => r.err);
+      if (!impRows.length) { box.innerHTML = ""; return; }
+      box.innerHTML = `<div class="alert ${okRows.length ? "alert-ok" : "alert-error"}">
+          ${okRows.length ? "✅ " + okRows.length + " " + OEG.t("admin.qImported") : "⚠️ " + OEG.t("admin.qNoRows")}${bad.length ? " · ⚠️ " + bad.length + " " + OEG.t("admin.qBadRows") : ""}
+        </div>
+        ${bad.length ? `<div class="help-box">⚠️ ${bad.slice(0, 6).map(b => "row " + b.n + ": " + OEG.esc(b.err)).join(" · ")}</div>` : ""}
+        <div class="file-list">${okRows.slice(0, 10).map(r => `<div class="file-item"><span>${r.obj.n || r.n}</span>
+            <code>${OEG.esc(String(r.obj.q.gu || r.obj.q.en).slice(0, 54))}</code>
+            <span class="badge">${OEG.esc(r.obj.cat)}</span><span class="badge">${OEG.gradeLabel(r.obj.grade)}</span>
+            <span class="badge">✅ ${"ABCD"[r.obj.a]}</span></div>`).join("")}${okRows.length > 10 ? `<p style="color:var(--muted);font-size:.84rem">+${okRows.length - 10}…</p>` : ""}</div>
+        <div class="form-row" style="margin-top:8px">
+          <button class="btn btn-brand" id="qzCommit">${OEG.t("admin.qCommit")} (${okRows.length})</button>
+          <button class="btn btn-outline" id="qzCancel">✕</button>
+        </div>`;
+      const cm = $("qzCommit");
+      if (cm) cm.onclick = commitImport;
+      const cx = $("qzCancel");
+      if (cx) cx.onclick = () => { impRows = []; $("qzFile").value = ""; paintImport(); };
+    }
+    async function commitImport() {
+      const rows = impRows.filter(r => !r.err).map(r => r.obj);
+      if (!rows.length) { $("qzImp").innerHTML = `<div class="alert alert-error">⚠️ ${OEG.esc(OEG.t("admin.qNoRows"))}</div>`; return; }
+      const btn = $("qzCommit");
+      if (btn) { btn.disabled = true; btn.textContent = "⏳ " + OEG.t("admin.qCommit"); }
+      try {
+        if ($("qzTrRows") && $("qzTrRows").checked) {
+          const src = impRows.filter(r => !r.err);
+          await translateRows(src);
+          rows.forEach((o, i) => { if (src[i]) o.q = src[i].obj.q, o.opts = src[i].obj.opts, o.ex = src[i].obj.ex; });
+        }
+        const newCats = [];
+        await saveBank((bank) => {
+          bank.cats = (Array.isArray(bank.cats) ? bank.cats : []).map(c => (typeof c === "string" ? { key: c } : c));
+          bank.questions = rows.concat(bank.questions || []);
+          rows.forEach((o) => {
+            if (!bank.cats.some(c => c.key === o.cat)) {
+              const lab = o.catLabel || o.cat;
+              bank.cats.push({ key: o.cat, icon: "🧠", label: { gu: lab, hi: lab, en: lab }, useGrade: !OEG.quiz.isExamCat(o.cat), useSubject: false });
+              newCats.push(o.cat);
+            }
+          });
+          return bank;
+        }, rows.length + " " + OEG.t("admin.qImported") + (newCats.length ? " · 🏷️ " + newCats.join(", ") : ""));
+        impRows = [];
+        const f = $("qzFile"); if (f) f.value = "";
+        renderQuiz(root); renderFlags(root); renderTax(root);
+      } catch (e) { $("qzMsg").innerHTML = `<div class="alert alert-error">❌ ${OEG.esc(e.message)}</div>`; }
+      if (btn) { btn.disabled = false; }
+    }
+    if ($("qzPreview")) $("qzPreview").onclick = async () => {
+      const inp = $("qzFile"), box = $("qzImp");
+      const file = inp && inp.files && inp.files[0];
+      if (!file) { box.innerHTML = `<div class="alert alert-error">⚠️ .xlsx / .csv</div>`; return; }
+      const btn = $("qzPreview"); btn.disabled = true; btn.textContent = "⏳";
+      try {
+        let rows;
+        if (/\.csv$/i.test(file.name) || file.type === "text/csv") {
+          const X = await loadLib();
+          const wb = X.read(await file.text(), { type: "string" });
+          rows = X.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], { header: 1, blankrows: false });
+        } else {
+          const X = await loadLib();
+          const buf = new Uint8Array(await file.arrayBuffer());
+          const wb = X.read(buf, { type: "array" });
+          rows = X.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], { header: 1, blankrows: false, defval: "" });
+        }
+        const parsed = parseRows(rows);
+        impRows = parsed.rows;
+        const needCat = impRows.filter(r => !r.err && !OEG.quiz.cats().some(c => c.key === r.obj.cat));
+        needCat.forEach(r => { r.obj.catLabel = r.obj.cat; });
+        paintImport();
+        if (!parsed.cols.q) $("qzMsg").innerHTML = `<div class="alert alert-error">❌ ${OEG.esc(OEG.t("admin.qCols"))}</div>`;
+      } catch (e) { box.innerHTML = `<div class="alert alert-error">❌ ${OEG.esc(e.message || OEG.t("admin.qNeedLib"))}</div>`; }
+      btn.disabled = false; btn.textContent = OEG.t("admin.qImport");
+    };
+    if ($("qzTpl")) $("qzTpl").onclick = async () => {
+      const csv = "cat,grade,subject,diff,પ્રશ્ન,વિકલ્પ A,વિકલ્પ B,વિકલ્પ C,વિકલ્પ D,સાચો,સમજૂતી\ngk,all,,easy,ભારતની રાજધાની કઈ?,દિલ્હી,મુંબઈ,ચંદીગઢ,પાટના,A,ભારતની રાજધાની નવી દિલ્હી છે\nmaths,5,,medium,9 × 7 = ?,54,63,72,81,B,અંકગણિતનો પાટો\ntat,all,,hard,બાળકની પ્રથમ શિક્ષક કોણ?,શિક્ષક,માતા,પડોશી,મિત્ર,B,ઘરેલું શિક્ષણ — માતા પ્રથમ ગુરૂ";
+      try { await navigator.clipboard.writeText(csv); OEG.toast(OEG.t("btn.copied")); } catch (e) { $("qzImp").innerHTML = `<div class="help-box"><code>${OEG.esc(csv)}</code></div>`; }
+    };
+    if ($("qzFile")) $("qzFile").onchange = () => { if ($("qzFile").files.length) paintImport(); };
 
     /* ---------- 🎬 YouTube — ફક્ત લિંક પરથી પોસ્ટ ---------- */
     let ytBusy = false;
@@ -852,7 +1152,8 @@ OEG.admin = (() => {
         : `<p style="color:var(--muted)">${OEG.t("admin.qNone")}</p>`;
       box.querySelectorAll("[data-qd]").forEach(b => b.onclick = () => window.OEG_admin_qz_del(b.dataset.qd));
     }
-    if ($("qzCat")) $("qzCat").onchange = renderQuiz;
+    if ($("qzCat")) $("qzCat").onchange = () => { syncCat(); renderQuiz(root); };
+    syncCat();
     if ($("qzCfg")) $("qzCfg").onclick = () => window.OEG_admin_qz_cfg();
     if ($("qzTrBtn")) $("qzTrBtn").onclick = async () => {
       const src = ($("qzSrc") || {}).value || "gu";
@@ -872,8 +1173,8 @@ OEG.admin = (() => {
       } catch (e) { $("qzMsg").innerHTML = `<div class="alert alert-error">❌ ${OEG.esc(e.message)}</div>`; }
       btn.disabled = false; btn.textContent = "🌐 " + OEG.t("admin.trBtn");
     };
-    if ($("qzRefresh")) $("qzRefresh").onclick = async () => { await OEG.quiz.load(); renderQuiz(root); renderTax(root); renderItems(root); };
-    renderQuiz(root);
+    if ($("qzRefresh")) $("qzRefresh").onclick = async () => { await OEG.quiz.load(); renderQuiz(root); renderFlags(root); renderTax(root); renderItems(root); syncCat(); };
+    renderQuiz(root); renderFlags(root);
 
     /* ---------- 🗂️ Items ---------- */
     if ($("itRefresh")) $("itRefresh").onclick = async () => { await OEG.loadCatalog(); renderItems(root); renderTax(root); };

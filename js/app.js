@@ -240,7 +240,7 @@
       ${OEG.tax().types.filter(x => x.route).map(x => `<a class="g-tab ${cat === x.key ? "on" : ""}" href="#/grade/${g}?cat=${x.key}${subject !== "all" ? "&subject=" + subject : ""}">${x.icon || "📄"} ${OEG.esc(OEG.typeLabel(x.key))} <small>${counts[x.key] || 0}</small></a>`).join("")}
     </div>
     <div class="section-head"><div><h2>📚 ${t("grade.subjects")} <small style="font-weight:700;color:var(--muted)">(${subs.length})</small></h2><p>${t("grade.subjectsSub")} — ${OEG.esc(OEG.gradeLabel(g))}</p></div>
-      <a href="#/quiz?grade=${g}">🧠 ${t("grade.quizNow")} →</a></div>
+      <a href="#/quiz?cat=grade&grade=${g}">🧠 ${t("grade.quizNow")} →</a></div>
     <div class="subject-row" id="gSubs">
       ${subs.map(s => `<a class="sub-chip ${subject === s.key ? "on" : ""}" href="#/grade/${g}?subject=${s.key}${cat !== "all" ? "&cat=" + cat : ""}">${OEG.esc(OEG.subjectLabel(s.key))}<small>${OEG.state.catalog.filter(i => (i.grade === g || i.grade === "all") && i.subject === s.key).length}</small></a>`).join("")}
     </div>
