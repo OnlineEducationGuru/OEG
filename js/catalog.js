@@ -98,6 +98,7 @@ OEG.pageUrl = () => {
   return OEG.shareBase() + (r ? "#/" + (r === "home" ? "" : r) : "");
 };
 OEG.siteName = () => (OEG.state.config && OEG.state.config.siteName) || "Online Education Guru";
+OEG.siteUrl = () => OEG.shareBase();   /* તમે જે host પર છો (Blogger ⇒ blogspot, Pages ⇒ github.io) */
 OEG.siteHost = () => { try { return new URL(OEG.shareBase()).host; } catch (e) { return location.host || "onlineeducationguru.github.io"; } };
 OEG.thumbFrom = (url) => { const id = OEG.youtubeId(url); return id ? "https://i.ytimg.com/vi/" + id + "/hqdefault.jpg" : ""; };
 OEG.thumbnail = (item) => (item && (item.image || OEG.thumbFrom(item.fileUrl))) || "";

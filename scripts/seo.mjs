@@ -33,16 +33,19 @@ const types = TX.types || [];
 const grades = (TX.grades || []).filter((g) => g.key !== "all");
 const realGrades = grades.filter((g) => g.key === "balvatika" || /^\d+$/.test(g.key));
 const gradeSubjects = TX.gradeSubjects || [];
-const quizCats = TX.quizCats || [];
+const quizCatsRaw = TX.quizCats || [];
+const bankCats = (quiz.cats || []).map((c) => (typeof c === "string" ? { key: c } : (c || {})));
+const qKeys = (quiz.questions || []).map((q) => q.cat || "gk");
+const quizCats = [...new Set([...quizCatsRaw.map((c) => c.key), ...bankCats.map((c) => c.key), ...qKeys])].filter(Boolean);
 const typeOf = (k) => types.find((t) => t.key === k) || { key: k, icon: "📄", route: "" };
 const labelOf = (o, pre) => (o && o.label ? (o.label.gu || o.label.en || o.label.hi) : "") || (o && o.key) || "";
 const gradeLabel = (k) => labelOf(grades.find((g) => g.key === k) || { key: k });
 const typeLabel = (k) => labelOf(typeOf(k));
 const ICONS = { balvatika: "🧸", "1": "1️⃣", "2": "2️⃣", "3": "3️⃣", "4": "4️⃣", "5": "5️⃣", "6": "6️⃣", "7": "7️⃣", "8": "8️⃣" };
 const quizCatOf = (k) => {
-  const a = quizCats.find((c) => c.key === k) || {};
-  const b = (quiz.cats || []).find((c) => c.key === k) || {};
-  return { key: k, label: a.label || b.label, icon: a.icon || b.icon };
+  const a = (TX.quizCats || []).find((c) => c.key === k) || {};
+  const b = bankCats.find((c) => c.key === k) || {};
+  return { key: k, label: a.label || b.label, icon: a.icon || b.icon, useGrade: b.useGrade !== false, useSubject: b.useSubject === true };
 };
 const quizCatLabel = (k) => labelOf(quizCatOf(k));
 
@@ -69,7 +72,7 @@ const T = {
   subjects: { gu: "વિષયો", hi: "विषय", en: "Subjects" },
   allMat: { gu: "બધું જુઓ", hi: "सभी देखें", en: "View all" },
   quiz: { gu: "ઓનલાઇન ક્વિઝ", hi: "ऑनलाइन क्विज़", en: "Online quiz" },
-  quizSub: { gu: "પ્રશ્નોત્તરી આપો, પાસ થાઓ અને Online Education Guru સહી કરેલું પ્રમાણપત્ર મેળવો.", hi: "क्विज़ दें, पास हों और Online Education Guru द्वारा हस्ताक्षरित प्रमाणपत्र पाएँ।", en: "Take the quiz, pass, and get a certificate signed by Online Education Guru." },
+  quizSub: { gu: "પ્રશ્નોત્તરી આપો, પાસ થાઓ અને Online Education Guru નું પ્રમાણપત્ર (PDF + ઇમેજ) મેળવો.", hi: "क्विज़ दें, पास हों और Online Education Guru का प्रमाणपत्र (PDF + छवि) पाएँ।", en: "Take the quiz, pass, and get your Online Education Guru certificate (PDF + image)." },
   items: { gu: "આઇટમ", hi: "आइटम", en: "items" },
   free: { gu: "સંપૂર્ણ મફત • ગુજરાતી / हिन्दी / English", hi: "पूर्णतः निःशुल्क • गुजराती / हिन्दी / English", en: "Completely free • Gujarati / Hindi / English" },
   level: { gu: "ધોરણ", hi: "कक्षा", en: "Class" },
@@ -247,9 +250,11 @@ put("g/all.html", shell({
 }));
 
 /* ---------- q/<cat>.html ---------- */
-for (const c of quizCats) {
-  const qs = (quiz.questions || []).filter((q) => (q.cat || "gk") === c.key);
-  const label = quizCatLabel(c.key);
+for (const key of quizCats) {
+  const c = quizCatOf(key);
+  const cc = c;
+  const qs = key === "grade" ? (quiz.questions || []) : (quiz.questions || []).filter((q) => (q.cat || "gk") === key);
+  const label = quizCatLabel(key);
   const sample = qs[0];
   const opts = sample ? sample.opts.map((o, i) => `<li>${"ABCD"[i]}. ${esc(field(o))}${i === sample.a ? " ✅" : ""}</li>`).join("") : "";
   put(`q/${c.key}.html`, shell({
@@ -267,7 +272,8 @@ for (const c of quizCats) {
     body: `<div class="seo-card">
       <h1>🧠 ${esc(label)} — ${esc(tr("quiz", "gu"))}</h1>
       <p>${esc(tr("quizSub", "gu"))}</p>
-      <div class="seo-meta"><span>${qs.length} ${esc(tr("qs", "gu"))}</span><span>${esc(tr("pass", "gu"))} ${quiz.passPercent || 60}%</span><span>⏱ ${quiz.seconds || 45}s</span></div>
+      <div class="seo-meta"><span>${qs.length} ${esc(tr("qs", "gu"))}</span><span>${esc(tr("pass", "gu"))} ${quiz.passPercent || 60}%</span><span>⏱ ${quiz.seconds || 45}s</span><span>${cc.useGrade ? "🎓 ધોરણ મુજબ" : "🚫 ધોરણ વગર (બધા માટે)"}</span>${cc.useSubject ? "<span>📘 વિષય પસંદગી</span>" : ""}</div>
+      <p class="seo-lang">🏅 પાસ માર્ક સુધી પહોંચો તો <b>Online Education Guru પ્રમાણપત્ર</b> — નામ સાથે, PDF કે ઇમેજ સ્વરૂપે ડાઉનલોડ કરી શકાય (WhatsApp/શાળા બંનેમાં ચાલે).</p>
       ${sample ? `<h2 style="margin-top:14px">${esc(tr("quiz", "en"))}: ${esc(field(sample.q))}</h2><ul>${opts}</ul><p class="seo-lang">${langBlock(sample.ex)}</p>` : ""}
       <div class="seo-cta"><a class="btn btn-brand" href="../#/quiz?cat=${c.key}">▶ ${esc(tr("open", "gu"))}</a></div>
     </div>`
@@ -277,9 +283,9 @@ put("q/all.html", shell({
   title: `🧠 ${tr("quiz", "gu")} | ${cfg.siteName}`,
   desc: tr("quizSub", "gu"), url: `${BASE}/q/all.html`, image: "",
   crumbs: [{ href: "../", text: tr("home", "gu") }],
-  jsonLd: { "@context": "https://schema.org", "@type": "ItemList", name: tr("quiz", "gu"), itemListElement: quizCats.map((c, i) => ({ "@type": "ListItem", position: i + 1, name: quizCatLabel(c.key), url: `${BASE}/q/${c.key}.html` })) },
+  jsonLd: { "@context": "https://schema.org", "@type": "ItemList", name: tr("quiz", "gu"), itemListElement: quizCats.map((k, i) => ({ "@type": "ListItem", position: i + 1, name: quizCatLabel(k), url: `${BASE}/q/${k}.html` })) },
   body: `<div class="seo-card"><h1>🧠 ${esc(tr("quiz", "gu"))}</h1><p>${esc(tr("quizSub", "gu"))}</p>
-    <div class="seo-list">${quizCats.map((c) => `<a href="${c.key}.html">${quizCatOf(c.key).icon || "🧠"} ${esc(quizCatLabel(c.key))} <small>${(quiz.questions || []).filter(q => (q.cat || "gk") === c.key).length}</small></a>`).join("\n      ")}</div>
+    <div class="seo-list">${quizCats.map((k) => `<a href="${k}.html">${quizCatOf(k).icon || "🧠"} ${esc(quizCatLabel(k))} <small>${(k === "grade" ? (quiz.questions || []) : (quiz.questions || []).filter(q => (q.cat || "gk") === k)).length} પ્રશ્નો</small></a>`).join("\n      ")}</div>
     <div class="seo-cta"><a class="btn btn-brand" href="../#/quiz">${esc(tr("open", "gu"))} →</a></div></div>`
 }));
 
@@ -291,7 +297,7 @@ const urls = [
   { p: "g/all.html", pri: "0.9", f: "weekly" },
   ...realGrades.map((g) => ({ p: `g/${g.key}.html`, pri: "0.9", f: "weekly" })),
   { p: "q/all.html", pri: "0.9", f: "weekly" },
-  ...quizCats.map((c) => ({ p: `q/${c.key}.html`, pri: "0.8", f: "weekly" })),
+  ...quizCats.map((k) => ({ p: `q/${k}.html`, pri: "0.8", f: "weekly" })),
   ...(cat.items || []).map((i) => ({ p: `p/${i.id}.html`, pri: i.type === "post" ? "0.7" : "0.8", f: "weekly" }))
 ];
 writeFileSync(join(root, "sitemap.xml"),
