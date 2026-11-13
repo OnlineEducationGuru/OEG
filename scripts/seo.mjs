@@ -6,7 +6,7 @@
    + sitemap.xml + robots.txt
    Usage: node scripts/seo.mjs
    ============================================================ */
-import { readFileSync, writeFileSync, mkdirSync, existsSync } from "node:fs";
+import { readFileSync, writeFileSync, mkdirSync, existsSync, readdirSync, rmSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -43,10 +43,16 @@ const labelOf = (o, pre) => (o && o.label ? (o.label.gu || o.label.en || o.label
 const gradeLabel = (k) => labelOf(grades.find((g) => g.key === k) || { key: k });
 const typeLabel = (k) => labelOf(typeOf(k));
 const ICONS = { balvatika: "🧸", "1": "1️⃣", "2": "2️⃣", "3": "3️⃣", "4": "4️⃣", "5": "5️⃣", "6": "6️⃣", "7": "7️⃣", "8": "8️⃣" };
+const normSubs = (list) => (Array.isArray(list) ? list : [])
+  .map((x) => (typeof x === "string" ? { key: x, label: { gu: x } } : (x && x.key ? x : null)))
+  .filter(Boolean);
 const quizCatOf = (k) => {
   const a = (TX.quizCats || []).find((c) => c.key === k) || {};
   const b = bankCats.find((c) => c.key === k) || {};
-  return { key: k, label: a.label || b.label, icon: a.icon || b.icon, useGrade: b.useGrade !== false, useSubject: b.useSubject === true };
+  const subs = normSubs(b.subs || a.subs);
+  let mode = [a.mode, b.mode].filter((m) => m === "grade" || m === "sub" || m === "none").pop() || "";
+  if (!mode) mode = k === "grade" ? "grade" : (b.useGrade === true ? "grade" : (subs.length ? "sub" : (b.useGrade === false || Object.keys(b).length ? "none" : "grade")));
+  return { key: k, label: a.label || b.label, icon: a.icon || b.icon, mode, subs, useGrade: mode === "grade", useSubject: mode === "grade" };
 };
 const quizCatLabel = (k) => labelOf(quizCatOf(k));
 
@@ -257,6 +263,15 @@ for (const key of quizCats) {
   const qs = key === "grade" ? (quiz.questions || []) : (quiz.questions || []).filter((q) => (q.cat || "gk") === key);
   const label = quizCatLabel(key);
   const sample = qs[0];
+  const subLinks = cc.mode === "sub" && cc.subs.length
+    ? `<h2 style="margin-top:14px">🧩 સબ-કેટેગરી</h2><div class="seo-list">${cc.subs.map((x) => {
+        const n = (quiz.questions || []).filter((q) => (q.cat || "gk") === key && (q.sub || "") === x.key).length;
+        return `<a href="../#/quiz?cat=${key}&sub=${x.key}">${x.icon || "🏷️"} ${esc(labelOf(x))} <small>${n} ${tr("qs", "gu")}</small></a>`;
+      }).join("\n      ")}</div>`
+    : cc.mode === "grade" ? `<h2 style="margin-top:14px">📘 વિષય મુજબ</h2><div class="seo-list">${(gradeSubjects || []).map((x) => {
+        const n = (quiz.questions || []).filter((q) => (q.cat || "gk") === "grade" && (q.subject || "") === x.key).length;
+        return `<a href="../#/quiz?cat=grade&subject=${x.key}">${x.icon || "📘"} ${esc(labelOf(x))} <small>${n} ${tr("qs", "gu")}</small></a>`;
+      }).join("\n      ")}</div>` : "";
   const opts = sample ? sample.opts.map((o, i) => `<li>${"ABCD"[i]}. ${esc(field(o))}${i === sample.a ? " ✅" : ""}</li>`).join("") : "";
   put(`q/${c.key}.html`, shell({
     title: `🧠 ${label} — ${tr("quiz", "gu")} | ${cfg.siteName}`,
@@ -273,7 +288,8 @@ for (const key of quizCats) {
     body: `<div class="seo-card">
       <h1>🧠 ${esc(label)} — ${esc(tr("quiz", "gu"))}</h1>
       <p>${esc(tr("quizSub", "gu"))}</p>
-      <div class="seo-meta"><span>${qs.length} ${esc(tr("qs", "gu"))}</span><span>${esc(tr("pass", "gu"))} ${quiz.passPercent || 60}%</span><span>⏱ ${quiz.seconds || 45}s</span><span>${cc.useGrade ? "🎓 ધોરણ મુજબ" : "🚫 ધોરણ વગર (બધા માટે)"}</span>${cc.useSubject ? "<span>📘 વિષય પસંદગી</span>" : ""}</div>
+      <div class="seo-meta"><span>${qs.length} ${esc(tr("qs", "gu"))}</span><span>${esc(tr("pass", "gu"))} ${quiz.passPercent || 60}%</span><span>⏱ ${quiz.seconds || 45}s</span><span>${cc.mode === "grade" ? "🎓 ધોરણ + 📘 વિષય પસંદગી" : cc.mode === "sub" ? "🧩 સબ-કેટેગરી મુજબ" : "🚫 બધા પ્રશ્નો એકસાથે"}</span></div>
+      ${subLinks}
       <p class="seo-lang">🏅 પાસ માર્ક સુધી પહોંચો તો <b>Online Education Guru પ્રમાણપત્ર</b> — નામ સાથે, PDF કે ઇમેજ સ્વરૂપે ડાઉનલોડ કરી શકાય (WhatsApp/શાળા બંનેમાં ચાલે).</p>
       ${sample ? `<h2 style="margin-top:14px">${esc(tr("quiz", "en"))}: ${esc(field(sample.q))}</h2><ul>${opts}</ul><p class="seo-lang">${langBlock(sample.ex)}</p>` : ""}
       <div class="seo-cta"><a class="btn btn-brand" href="../#/quiz?cat=${c.key}">▶ ${esc(tr("open", "gu"))}</a></div>
@@ -307,4 +323,18 @@ writeFileSync(join(root, "sitemap.xml"),
   `\n</urlset>\n`);
 writeFileSync(join(root, "robots.txt"),
   `User-agent: *\nAllow: /\nDisallow: /#/admin\nDisallow: /*?shareBase=\n\nSitemap: ${BASE}/sitemap.xml\n`);
-console.log(`SEO build: ${written.length} pages → p/, g/, q/ + sitemap.xml (${urls.length} urls) + robots.txt`);
+/* ---------- 🧹 જૂનાં પાનાં કાઢી નાખો (Admin માંથી કંઈ કઢાય તો SEO પાનું પણ તરત જ ખતમ) ---------- */
+const keep = new Set(written);
+let pruned = 0;
+for (const dir of ["p", "g", "q"]) {
+  const abs = join(root, dir);
+  if (!existsSync(abs)) continue;
+  for (const f of readdirSync(abs)) {
+    if (!/\.html$/.test(f)) continue;
+    const rel = `${dir}/${f}`;
+    if (keep.has(rel)) continue;
+    rmSync(join(abs, f));
+    pruned++;
+  }
+}
+console.log(`SEO build: ${written.length} pages → p/, g/, q/ + sitemap.xml (${urls.length} urls) + robots.txt` + (pruned ? ` · 🧹 ${pruned} જૂनाં પાનાં કાઢ્યા` : ""));

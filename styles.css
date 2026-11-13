@@ -572,3 +572,59 @@ body.allow-select img, body.allow-select video { -webkit-user-drag: auto; }
   .adm-tab b{font-size:1.05rem}
   .adm-hint{font-size:.86rem}
 }
+
+/* ================= Round 13 ================= */
+/* 🧠 મુખ્ય કેટેગરી = એક glowing કાર્ડ (હોમ પેજ) */
+.grid-qz{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:18px}
+.qz-cat-card{padding:20px;gap:6px;align-items:flex-start;text-decoration:none;color:var(--text)}
+.qz-cat-card:hover{text-decoration:none}
+.qz-cat-card .qz-ic{font-size:1.9rem;line-height:1}
+.qz-cat-card h3{font-size:1.02rem;margin-top:2px}
+.qz-cat-card p{font-size:.84rem;color:var(--muted);margin-top:2px}
+.qz-cat-card .qz-mini{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
+.qz-cat-card .qz-mini span{display:inline-flex;align-items:center;gap:5px;font-size:.74rem;font-weight:700;color:var(--muted);background:var(--surface-2);border:1px solid var(--border);border-radius:999px;padding:3px 9px}
+.qz-cat-card .qz-mini b{color:var(--brand);font-size:.74rem}
+.qz-cat-card .qz-go{margin-top:auto;padding-top:12px;font-size:.86rem;font-weight:800;color:var(--brand)}
+/* 👁 Most Viewed કાર્ડનો બેજ */
+.card-meta span{white-space:nowrap}
+
+/* ▶ YouTube — આપણા પેજ પર પ્લેયર (પોસ્ટર પર ક્લિક = ચાલુ) */
+.yt-poster{cursor:pointer}
+.yt-poster:focus-visible{outline:3px solid var(--accent-2);outline-offset:2px}
+.yt-poster.yt-live{cursor:default}
+.yt-big{border-radius:var(--radius);overflow:hidden}
+.yt-live iframe{z-index:1}
+.yt-altwrap{position:absolute;left:10px;bottom:10px;z-index:5}
+.yt-alt{display:inline-flex;align-items:center;gap:6px;border:1px solid rgba(255,255,255,.35);background:rgba(12,12,26,.72);color:#fff;font-size:.76rem;font-weight:700;border-radius:999px;padding:6px 11px;cursor:pointer;transition:.2s}
+.yt-alt:hover{background:#ff0033;border-color:#ff0033}
+.yt-bar{display:flex;flex-wrap:wrap;align-items:center;gap:12px;padding:12px 2px 0;font-size:.86rem;color:var(--muted)}
+.yt-bar b{color:var(--text);font-size:.98rem}
+.video-card .vc-meta{display:flex;flex-wrap:wrap;gap:10px;margin-top:8px;font-size:.78rem;color:var(--muted);font-weight:700}
+
+/* 🧩 Admin — સબ-કેટેગરી મેનેજર */
+.sub-mgr{display:grid;gap:12px}
+.sub-cat{border:1px solid var(--border);border-radius:14px;background:var(--surface-2);padding:12px 14px}
+.sub-cat-head{display:flex;flex-wrap:wrap;align-items:center;gap:10px}
+.sub-cat-head select{margin-left:auto;padding:7px 10px;border-radius:10px;border:1px solid var(--border);background:var(--surface);color:var(--text);font-weight:700;font-size:.84rem}
+.sub-list{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+.sub-pill{display:inline-flex;align-items:center;gap:7px;padding:6px 10px;border-radius:999px;background:var(--surface);border:1px solid var(--border);font-size:.84rem;font-weight:700}
+.sub-pill small{color:var(--muted);font-weight:800}
+.sub-x{border:none;background:transparent;cursor:pointer;font-size:.9rem;line-height:1;padding:2px;border-radius:8px;color:var(--muted)}
+.sub-x:hover{color:#fff;background:#dc2626}
+.sub-none{color:var(--muted);font-size:.84rem}
+.sub-add{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+.sub-add input{flex:1 1 130px;min-width:110px;padding:8px 10px;border-radius:10px;border:1px solid var(--border);background:var(--surface);color:var(--text);font-size:.86rem}
+.it-thumb{width:56px;height:34px;border-radius:7px;object-fit:cover;flex:0 0 auto;background:var(--surface-2)}
+.yt-prev2{margin:2px 0 10px}
+.ytp{display:flex;gap:12px;align-items:center;border:1px solid var(--border);border-radius:12px;background:var(--surface-2);padding:9px 11px}
+.ytp img{width:112px;height:64px;border-radius:9px;object-fit:cover;flex:0 0 auto}
+.ytp b{display:block;font-size:.9rem}
+.ytp span{display:block;color:var(--muted);font-size:.78rem;margin-top:2px}
+.vw-list{display:grid;gap:6px;margin-top:8px}
+.vw-row{display:flex;align-items:center;gap:9px;font-size:.86rem}
+.vw-row b{color:var(--muted);min-width:18px}
+.vw-row code{flex:1 1 auto;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.vw-row .vw-n{font-weight:800;color:var(--brand);white-space:nowrap}
+.vw-ic{font-size:1rem}
+.qz-cat-card.qz-soon{opacity:.72;border-style:dashed}
+.qz-cat-card.qz-soon .qz-go{color:var(--muted)}
