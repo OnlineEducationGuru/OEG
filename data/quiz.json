@@ -298,6 +298,47 @@
   ],
   "questions": [
     {
+      "id": "q-grade-18-a7bu",
+      "cat": "grade",
+      "grade": "1",
+      "diff": "medium",
+      "q": {
+        "gu": "તાપી નદી ક્યા શહેરમાંથી નીકળે છે?",
+        "hi": "तापी नदी किस शहर से निकलती है?",
+        "en": "Tapi river originates from which city?"
+      },
+      "opts": [
+        {
+          "gu": "રાજકોટ",
+          "hi": "राजकोट",
+          "en": "Rajkot"
+        },
+        {
+          "gu": "અમદાવાદ",
+          "hi": "अहमदाबाद",
+          "en": "Ahmedabad"
+        },
+        {
+          "gu": "પોરબંદર",
+          "hi": "पोरबंदर",
+          "en": "Porbandar"
+        },
+        {
+          "gu": "સુરત",
+          "hi": "सूरत",
+          "en": "Surat"
+        }
+      ],
+      "a": 3,
+      "ex": {
+        "gu": "",
+        "hi": "",
+        "en": ""
+      },
+      "marks": 1,
+      "subject": "gujarati"
+    },
+    {
       "id": "q-grade-17-8o54",
       "cat": "grade",
       "grade": "1",
