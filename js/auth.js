@@ -185,23 +185,28 @@ OEG.auth = (() => {
     return parseAdminCreds(null);
   }
   const unlocked = () => { try { return sessionStorage.getItem(SS_ADMIN) === "1"; } catch (e) { return false; } };
-  const lockAdmin = () => { try { sessionStorage.removeItem(SS_ADMIN); } catch (e) {} };
+  const lockAdmin = () => { try { sessionStorage.removeItem(SS_ADMIN); sessionStorage.removeItem(SS_TOKEN); } catch (e) {} };
 
-  async function loginAdmin({ email, password, token }) {
+  async function loginAdmin({ email, password, token, remember }) {
     const adm = await getAdminFile();
-    const tokenGiven = !!(token && String(token).trim());
-    if (!adminConfigured(adm) || tokenGiven) {
+    const typed = String(token || "").trim();
+    let tok = typed;
+    const wantsSetup = !!typed || !adminConfigured(adm);
+    if (!tok) tok = await recallSecret();          /* 📱 ઉપકરણ પર સેવ કરેલો કોડ (સિધું login માં setup ન કરે) */
+    if (wantsSetup) {
       /* Setup / પાસવર્ડ રીસેટ: email + પાસવર્ડ + સિક્રેટ કોડ (એકવાર) → hash કરી સુરક્ષિત સેવ */
-      if (!tokenGiven) throw new Error(OEG.t("admin.setupNeedToken"));
+      if (!tok) throw new Error(OEG.t("admin.setupNeedToken"));
       if (!email || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(String(email))) throw new Error(OEG.t("admin.badCred"));
       if (String(password).length < 6) throw new Error(OEG.t("admin.badCred"));
-      OEG.state.gh.token = String(token).trim();
+      OEG.state.gh.token = tok;
       await OEG.gh.putFile(ADMIN_FILE, JSON.stringify(adminRecord({ email, password }), null, 2), "OEG: admin account setup");
+      if (typed && remember !== false) await saveSecret(typed);
       try { sessionStorage.setItem(SS_ADMIN, "1"); } catch (e) {}
       return { setup: true };
     }
     if (norm(email) !== adm.email) throw new Error(OEG.t("admin.badCred"));
     const pw = String(password);
+    if (typed && remember !== false) await saveSecret(typed);
     const ok = adm.hash ? sha256hex(pw) === adm.hash : pw === adm.plain;
     if (!ok) throw new Error(OEG.t("admin.badCred"));
     try { sessionStorage.setItem(SS_ADMIN, "1"); } catch (e) {}
@@ -249,5 +254,106 @@ OEG.auth = (() => {
 
   function logout() { OEG.state.user = null; lockAdmin(); try { localStorage.removeItem(LS_USER); } catch (e) {} }
 
-  return { register, login, logout, load, isFirebase, fetchUsers, makeUserRecord, addUser, removeUser, resetPassword, sha256hex, getAdminFile, loginAdmin, setAdminAccount, adminRecord, parseAdminCreds, adminConfigured, unlocked, lockAdmin };
+
+  /* ---- 📱 Device Vault — સિક્રેટ કોડ ફક્ત આ બ્રાઉઝરમાં (GitHub પર ક્યાંય નહીં) ----
+     localStorage માં AES-GCM એન્ક્રિપ્ટેડ રૂપમાં રહે છે (device key વડે),
+     એટલે repo/folder માં શોધો તો કંઈ મળે નહીં, અને localStorage ખોલો તો પણ
+     ગબડતું random string સિવાય કંઈ દેખાશે નહીં. Tab દરમિયાન sessionStorage cache
+     રાખે છે જેથી reload પર ફરી પૂછવું ન પડે. lockAdmin()/logout() એ cache કાઢી નાખે છે. */
+  const LS_VAULT = "oeg.v.9f2c";
+  const LS_MASK = "oeg.k.9f2c";
+  const SS_TOKEN = "oeg.t.9f2c";
+  const enc8 = new TextEncoder(), dec8 = new TextDecoder();
+  const b64f = (buf) => { const a = new Uint8Array(buf); let o = ""; for (let i = 0; i < a.length; i++) o += String.fromCharCode(a[i]); return btoa(o); };
+  const unb64f = (str) => Uint8Array.from(atob(String(str)), c => c.charCodeAt(0));
+  const rndBytes = (n) => {
+    const a = new Uint8Array(n);
+    if (window.crypto && crypto.getRandomValues) crypto.getRandomValues(a);
+    else for (let i = 0; i < n; i++) a[i] = Math.floor(Math.random() * 256);
+    return a;
+  };
+  const hasSubtle = () => !!(window.crypto && crypto.subtle && crypto.subtle.importKey && crypto.subtle.deriveKey);
+  function keystream(seed, len) {
+    const out = new Uint8Array(len);
+    for (let off = 0; off < len; off += 32) {
+      const hex = sha256hex(seed + "|" + (off >> 5));
+      for (let j = 0; j < 32 && off + j < len; j++) out[off + j] = parseInt(hex.substr(j * 2, 2), 16);
+    }
+    return out;
+  }
+  function xorBytes(bytes, ks) { const o = new Uint8Array(bytes.length); for (let i = 0; i < bytes.length; i++) o[i] = bytes[i] ^ ks[i]; return o; }
+  function devKey() {
+    let masked = null;
+    try { masked = localStorage.getItem(LS_MASK); } catch (e) {}
+    if (!masked) {
+      const k = b64f(rndBytes(24));
+      try { localStorage.setItem(LS_MASK, b64f(xorBytes(enc8.encode(k), keystream(LS_MASK, k.length)))); } catch (e) {}
+      return k;
+    }
+    try { return dec8.decode(xorBytes(unb64f(masked), keystream(LS_MASK, unb64f(masked).length))); } catch (e) { return masked; }
+  }
+  const vaultMaterial = () => devKey() + "|oeg-v1";
+  async function seal(plain) {
+    plain = String(plain || "").trim();
+    if (!plain) return "";
+    const material = vaultMaterial();
+    if (hasSubtle()) {
+      const salt = rndBytes(16), iv = rndBytes(12), iter = 120000;
+      const base = await crypto.subtle.importKey("raw", enc8.encode(material), "PBKDF2", false, ["deriveKey"]);
+      const key = await crypto.subtle.deriveKey({ name: "PBKDF2", salt, iterations: iter, hash: "SHA-256" }, base, { name: "AES-GCM", length: 256 }, false, ["encrypt", "decrypt"]);
+      const ct = await crypto.subtle.encrypt({ name: "AES-GCM", iv }, key, enc8.encode(plain));
+      return JSON.stringify({ a: "A", i: iter, s: b64f(salt), v: b64f(iv), d: b64f(ct) });
+    }
+    const bytes = enc8.encode(plain), salt = b64f(rndBytes(6));
+    const ks = keystream(material + "|" + salt + "|" + bytes.length, bytes.length);
+    /* k = integrity tag: ખોટું ઉપકરણ / બદલાયેલો ડેટા તરત પકડાય */
+    return JSON.stringify({ a: "X", s: salt, k: sha256hex(plain).slice(0, 12), d: b64f(xorBytes(bytes, ks)) });
+  }
+  async function open(blob) {
+    try {
+      const j = typeof blob === "string" ? JSON.parse(blob) : blob;
+      if (!j || !j.d) return "";
+      const material = vaultMaterial();
+      if (j.a === "A") {
+        if (!hasSubtle()) return "";
+        const base = await crypto.subtle.importKey("raw", enc8.encode(material), "PBKDF2", false, ["deriveKey"]);
+        const key = await crypto.subtle.deriveKey({ name: "PBKDF2", salt: unb64f(j.s), iterations: j.i || 120000, hash: "SHA-256" }, base, { name: "AES-GCM", length: 256 }, false, ["encrypt", "decrypt"]);
+        return dec8.decode(await crypto.subtle.decrypt({ name: "AES-GCM", iv: unb64f(j.v) }, key, unb64f(j.d))).trim();
+      }
+      const bytes = unb64f(j.d);
+      const pt = dec8.decode(xorBytes(bytes, keystream(material + "|" + (j.s || "") + "|" + bytes.length, bytes.length))).trim();
+      if (j.k && sha256hex(pt).slice(0, 12) !== j.k) return "";
+      return pt;
+    } catch (e) { return ""; }
+  }
+  async function saveSecret(token) {
+    token = String(token || OEG.state.gh.token || "").trim();
+    if (!token) return false;
+    const blob = await seal(token);
+    try { if (blob) localStorage.setItem(LS_VAULT, blob); } catch (e) { return false; }
+    try { sessionStorage.setItem(SS_TOKEN, token); } catch (e) {}
+    OEG.state.gh.token = token;
+    return true;
+  }
+  async function recallSecret() {
+    let tok = "";
+    try { tok = sessionStorage.getItem(SS_TOKEN) || ""; } catch (e) {}
+    if (tok) { OEG.state.gh.token = tok; return tok; }
+    let blob = null;
+    try { blob = localStorage.getItem(LS_VAULT); } catch (e) {}
+    if (!blob) return "";
+    tok = await open(blob);
+    if (tok) {
+      OEG.state.gh.token = tok;
+      try { sessionStorage.setItem(SS_TOKEN, tok); } catch (e) {}
+    }
+    return tok;
+  }
+  const hasSecret = () => { try { return !!(localStorage.getItem(LS_VAULT) || sessionStorage.getItem(SS_TOKEN)); } catch (e) { return false; } };
+  function forgetSecret() {
+    try { localStorage.removeItem(LS_VAULT); localStorage.removeItem(LS_MASK); sessionStorage.removeItem(SS_TOKEN); } catch (e) {}
+    OEG.state.gh.token = "";
+  }
+
+  return { register, login, logout, load, isFirebase, fetchUsers, makeUserRecord, addUser, removeUser, resetPassword, sha256hex, getAdminFile, loginAdmin, setAdminAccount, adminRecord, parseAdminCreds, adminConfigured, unlocked, lockAdmin, saveSecret, recallSecret, hasSecret, forgetSecret };
 })();

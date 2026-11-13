@@ -3,7 +3,7 @@
 બાલવાટિકાથી ધોરણ 8 સુધીના વિદ્યાર્થીઓ, શિક્ષકો અને આચાર્યો માટેનું **પ્રીમિયમ શૈક્ષણિક પ્લેટફોર્મ** —
 **GitHub Pages** પર હોસ્ટ થાય છે અને **Blogger (blogspot.com)** માં live embed થાય છે.
 
-> **ભાષાઓ:** ગુજરાતી • हिन्दी • English (એક ક્લિકમાં બદલાય) | **ડાર્ક મોડ** | **PWA-ready**
+> **ભાષાઓ:** ગુજરાતી •िन्दी • English (એક ક્લિકમાં બદલાય) | **ડાર્ક મોડ** | **PWA-ready**
 
 ---
 
@@ -56,7 +56,7 @@
 2. **પ્રથમ વખત (setup):** email + તમારો નવો પાસવર્ડ + **એકવાર સિક્રેટ કોડ** ભરો → **દાખલ થાઓ**.
    - 🔑 **સિક્રેટ કોડ = GitHub Fine-grained PAT** — login card પર ક્યાંય "GitHub/PAT/token" લખ્યું દેખાતું નથી; સમજ **લોગિન પછી** Panel → 🔗 Connect માં "❓ સિક્રેટ કોડ ક્યાંથી મેળવવો?" પર મળશે (README માં પણ છે).
    - પગલાં: https://github.com/settings/personal-access-tokens → **Generate new token → Fine-grained** → name `OEG`, 90 days → **Only select repositories** = `OnlineEducationGuru/OEG` → **Contents: Read and write** → Generate → copy.
-3. **બીજી વારથી:** ફક્ત email + પાસવર્ડ. (કોઈ auto-fill નહીં — નીચે જુઓ.)
+3. **બીજી વારથી:** ફક્ત email + પાસવર્ડ. (કોઈ auto-fill નહીં — નીચે જુઓ.) સિક્રેટ કોડ પહેલી વાર ભરેલો હોય તો આપોઆપ લાગુ થાય — વારંવાર copy-paste કરવાનો પ્રશ્ન જ નથી (જુઓ: 📱 નીચેનો ભાગ).
 4. **પાસવર્ડ ભૂલી જાઓ?** login card પર "🔑 સિક્રેટ કોડથી સેટઅપ / પાસવર્ડ બદલવો છે?" ક્લિક → નવો પાસવર્ડ + એકવાર સિક્રેટ કોડ → ફાઈલ આપોઆપ નવા hash થી લખાય.
 5. **પાસવર્ડ/email બદલવાના 2 રસ્તા:**
    - **Panel → 🛡️ એક્સેસ કંટ્રોલ** → નવું email/પાસવર્ડ → Save (તરત base64+hash થઈ સેવ).
@@ -82,6 +82,21 @@
 - **લોગિન:** બધા માટે free (કોઈ token નહીં) — પાસવર્ડ hash+salt થઈ સેવ, plain text ક્યાંય નહીં.
 - ⚠️ `users.json` public repo માં છે — નબળા/બીજી site ના પાસવર્ડ વાપરવાનું કહો.
 - 🔥 ઈચ્છો તો Firebase પણ ચાલુ રહે છે: `site-config.json` → `firebase.apiKey` ભરો.
+
+---
+
+## 📱 સિક્રેટ કોડ (GitHub PAT) ક્યાં સેવ છે?
+
+**કોઈ પણ GitHub ફાઈલમાં નહીં** — repo, `data/*.json`, commit history કે source કોડમાં એ કોડ લખાતો નથી (એટલે કોઈ શોધી શકે નહીં).
+
+- પહેલી વાર તમે Panel → 🔗 Connect માં (અથવા login card માં) કોડ ભરો અને **"આ કોડ ફક્ત આ બ્રાઉઝરમાં સુરક્ષિત રાખો"** ચેક રાખો (default ચાલુ) → કોડ **AES-256-GCM** થી એન્ક્રિપ્ટ થઈ તમારા બ્રાઉઝરના `localStorage` માં રહે છે.
+- એન્ક્રિપ્શન key એ જ બ્રાઉઝરમાં છુપાયેલા અલગ random device-key માંથી બને છે → બીજા ફોન/PC પર એ જ blob ખોલો તો પણ **વાંચી ન શકાય**.
+- બ્રાઉઝરની storage ખોલો તો પણ `oeg.v.9f2c` નામના opaque key હેઠળ ગબડતું random text દેખાય (કોડ સીધો દેખાતો નથી).
+- Tab બંધ કરો તો પણ **આવતી વખતે email + પાસવર્ડ જ ભરવો** — કોડ આપોઆપ લાગુ થાય, upload/post કામ ચાલુ રહે (page reload દરમિયાન tab-cache કામ કરે છે).
+- 🔓 Admin login થયા પછી Panel માં "💾 આ ઉપકરણ પર સેવ ✔" દેખાય; જાહેર/બીજા computer પર હોય તો **"🗑️ ભૂલી જાઓ"** દબાવો (અથવા remember checkbox uncheck કરો).
+- logout/lock કરો એટલે tab-cache તરત કાઢી નાખાય.
+
+> ⚠️ Web પર browser storage એટલે ફક્ત *તમારું ઉપકરણ* — એ computer નો બીજો વાપરનાર (અથવા malware) તમારી ખુલ્લી browser session વાપરી શકે. એટલે જાહેર/office PC પર remember બંધ રાખો।
 
 ---
 

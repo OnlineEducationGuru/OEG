@@ -64,6 +64,10 @@ OEG.admin = (() => {
         <div class="field"><label>${OEG.t("admin.token")}</label><input id="ghToken" type="password" autocomplete="off">
           <button type="button" class="linklike" id="ghHelpBtn">${OEG.t("admin.howTo")}</button>
           <div class="help-box" id="ghHelp" style="display:none">${OEG.t("admin.howBody")}</div></div>
+        <div class="field"><label class="chk"><input type="checkbox" id="ghRemember" checked> ${OEG.t("admin.remember")}</label>
+          <span class="vault-state" id="ghVault">${OEG.auth.hasSecret() ? OEG.t("admin.deviceSaved") : OEG.t("admin.deviceNone")}
+          ${OEG.auth.hasSecret() ? `<button type="button" class="linklike" id="ghForget">${OEG.t("admin.forgetBtn")}</button>` : ""}</span>
+          <span class="vault-warn">${OEG.t("admin.rememberWarn")}</span></div>
         <div class="alert alert-info">${OEG.t("admin.tokenNote")}</div>
         <button class="btn btn-brand" id="ghConnect">${OEG.t("admin.connect")}</button>
         <div id="ghMsg" style="margin-top:12px"></div>
@@ -174,15 +178,26 @@ OEG.admin = (() => {
     const needGh = () => { if (!OEG.gh.connected()) { OEG.toast(OEG.t("admin.notConnected")); return false; } return true; };
 
     $("ghHelpBtn").onclick = () => { const b = $("ghHelp"); b.style.display = b.style.display === "none" ? "block" : "none"; };
+    if ($("ghForget")) $("ghForget").onclick = (e) => {
+      e.preventDefault();
+      OEG.auth.forgetSecret();
+      msg("ghMsg", "🗑️ " + OEG.t("admin.forgetDone"), true);
+      render(root);
+    };
     $("ghConnect").onclick = async () => {
       OEG.state.gh.owner = $("ghOwner").value.trim();
       OEG.state.gh.repo = $("ghRepo").value.trim();
       OEG.state.gh.branch = $("ghBranch").value.trim() || "main";
-      OEG.state.gh.token = $("ghToken").value.trim();
+      const tok = $("ghToken").value.trim() || (await OEG.auth.recallSecret());
+      OEG.state.gh.token = tok;
       $("ghToken").value = "";
       try {
         const info = await OEG.gh.testConnection();
-        msg("ghMsg", "✅ " + info.name, true);
+        if (tok && $("ghRemember")) {
+          if ($("ghRemember").checked) await OEG.auth.saveSecret(tok);
+          else { OEG.auth.forgetSecret(); OEG.state.gh.token = tok; }
+        }
+        msg("ghMsg", "✅ " + info.name + (OEG.auth.hasSecret() ? " · " + OEG.t("admin.deviceSaved") : ""), true);
         render(root);
       } catch (e) { msg("ghMsg", OEG.t("admin.error") + " " + e.message, false); }
     };
