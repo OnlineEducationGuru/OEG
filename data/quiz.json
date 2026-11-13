@@ -13,7 +13,7 @@
         "en": "By grade"
       },
       "useGrade": true,
-      "useSubject": true
+      "useSubject": false
     },
     {
       "key": "gk",
