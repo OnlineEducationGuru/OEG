@@ -179,7 +179,7 @@
     const thumb = OEG.thumbnail(item);
     const img = thumb
       ? `<div class="card-img${kind === "video" || OEG.youtubeId(item.fileUrl) ? " has-play" : ""}"><img src="${OEG.esc(thumb)}" alt="" loading="lazy" draggable="false">${kind === "video" || OEG.youtubeId(item.fileUrl) ? '<span class="play-badge">▶</span>' : ""}</div>`
-      : `<div class="card-img">${icon}</div>`;
+      : `<div class="card-img is-icon"><span class="ci">${icon}</span></div>`;
     const isVid = !!OEG.youtubeId(item.fileUrl);
     const action = `<a class="btn ${item.fileUrl ? "btn-brand" : "btn-outline"} btn-sm" href="#/view/${item.id}">${isVid ? "▶ " + t("btn.play") : item.fileUrl ? t("btn.view") : t("btn.readMore")}</a>`;
     return `<article class="card reveal glow">${img}<div class="card-body">
@@ -777,6 +777,9 @@
       document.documentElement.style.removeProperty("--brand");
       document.documentElement.style.removeProperty("--brand-2");
     }
+    /* બ્રાઉઝર-બારનો રંગ થીમ સાથે બદલાય */
+    const tc = document.getElementById("themeColor");
+    if (tc) tc.setAttribute("content", OEG.state.theme === "dark" ? "#0e1014" : (acc && /^#[0-9a-fA-F]{6}$/.test(acc) ? acc : "#2b4fd8"));
     document.getElementById("themeToggle").textContent = OEG.state.theme === "dark" ? "☀️" : "🌙";
   }
   document.getElementById("themeToggle").onclick = () => {

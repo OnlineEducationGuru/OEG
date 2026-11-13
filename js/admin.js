@@ -123,7 +123,7 @@ OEG.admin = (() => {
         </div>
         <div class="form-row">
           <div class="field"><label>${OEG.t("admin.logoIcon")}</label><input id="stLogo" maxlength="4" value="${OEG.esc(((cfg.ui || {}).logoEmoji) || "🎓")}"></div>
-          <div class="field"><label>${OEG.t("admin.accent")}</label><input id="stAccent" type="color" value="${OEG.esc(((cfg.ui || {}).accent) || "#4f46e5")}"></div>
+          <div class="field"><label>${OEG.t("admin.accent")}</label><input id="stAccent" type="color" value="${OEG.esc(((cfg.ui || {}).accent) || "#2b4fd8")}"></div>
           <div class="field"><label>${OEG.t("admin.defLang")}</label><select id="stLang">${[["gu", "ગુજરાતી"], ["hi", "हिन्दी"], ["en", "English"]].map(x => `<option value="${x[0]}" ${((cfg.ui || {}).defaultLang) === x[0] ? "selected" : ""}>${x[1]}</option>`).join("")}<option value="" ${!(cfg.ui || {}).defaultLang ? "selected" : ""}>${OEG.t("admin.keepUser")}</option></select></div>
           <div class="field"><label>${OEG.t("admin.defTheme")}</label><select id="stTheme"><option value="" ${!["light", "dark"].includes(((cfg.ui || {}).defaultTheme)) ? "selected" : ""}>${OEG.t("admin.keepUser")}</option><option value="light" ${((cfg.ui || {}).defaultTheme) === "light" ? "selected" : ""}>☀️ Light</option><option value="dark" ${((cfg.ui || {}).defaultTheme) === "dark" ? "selected" : ""}>🌙 Dark</option></select></div>
         </div>
@@ -1658,7 +1658,7 @@ OEG.admin = (() => {
           };
           c.ui = Object.assign({}, c.ui || {}, {
             logoEmoji: $("stLogo").value.trim() || "🎓",
-            accent: $("stAccent").value.trim() || "#4f46e5",
+            accent: $("stAccent").value.trim() || "#2b4fd8",
             defaultLang: $("stLang").value || "", defaultTheme: $("stTheme").value || "",
             tagline: tag, heroTitle: hero, heroSub: hsub, footerAbout: about,
             footerNote: $("stNote").value.trim(),
