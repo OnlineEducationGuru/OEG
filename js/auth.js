@@ -155,9 +155,10 @@ OEG.auth = (() => {
 
   async function loginAdmin({ email, password, token }) {
     const adm = await getAdminFile();
-    if (!adm.email || !adm.passHash) {
-      /* પ્રથમ વખત setup: email + પાસવર્ડ + એકવાર PAT → data/admin.json commit */
-      if (!token || !String(token).trim()) throw new Error(OEG.t("admin.setupNeedToken"));
+    const tokenGiven = !!(token && String(token).trim());
+    if (!adm.email || !adm.passHash || tokenGiven) {
+      /* Setup / પાસવર્ડ રીસેટ: email + પાસવર્ડ + સિક્રેટ કોડ (એકવાર) → data/admin.json માં hash સેવ */
+      if (!tokenGiven) throw new Error(OEG.t("admin.setupNeedToken"));
       if (!email || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(String(email))) throw new Error(OEG.t("admin.badCred"));
       if (String(password).length < 6) throw new Error(OEG.t("admin.badCred"));
       OEG.state.gh.token = String(token).trim();
@@ -166,8 +167,14 @@ OEG.auth = (() => {
       return { setup: true };
     }
     if (norm(email) !== norm(adm.email)) throw new Error(OEG.t("admin.badCred"));
-    if (sha256hex(String(password)) !== adm.passHash) throw new Error(OEG.t("admin.badCred"));
+    const pw = String(password);
+    /* પાસવર્ડ hash કે સીધી value — બંને ચાલશે (ફાઈલ જાતે edit કરી હોય તો પણ) */
+    if (pw !== String(adm.passHash) && sha256hex(pw) !== adm.passHash) throw new Error(OEG.t("admin.badCred"));
     try { sessionStorage.setItem(SS_ADMIN, "1"); } catch (e) {}
+    /* plaintext મળ્યું અને gh કનેક્ટેડ હોય તો આપોઆપ hash માં સુધારી દો */
+    if (pw === String(adm.passHash) && OEG.gh.connected()) {
+      try { await OEG.gh.putFile(ADMIN_FILE, JSON.stringify({ email: adm.email, passHash: sha256hex(pw), updated: new Date().toISOString().slice(0, 10) }, null, 2), "OEG: secure admin password (hash)"); } catch (e) {}
+    }
     return { ok: true };
   }
   async function setAdminAccount({ email, password }) {
