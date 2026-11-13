@@ -236,16 +236,8 @@ OEG.quiz = (() => {
   const curName = () => (OEG.state.quizName || nameStore() || (OEG.state.user && OEG.state.user.name) || "").trim();
 
   const canAdmin = () => { try { return !!(OEG.canAdmin && OEG.canAdmin()); } catch (e) { return false; } };
-  /* 🔑 Admin (જ્યારે quiz પેજ પરથી જ નવું ચેપ્ટર ઉમેરવાનું) */
-  function chapForm(catKey, l2) {
-    const T = t();
-    if (!l2 || l2 === "all") return "";
-    return `<div class="chap-add" data-chapadd="${OEG.esc(catKey)}:${OEG.esc(l2)}">
-      <input class="ca-num" type="text" inputmode="numeric" maxlength="6" placeholder="${T("quiz.chapNum")}">
-      <input class="ca-lab" type="text" maxlength="60" placeholder="${T("quiz.chapName")}">
-      <button type="button" class="btn btn-outline btn-sm ca-go">➕ ${T("quiz.chapAdd")}</button>
-    </div>`;
-  }
+  /* 📗 ચેપ્ટર ઉમેરવા-કાઢવાનું ફક્ત Admin Panel માં (🏷️ કેટેગરી ▸ વૃક્ષ).
+     ક્વિઝ પેજ પર વિદ્યાર્થીને કંઈ ઉમેરવા-બદલવાનું દેખાતું નથી. */
 
   /* ---------- સેટ-અપ સ્ક્રીન (નામ + કેટેગરી + ધોરણ + વિષય/સબ + ચેપ્ટર + ગણતરી) ---------- */
   function setup(gradePreset) {
@@ -265,6 +257,9 @@ OEG.quiz = (() => {
     const subs = mode === "grade" ? subsOf(st.cat) : (cur.subs || []);
     const l2 = mode === "grade" ? st.subject : mode === "sub" ? st.sub : "all";
     const chaps = l2 && l2 !== "all" ? chapsOf(st.cat, l2, mode === "grade" ? st.grade : "all") : [];
+    /* ચેપ્ટર પોર્શન: ધોરણ મુજબ ક્વિઝમાં વિષય પસંદ કરો (અથવા બીજી શ્રેણીમાં ઉપ-શ્રેણી)
+       અને એ પાસે ચેપ્ટર ખરેખર હોય તો જ દેખાય — ન હોય તો બ્લોક આવતો નથી */
+    const showChaps = !!(l2 && l2 !== "all") && chaps.length > 0;
     if (st.chap !== "all" && !chaps.some(c => c.key === st.chap)) st.chap = "all";
     const avail = countIn(st.cat, mode === "grade" ? st.grade : "all", mode === "grade" ? st.subject : "all", mode === "sub" ? st.sub : "all", st.chap);
     return paint(`<div class="quiz-shell quiz-setup">
@@ -295,15 +290,13 @@ OEG.quiz = (() => {
           ${subs.length ? `<div class="chip-row sm" id="qzSubCats">
             <button type="button" class="qz-chip ${st.sub === "all" ? "on" : ""}" data-subcat="all"><span>🗂️</span><b>${T("quiz.allSubs")}</b><small>${countIn(st.cat, "all", "all", "all", "all")}</small></button>
             ${subs.map(x => `<button type="button" class="qz-chip ${x.key === st.sub ? "on" : ""}" data-subcat="${OEG.esc(x.key)}"><span>${x.icon || "🏷️"}</span><b>${OEG.esc(OEG.taxLabel(x, "subject"))}</b><small>${subCount(st.cat, x.key)}${chapsOf(st.cat, x.key, "all").length ? " · 📗 " + chapsOf(st.cat, x.key, "all").length : ""}</small></button>`).join("")}
-          </div>` : `<p class="qz-hint">🧠 ${T("quiz.noSubs")}</p>`}
+          </div>` : `<p class="qz-hint">🧠 ${T("quiz.noSubs")}${canAdmin() ? " " + T("quiz.noSubsAdmin") : ""}</p>`}
         </div>` : ""}
-        ${mode === "grade" || mode === "sub" ? `<div class="quiz-block"><h3>📗 ${T("quiz.pickChap")}</h3>
-          ${l2 && l2 !== "all" ? (chaps.length ? `<div class="chip-row sm" id="qzChaps">
+        ${showChaps ? `<div class="quiz-block"><h3>📗 ${T("quiz.pickChap")}</h3>
+          <div class="chip-row sm" id="qzChaps">
             <button type="button" class="qz-chip ${st.chap === "all" ? "on" : ""}" data-chap="all"><span>🗂️</span><b>${T("quiz.allChaps")}</b><small>${countIn(st.cat, mode === "grade" ? st.grade : "all", mode === "grade" ? st.subject : "all", mode === "sub" ? st.sub : "all", "all")}</small></button>
             ${chaps.map((c) => `<button type="button" class="qz-chip ${st.chap === c.key ? "on" : ""}" data-chap="${OEG.esc(c.key)}"><span>${c.icon || "📗"}</span><b>${OEG.esc(chapTitle(st.cat, l2, c.key))}</b><small>${chapCount(st.cat, l2, c.key, mode === "grade" ? st.grade : "all")}</small></button>`).join("")}
-          </div>` : `<p class="qz-hint">📗 ${T("quiz.noChaps")}</p>`) : `<p class="qz-hint">👉 ${T("quiz.chapFirst")}</p>`}
-          ${canAdmin() ? chapForm(st.cat, l2) : ""}
-        </div>` : ""}
+          </div></div>` : ""}
         <div class="quiz-block"><h3>🔢 ${T("quiz.count")}</h3>
           <div class="chip-row sm" id="qzN">
             ${[5, 10, 15, 0].map((n) => `<button type="button" class="qz-chip ${Number(st.n) === n ? "on" : ""}" data-n="${n}"><b>${n || T("grade.all")}</b></button>`).join("")}
@@ -577,19 +570,6 @@ OEG.quiz = (() => {
     });
     mountEl.querySelectorAll("#qzChaps .qz-chip").forEach(b => {
       b.onclick = () => { st.chap = b.dataset.chap; setup(st.grade); };
-    });
-    mountEl.querySelectorAll(".chap-add .ca-go").forEach(b => {
-      b.onclick = async () => {
-        const wrap = b.closest(".chap-add");
-        const parts = String(wrap.dataset.chapadd || "").split(":");
-        const num = (wrap.querySelector(".ca-num").value || "").trim();
-        const lab = (wrap.querySelector(".ca-lab").value || "").trim();
-        if (!num && !lab) { OEG.toast(t()("quiz.chapNeed")); return; }
-        b.disabled = true;
-        try { await addChap(parts[0], parts.slice(1).join(":"), num, lab, "", st.grade || "all"); OEG.toast(t()("quiz.chapAdded")); setup(st.grade); }
-        catch (e) { OEG.toast("⚠️ " + (e && e.message ? e.message : t()("quiz.chapFail"))); }
-        b.disabled = false;
-      };
     });
     const nm = q("#qzName");
     if (nm) nm.oninput = () => { nameSave(nm.value.trim()); };
