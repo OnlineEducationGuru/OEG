@@ -1,4 +1,6 @@
 User-agent: *
 Allow: /
+Disallow: /#/admin
+Disallow: /*?shareBase=
 
 Sitemap: https://onlineeducationguru.github.io/OEG/sitemap.xml

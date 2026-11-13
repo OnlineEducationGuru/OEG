@@ -1,49 +1,386 @@
 /* ============================================================
-   OEG — Online Education Guru | Site Configuration
+   OEG — Online Education Guru | Site Configuration (fallback)
    ------------------------------------------------------------
-   આ ફાઈલમાં સાઈટનું મુખ્ય કોન્ફિગરેશન છે.
-   Firebase / AdSense / GitHub ની વિગતો અહીં ભરો.
-   (Admin Panel માંથી પણ data/site-config.json અપડેટ થાય છે.)
+   આ ફાઈલમાં સાઇટનું મુખ્ય કોન્ફિગરેશન છે.
+   Admin Panel માંથી બદલાતી વિગતો data/site-config.json માં સેવ થાય છે
+   (runtime માં એ જ પ્રાધાન્ય પામે છે).
    ============================================================ */
 window.OEG_CONFIG = {
-  siteName: "Online Education Guru",
-  siteTagline: {
-    gu: "શિક્ષણનું ડિજિટલ પ્લેટફોર્મ",
-    hi: "शिक्षा का डिजिटल प्लेटफ़ॉर्म",
-    en: "Digital Platform for Education"
+  "siteName": "Online Education Guru",
+  "siteUrl": "https://onlineeducationguru.github.io/OEG/",
+  "github": {
+    "owner": "OnlineEducationGuru",
+    "repo": "OEG",
+    "branch": "main"
   },
-  /* GitHub Pages URL — તમારી સાઈટનું સરનામું (Blogger theme માં પણ આ જ વાપરો) */
-  siteUrl: "https://onlineeducationguru.github.io/OEG/",
-  github: {
-    owner: "OnlineEducationGuru",
-    repo: "OEG",
-    branch: "main"
+  "firebase": {
+    "apiKey": "",
+    "authDomain": ""
   },
-  /* Firebase Auth (REST) — https://console.firebase.google.com પરથી Web API Key લો
-     ખાલી રાખો તો Demo Mode ચાલશે (localStorage, માત્ર ડેમો માટે) */
-  firebase: {
-    apiKey: "",
-    authDomain: ""
-  },
-  /* Google AdSense — Publisher ID અને Slot ID ભરો. ખાલી હોય તો placeholder દેખાશે */
-  adsense: {
-    publisherId: "",        // e.g. "ca-pub-XXXXXXXXXXXXXXXX"
-    slots: {
-      homeTop: "",
-      homeMid: "",
-      sidebar: "",
-      contentBottom: ""
+  "adsense": {
+    "publisherId": "",
+    "enabled": true,
+    "autoAds": true,
+    "slots": {
+      "homeTop": "",
+      "homeMid": "",
+      "listTop": "",
+      "listMid": "",
+      "gradeTop": "",
+      "viewTop": "",
+      "viewMid": "",
+      "videoTop": "",
+      "quizTop": "",
+      "quizResult": "",
+      "gameTop": "",
+      "inFeed": "",
+      "contentBottom": "",
+      "sidebar": ""
     }
   },
-  /* Admin Panel એક્સેસ — ફક્ત data/admin.json માં રાખેલા email+પાસવર્ડથી જ ખુલે.
-     (પ્રથમ વખત #/admin પર email+પાસવર્ડ સેટ કરો — ફાઈલ GitHub પર commit થશે.) */
-  contactEmail: "hm89patel78@gmail.com",
-  /* Social links — footer + home "Follow us" બટનમાં વપરાય છે */
-  social: {
-    youtube: "https://www.youtube.com/@EducationGuruOnline",
-    facebook: "https://www.facebook.com/online.education.gurus",
-    instagram: "https://www.instagram.com/onlineeducationguru/",
-    telegram: "",
-    whatsapp: ""
+  "contactEmail": "hm89patel78@gmail.com",
+  "social": {
+    "youtube": "https://www.youtube.com/@EducationGuruOnline",
+    "facebook": "https://www.facebook.com/online.education.gurus",
+    "instagram": "https://www.instagram.com/onlineeducationguru/",
+    "telegram": "",
+    "whatsapp": ""
+  },
+  "seo": {
+    "title": {
+      "gu": "Online Education Guru — બાલવાટિકાથી ધોરણ ૮ સુધીનું મટિરિયલ",
+      "hi": "Online Education Guru — बालवाटिका से कक्षा 8 तक की सामग्री",
+      "en": "Online Education Guru — Balvatika to Class 8 study material"
+    },
+    "description": {
+      "gu": "GCERT પાઠ્યપુસ્તકો, સ્વાધ્યાયપોથી, શૈક્ષણિક ગેમ, વિડિયો પાઠ અને ઓનલાઇન ક્વિઝ — બાલવાટિકાથી ધોરણ ૮ સુધી, ગુજરાતી-હિન્દી-English માં. મફત, onlineeducationguru.github.io.",
+      "hi": "GCERT पाठ्यपुस्तकें, स्वाध्यायपोथी, शैक्षणिक गेम्स, वीडियो पाठ और ऑनलाइन क्विज़ — बालवाटिका से कक्षा 8 तक, हिन्दी-गुजराती-English में। निःशुल्क।",
+      "en": "Free GCERT textbooks, workbooks, educational games, video lessons and online quizzes for Balvatika to Class 8 in Gujarati, Hindi and English."
+    },
+    "keywords": "Online Education Guru, GCERT, પાઠ્યપુસ્તક, textbook, સ્વાધ્યાયપોથી, workbook, balvatika, ધોરણ 1 to 8, GSEB, શૈક્ષણિક ગેમ, quiz, TAT, HTAT, ગુજરાતી વિડિયો, study material free download site",
+    "siteVerification": ""
+  },
+  "taxonomy": {
+    "types": [
+      {
+        "key": "textbook",
+        "icon": "📚",
+        "route": "textbooks",
+        "label": {
+          "gu": "પાઠ્યપુસ્તક",
+          "hi": "पाठ्यपुस्तक",
+          "en": "Textbook"
+        }
+      },
+      {
+        "key": "workbook",
+        "icon": "📝",
+        "route": "workbooks",
+        "label": {
+          "gu": "સ્વાધ્યાયપોથી",
+          "hi": "स्वाध्यायपोथी",
+          "en": "Workbook"
+        }
+      },
+      {
+        "key": "quiz",
+        "icon": "🧠",
+        "route": "quiz",
+        "label": {
+          "gu": "ક્વિઝ",
+          "hi": "क्विज़",
+          "en": "Quiz"
+        }
+      },
+      {
+        "key": "game",
+        "icon": "🎮",
+        "route": "games",
+        "label": {
+          "gu": "શૈક્ષણિક રમત",
+          "hi": "शैक्षणिक खेल",
+          "en": "Education Games"
+        }
+      },
+      {
+        "key": "office",
+        "icon": "🗂️",
+        "route": "office",
+        "label": {
+          "gu": "Office Documents",
+          "hi": "Office Documents",
+          "en": "Office Documents"
+        }
+      },
+      {
+        "key": "teacher",
+        "icon": "👩‍🏫",
+        "route": "teachers",
+        "label": {
+          "gu": "Teachers Helper",
+          "hi": "शिक्षक सहायक",
+          "en": "Teachers Helper"
+        }
+      },
+      {
+        "key": "student",
+        "icon": "🧑‍🎓",
+        "route": "students",
+        "label": {
+          "gu": "વિદ્યાર્થીઓ",
+          "hi": "छात्र",
+          "en": "Students"
+        }
+      },
+      {
+        "key": "video",
+        "icon": "▶️",
+        "route": "videos",
+        "label": {
+          "gu": "વિડિયો",
+          "hi": "वीडियो",
+          "en": "Video"
+        }
+      },
+      {
+        "key": "post",
+        "icon": "📰",
+        "route": "blog",
+        "label": {
+          "gu": "બ્લોગ / પોસ્ટ",
+          "hi": "ब्लॉग / पोस्ट",
+          "en": "Blog / Posts"
+        }
+      },
+      {
+        "key": "link",
+        "icon": "🔗",
+        "route": "links",
+        "label": {
+          "gu": "ઉપયોગી લિંક્સ",
+          "hi": "उपयोगी लिंक",
+          "en": "Useful Links"
+        }
+      }
+    ],
+    "grades": [
+      {
+        "key": "balvatika",
+        "icon": "🧸",
+        "label": {
+          "gu": "બાલવાટિકા",
+          "hi": "बालवाटिका",
+          "en": "Balvatika"
+        }
+      },
+      {
+        "key": "1",
+        "icon": "1️⃣",
+        "label": {
+          "gu": "ધોરણ ૧",
+          "hi": "कक्षा 1",
+          "en": "Class 1"
+        }
+      },
+      {
+        "key": "2",
+        "icon": "2️⃣",
+        "label": {
+          "gu": "ધોરણ ૨",
+          "hi": "कक्षा 2",
+          "en": "Class 2"
+        }
+      },
+      {
+        "key": "3",
+        "icon": "3️⃣",
+        "label": {
+          "gu": "ધોરણ ૩",
+          "hi": "कक्षा 3",
+          "en": "Class 3"
+        }
+      },
+      {
+        "key": "4",
+        "icon": "4️⃣",
+        "label": {
+          "gu": "ધોરણ ૪",
+          "hi": "कक्षा 4",
+          "en": "Class 4"
+        }
+      },
+      {
+        "key": "5",
+        "icon": "5️⃣",
+        "label": {
+          "gu": "ધોરણ ૫",
+          "hi": "कक्षा 5",
+          "en": "Class 5"
+        }
+      },
+      {
+        "key": "6",
+        "icon": "6️⃣",
+        "label": {
+          "gu": "ધોરણ ૬",
+          "hi": "कक्षा 6",
+          "en": "Class 6"
+        }
+      },
+      {
+        "key": "7",
+        "icon": "7️⃣",
+        "label": {
+          "gu": "ધોરણ ૭",
+          "hi": "कक्षा 7",
+          "en": "Class 7"
+        }
+      },
+      {
+        "key": "8",
+        "icon": "8️⃣",
+        "label": {
+          "gu": "ધોરણ ૮",
+          "hi": "कक्षा 8",
+          "en": "Class 8"
+        }
+      },
+      {
+        "key": "1-5",
+        "icon": "🔢",
+        "label": {
+          "gu": "ધોરણ ૧–૫",
+          "hi": "कक्षा 1–5",
+          "en": "Class 1–5"
+        }
+      },
+      {
+        "key": "6-8",
+        "icon": "🔬",
+        "label": {
+          "gu": "ધોરણ ૬–૮",
+          "hi": "कक्षा 6–8",
+          "en": "Class 6–8"
+        }
+      },
+      {
+        "key": "all",
+        "icon": "🗂️",
+        "label": {
+          "gu": "બધા",
+          "hi": "सभी",
+          "en": "All"
+        }
+      }
+    ],
+    "subjects": [
+      {
+        "key": "gujarati"
+      },
+      {
+        "key": "hindi"
+      },
+      {
+        "key": "english"
+      },
+      {
+        "key": "maths"
+      },
+      {
+        "key": "science"
+      },
+      {
+        "key": "social"
+      },
+      {
+        "key": "sanskrit"
+      },
+      {
+        "key": "gk"
+      },
+      {
+        "key": "tat"
+      },
+      {
+        "key": "htat"
+      },
+      {
+        "key": "reasoning"
+      },
+      {
+        "key": "current"
+      },
+      {
+        "key": "office"
+      },
+      {
+        "key": "planning"
+      },
+      {
+        "key": "exam"
+      },
+      {
+        "key": "news"
+      },
+      {
+        "key": "official"
+      },
+      {
+        "key": "blog"
+      }
+    ],
+    "gradeSubjects": [
+      {
+        "key": "gujarati"
+      },
+      {
+        "key": "english"
+      },
+      {
+        "key": "hindi"
+      },
+      {
+        "key": "maths"
+      },
+      {
+        "key": "science"
+      },
+      {
+        "key": "social"
+      },
+      {
+        "key": "sanskrit"
+      }
+    ],
+    "quizCats": [
+      {
+        "key": "grade",
+        "icon": "🎓"
+      },
+      {
+        "key": "gk",
+        "icon": "🌍"
+      },
+      {
+        "key": "tat",
+        "icon": "📝"
+      },
+      {
+        "key": "htat",
+        "icon": "🏫"
+      },
+      {
+        "key": "reasoning",
+        "icon": "🧩"
+      },
+      {
+        "key": "current",
+        "icon": "📰"
+      }
+    ]
+  },
+  "quiz": {
+    "passPercent": 60,
+    "seconds": 45
   }
 };

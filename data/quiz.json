@@ -1,0 +1,1438 @@
+{
+  "v": 1,
+  "note": "Admin Panel → ક્વિઝ મેનેજ માંથી પ્રશ્નો ઉમેરો/કાઢી નાખો. cat = સબ-કેટેગરી; a = સાચા વિકલ્પનો ક્રમ (0–3).",
+  "passPercent": 60,
+  "seconds": 45,
+  "cats": [
+    {
+      "key": "grade",
+      "icon": "🎓",
+      "label": {
+        "gu": "ધોરણ મુજબ",
+        "hi": "कक्षा अनुसार",
+        "en": "By grade"
+      }
+    },
+    {
+      "key": "gk",
+      "icon": "🌍",
+      "label": {
+        "gu": "સામાન્ય જ્ઞાન",
+        "hi": "सामान्य ज्ञान",
+        "en": "General Knowledge"
+      }
+    },
+    {
+      "key": "maths",
+      "icon": "➗",
+      "label": {
+        "gu": "ગણિત",
+        "hi": "गणित",
+        "en": "Maths"
+      }
+    },
+    {
+      "key": "science",
+      "icon": "🔬",
+      "label": {
+        "gu": "વિજ્ઞાન",
+        "hi": "विज्ञान",
+        "en": "Science"
+      }
+    },
+    {
+      "key": "social",
+      "icon": "🗺️",
+      "label": {
+        "gu": "સામાજિક વિજ્ઞાન",
+        "hi": "सामाजिक विज्ञान",
+        "en": "Social Science"
+      }
+    },
+    {
+      "key": "gujarati",
+      "icon": "📖",
+      "label": {
+        "gu": "ગુજરાતી",
+        "hi": "गुजराती",
+        "en": "Gujarati"
+      }
+    },
+    {
+      "key": "english",
+      "icon": "🔤",
+      "label": {
+        "gu": "English",
+        "hi": "English",
+        "en": "English"
+      }
+    },
+    {
+      "key": "sanskrit",
+      "icon": "🕉️",
+      "label": {
+        "gu": "સંસ્કૃત",
+        "hi": "संस्कृत",
+        "en": "Sanskrit"
+      }
+    },
+    {
+      "key": "tat",
+      "icon": "📝",
+      "label": {
+        "gu": "TAT (૧–૮)",
+        "hi": "TAT (1–8)",
+        "en": "TAT (1–8)"
+      }
+    },
+    {
+      "key": "htat",
+      "icon": "🏫",
+      "label": {
+        "gu": "HTAT (૯–૧૨)",
+        "hi": "HTAT (9–12)",
+        "en": "HTAT (9–12)"
+      }
+    },
+    {
+      "key": "reasoning",
+      "icon": "🧩",
+      "label": {
+        "gu": "તર્કશક્તિ",
+        "hi": "तर्कशक्ति",
+        "en": "Reasoning"
+      }
+    },
+    {
+      "key": "current",
+      "icon": "📰",
+      "label": {
+        "gu": "સમકાલીન",
+        "hi": "समकालीन",
+        "en": "Current Affairs"
+      }
+    }
+  ],
+  "questions": [
+    {
+      "id": "q-gk-01",
+      "cat": "gk",
+      "grade": "all",
+      "diff": "easy",
+      "q": {
+        "gu": "ભારતની રાજધાની કઈ છે?",
+        "hi": "भारत की राजधानी कौन सी है?",
+        "en": "What is the capital of India?"
+      },
+      "opts": [
+        {
+          "gu": "નવી દિલ્હી",
+          "hi": "नई दिल्ली",
+          "en": "New Delhi"
+        },
+        {
+          "gu": "મુંબઈ",
+          "hi": "मुंबई",
+          "en": "Mumbai"
+        },
+        {
+          "gu": "અમદાવાદ",
+          "hi": "अहमदाबाद",
+          "en": "Ahmedabad"
+        },
+        {
+          "gu": "ચેન્નાઈ",
+          "hi": "चेन्नई",
+          "en": "Chennai"
+        }
+      ],
+      "a": 0,
+      "ex": {
+        "gu": "ભારતની રાજધાની નવી દિલ્હી છે.",
+        "hi": "भारत की राजधानी नई दिल्ली है।",
+        "en": "New Delhi is the capital of India."
+      },
+      "marks": 1
+    },
+    {
+      "id": "q-gk-02",
+      "cat": "gk",
+      "grade": "all",
+      "diff": "easy",
+      "q": {
+        "gu": "ગુજરાતની રાજધાની કઈ છે?",
+        "hi": "गुजरात की राजधानी कौन सी है?",
+        "en": "What is the capital of Gujarat?"
+      },
+      "opts": [
+        {
+          "gu": "ગાંધીનગર",
+          "hi": "गांधीनगर",
+          "en": "Gandhinagar"
+        },
+        {
+          "gu": "અમદાવાદ",
+          "hi": "अहमदाबाद",
+          "en": "Ahmedabad"
+        },
+        {
+          "gu": "સુરત",
+          "hi": "सूरत",
+          "en": "Surat"
+        },
+        {
+          "gu": "રાજકોટ",
+          "hi": "राजकोट",
+          "en": "Rajkot"
+        }
+      ],
+      "a": 0,
+      "ex": {
+        "gu": "ગુજરાતની રાજધાની ગાંધીનગર છે.",
+        "hi": "गुजरात की राजधानी गांधीनगर है।",
+        "en": "Gandhinagar is the capital of Gujarat."
+      },
+      "marks": 1
+    },
+    {
+      "id": "q-gk-03",
+      "cat": "gk",
+      "grade": "all",
+      "diff": "medium",
+      "q": {
+        "gu": "ગુજરાતમાં વર્તમાન કેટલા જિલ્લા છે?",
+        "hi": "गुजरात में वर्तमान में कितने जिले हैं?",
+        "en": "How many districts does Gujarat have now?"
+      },
+      "opts": [
+        {
+          "gu": "૩૩",
+          "hi": "33",
+          "en": "33"
+        },
+        {
+          "gu": "૨૭",
+          "hi": "27",
+          "en": "27"
+        },
+        {
+          "gu": "૩૦",
+          "hi": "30",
+          "en": "30"
+        },
+        {
+          "gu": "૩૬",
+          "hi": "36",
+          "en": "36"
+        }
+      ],
+      "a": 0,
+      "ex": {
+        "gu": "ગુજરાતમાં ૩૩ જિલ્લા છે.",
+        "hi": "गुजरात में 33 जिले हैं।",
+        "en": "Gujarat has 33 districts."
+      },
+      "marks": 1
+    },
+    {
+      "id": "q-gk-04",
+      "cat": "gk",
+      "grade": "all",
+      "diff": "easy",
+      "q": {
+        "gu": "ભારતનું રાષ્ટ્રીય પંક્ષી કયું છે?",
+        "hi": "भारत का राष्ट्रीय पक्षी कौन सा है?",
+        "en": "Which is the national bird of India?"
+      },
+      "opts": [
+        {
+          "gu": "મોર",
+          "hi": "मोर",
+          "en": "Peacock"
+        },
+        {
+          "gu": "કબૂતર",
+          "hi": "कबूतर",
+          "en": "Pigeon"
+        },
+        {
+          "gu": "કાગડો",
+          "hi": "कागड़",
+          "en": "Crow"
+        },
+        {
+          "gu": "હંસ",
+          "hi": "हंस",
+          "en": "Swan"
+        }
+      ],
+      "a": 0,
+      "ex": {
+        "gu": "મોર ભારતનું રાષ્ટ્રીય પંક્ષી છે.",
+        "hi": "मोर भारत का राष्ट्रीय पक्षी है।",
+        "en": "The peacock is India's national bird."
+      },
+      "marks": 1
+    },
+    {
+      "id": "q-gk-05",
+      "cat": "gk",
+      "grade": "all",
+      "diff": "medium",
+      "q": {
+        "gu": "ગુજરાતનું સર્વોચ્ચ શિખર કયું છે?",
+        "hi": "गुजरात का सर्वोच्च शिखर कौन सा है?",
+        "en": "Which is the highest peak of Gujarat?"
+      },
+      "opts": [
+        {
+          "gu": "ગુરુશિખર (માઉન્ટ આબૂ)",
+          "hi": "गुरुशिखर (माउंट आबू)",
+          "en": "Guru Shikhar (Mount Abu)"
+        },
+        {
+          "gu": "ગિરનાર",
+          "hi": "गिरनार",
+          "en": "Girnar"
+        },
+        {
+          "gu": "શત્રુંજય",
+          "hi": "शतरंजय",
+          "en": "Shatrunjaya"
+        },
+        {
+          "gu": "મહીસમડી",
+          "hi": "महीसमड़ी",
+          "en": "Mahismandal"
+        }
+      ],
+      "a": 0,
+      "ex": {
+        "gu": "ગુજરાતનું સર્વોચ્ચ શિખર ગુરુશિખર (૧૭૨૨ મી.) છે.",
+        "hi": "गुजरात का सर्वोच्च शिखर गुरुशिखर (1722 मी.) है।",
+        "en": "Guru Shikhar (1722 m) is Gujarat's highest peak."
+      },
+      "marks": 1
+    },
+    {
+      "id": "q-gk-06",
+      "cat": "gk",
+      "grade": "all",
+      "diff": "medium",
+      "q": {
+        "gu": "ભારતના બંધારણના મુખ્ય શિલ્પી કોણ કહેવાય?",
+        "hi": "भारत के संविधान के मुख्य निर्माता कौन कहलाते हैं?",
+        "en": "Who is regarded as the chief architect of the Indian Constitution?"
+      },
+      "opts": [
+        {
+          "gu": "ડૉ. ભીમરાવ અમ્બેડકર",
+          "hi": "डॉ. भीमराव अंबेडकर",
+          "en": "Dr. B. R. Ambedkar"
+        },
+        {
+          "gu": "મહાત્મા ગાંધી",
+          "hi": "महात्मा गांधी",
+          "en": "Mahatma Gandhi"
+        },
+        {
+          "gu": "જવાહરલાલ નેહરુ",
+          "hi": "जवाहरलाल नेहरू",
+          "en": "Jawaharlal Nehru"
+        },
+        {
+          "gu": "સરદાર વલ્લભભાઈ પટેલ",
+          "hi": "सरदार वल्लभभाई पटेल",
+          "en": "Sardar Patel"
+        }
+      ],
+      "a": 0,
+      "ex": {
+        "gu": "બંધારણ સમિતિના અધ્યક્ષ ડૉ. અમ્બેડકર હતા.",
+        "hi": "संविधान सभा की प्रारूप समिति के अध्यक्ष डॉ. अंबेडकर थे।",
+        "en": "Dr. Ambedkar chaired the Drafting Committee."
+      },
+      "marks": 1
+    },
+    {
+      "id": "q-gk-07",
+      "cat": "gk",
+      "grade": "5",
+      "diff": "easy",
+      "q": {
+        "gu": "સામાન્ય વર્ષમાં કેટલા દિવસ હોય છે?",
+        "hi": "सामान्य वर्ष में कितने दिन होते हैं?",
+        "en": "How many days are there in a normal year?"
+      },
+      "opts": [
+        {
+          "gu": "૩૬૫",
+          "hi": "365",
+          "en": "365"
+        },
+        {
+          "gu": "૩૬૬",
+          "hi": "366",
+          "en": "366"
+        },
+        {
+          "gu": "૩૬૦",
+          "hi": "360",
+          "en": "360"
+        },
+        {
+          "gu": "૩૪૫",
+          "hi": "345",
+          "en": "345"
+        }
+      ],
+      "a": 0,
+      "ex": {
+        "gu": "સામાન્ય વર્ષ ૩૬૫ અને લીપવર્ષ ૩૬૬ દિવસનો હોય.",
+        "hi": "सामान्य वर्ष 365 और अधिकम वर्ष 366 दिन का होता है।",
+        "en": "A normal year has 365 days, a leap year 366."
+      },
+      "marks": 1
+    },
+    {
+      "id": "q-gk-08",
+      "cat": "gk",
+      "grade": "6",
+      "diff": "easy",
+      "q": {
+        "gu": "સૌરમંડળનો સૌથી મોટો ગ્રહ કયો?",
+        "hi": "सौरमंडल का सबसे बड़ा ग्रह कौन सा है?",
+        "en": "Which is the largest planet in the solar system?"
+      },
+      "opts": [
+        {
+          "gu": "ગુરુ",
+          "hi": "बृहस्पति",
+          "en": "Jupiter"
+        },
+        {
+          "gu": "શનિ",
+          "hi": "शनि",
+          "en": "Saturn"
+        },
+        {
+          "gu": "પૃથ્વી",
+          "hi": "पृथ्वी",
+          "en": "Earth"
+        },
+        {
+          "gu": "મંગળ",
+          "hi": "मंगल",
+          "en": "Mars"
+        }
+      ],
+      "a": 0,
+      "ex": {
+        "gu": "ગુરુ (Jupiter) સૌથી મોટો ગ્રહ છે.",
+        "hi": "बृहस्पति सबसे बड़ा ग्रह है।",
+        "en": "Jupiter is the largest planet."
+      },
+      "marks": 1
+    },
+    {
+      "id": "q-gk-09",
+      "cat": "gk",
+      "grade": "all",
+      "diff": "easy",
+      "q": {
+        "gu": "આપણા સૌથી નજીકનો તારો કયો?",
+        "hi": "हमारे सबसे निकट का तारा कौन सा है?",
+        "en": "Which is the star nearest to us?"
+      },
+      "opts": [
+        {
+          "gu": "સૂર્ય",
+          "hi": "सूर्य",
+          "en": "The Sun"
+        },
+        {
+          "gu": "ધ્રુવ તારો",
+          "hi": "ध्रुव तारा",
+          "en": "Polaris"
+        },
+        {
+          "gu": "ચંદ્ર",
+          "hi": "चंद्र",
+          "en": "The Moon"
+        },
+        {
+          "gu": "શુક્ર",
+          "hi": "शुक्र",
+          "en": "Venus"
+        }
+      ],
+      "a": 0,
+      "ex": {
+        "gu": "સૂર્ય પૃથ્વીનો સૌથી નજીકનો તારો છે (ચંદ્ર તારો નથી).",
+        "hi": "सूर्य पृथ्वी के सबसे निकट का तारा है।",
+        "en": "The Sun is the nearest star to Earth."
+      },
+      "marks": 1
+    },
+    {
+      "id": "q-maths-01",
+      "cat": "maths",
+      "grade": "3",
+      "diff": "easy",
+      "q": {
+        "gu": "૭ × ૮ = ?",
+        "hi": "७ × ८ = ?",
+        "en": "7 × 8 = ?"
+      },
+      "opts": [
+        {
+          "gu": "૫૬",
+          "hi": "56",
+          "en": "56"
+        },
+        {
+          "gu": "૫૪",
+          "hi": "54",
+          "en": "54"
+        },
+        {
+          "gu": "૬૩",
+          "hi": "63",
+          "en": "63"
+        },
+        {
+          "gu": "૪૮",
+          "hi": "48",
+          "en": "48"
+        }
+      ],
+      "a": 0,
+      "ex": {
+        "gu": "૭ × ૮ = ૫૬",
+        "hi": "७ × ८ = ५६",
+        "en": "7 × 8 = 56"
+      },
+      "marks": 1
+    },
+    {
+      "id": "q-maths-02",
+      "cat": "maths",
+      "grade": "5",
+      "diff": "easy",
+      "q": {
+        "gu": "૧૪૪ નું વર્ગમૂળ કેટલું?",
+        "hi": "144 का वर्गमूल क्या है?",
+        "en": "What is the square root of 144?"
+      },
+      "opts": [
+        {
+          "gu": "૧૨",
+          "hi": "12",
+          "en": "12"
+        },
+        {
+          "gu": "૧૪",
+          "hi": "14",
+          "en": "14"
+        },
+        {
+          "gu": "૧૬",
+          "hi": "16",
+          "en": "16"
+        },
+        {
+          "gu": "૧૧",
+          "hi": "11",
+          "en": "11"
+        }
+      ],
+      "a": 0,
+      "ex": {
+        "gu": "૧૨ × ૧૨ = ૧૪૪",
+        "hi": "१२ × १२ = १४४",
+        "en": "12 × 12 = 144"
+      },
+      "marks": 1
+    },
+    {
+      "id": "q-maths-03",
+      "cat": "maths",
+      "grade": "7",
+      "diff": "medium",
+      "q": {
+        "gu": "બાજુ ૯ સેમી હોય તેવા ચોરસની પરિમિતિ?",
+        "hi": "भुजा 9 सेमी वाले वर्ग का परिमाप क्या है?",
+        "en": "What is the perimeter of a square with side 9 cm?"
+      },
+      "opts": [
+        {
+          "gu": "૩૬ સેમી",
+          "hi": "36 सेमी",
+          "en": "36 cm"
+        },
+        {
+          "gu": "૮૧ સેમી",
+          "hi": "81 सेमी",
+          "en": "81 cm"
+        },
+        {
+          "gu": "૧૮ સેમી",
+          "hi": "18 सेमी",
+          "en": "18 cm"
+        },
+        {
+          "gu": "૨૭ સેમી",
+          "hi": "27 सेमी",
+          "en": "27 cm"
+        }
+      ],
+      "a": 0,
+      "ex": {
+        "gu": "પરિમિતિ = ૪ × ૯ = ૩૬ સેમી",
+        "hi": "परिमाप = 4 × 9 = 36 सेमी",
+        "en": "Perimeter = 4 × 9 = 36 cm"
+      },
+      "marks": 1
+    },
+    {
+      "id": "q-maths-04",
+      "cat": "maths",
+      "grade": "4",
+      "diff": "easy",
+      "q": {
+        "gu": "૩/૪ ને દશાંશમાં લખો.",
+        "hi": "3/4 को दशमलव में लिखें।",
+        "en": "Write 3/4 as a decimal."
+      },
+      "opts": [
+        {
+          "gu": "૦.૭૫",
+          "hi": "0.75",
+          "en": "0.75"
+        },
+        {
+          "gu": "૦.૩૪",
+          "hi": "0.34",
+          "en": "0.34"
+        },
+        {
+          "gu": "૦.૭૪",
+          "hi": "0.74",
+          "en": "0.74"
+        },
+        {
+          "gu": "૩.૪",
+          "hi": "3.4",
+          "en": "3.4"
+        }
+      ],
+      "a": 0,
+      "ex": {
+        "gu": "૩ ÷ ૪ = ૦.૭૫",
+        "hi": "3 ÷ 4 = 0.75",
+        "en": "3 ÷ 4 = 0.75"
+      },
+      "marks": 1
+    },
+    {
+      "id": "q-science-01",
+      "cat": "science",
+      "grade": "6",
+      "diff": "easy",
+      "q": {
+        "gu": "છોડ પોતાનો ખોરાક કઈ પ્રક્રિયાથી બનાવે?",
+        "hi": "पौधे अपना भोजन किस प्रक्रिया से बनाते हैं?",
+        "en": "By which process do plants make their food?"
+      },
+      "opts": [
+        {
+          "gu": "પ્રકાશસંશ્લેષણ",
+          "hi": "प्रकाश-संश्लेषण",
+          "en": "Photosynthesis"
+        },
+        {
+          "gu": "શ્વસન",
+          "hi": "श्वसन",
+          "en": "Respiration"
+        },
+        {
+          "gu": "બાષ્પોત્સર્જન",
+          "hi": "वाष्प-उत्सर्जन",
+          "en": "Transpiration"
+        },
+        {
+          "gu": "પાચન",
+          "hi": "पाचन",
+          "en": "Digestion"
+        }
+      ],
+      "a": 0,
+      "ex": {
+        "gu": "પાંદડાં સૂર્યપ્રકાશ લઈ પ્રકાશસંશ્લેષણથી ખોરાક બનાવે છે.",
+        "hi": "पत्ते सूर्यप्रकाश लेकर प्रकाश-संश्लेषण से भोजन बनाते हैं।",
+        "en": "Leaves use sunlight to make food by photosynthesis."
+      },
+      "marks": 1
+    },
+    {
+      "id": "q-science-02",
+      "cat": "science",
+      "grade": "8",
+      "diff": "easy",
+      "q": {
+        "gu": "પાણીનું રાસાયણિક સૂત્ર શું?",
+        "hi": "पानी का रासायनिक सूत्र क्या है?",
+        "en": "What is the chemical formula of water?"
+      },
+      "opts": [
+        {
+          "gu": "H₂O",
+          "hi": "H₂O",
+          "en": "H₂O"
+        },
+        {
+          "gu": "CO₂",
+          "hi": "CO₂",
+          "en": "CO₂"
+        },
+        {
+          "gu": "O₂",
+          "hi": "O₂",
+          "en": "O₂"
+        },
+        {
+          "gu": "NaCl",
+          "hi": "NaCl",
+          "en": "NaCl"
+        }
+      ],
+      "a": 0,
+      "ex": {
+        "gu": "પાણી = H₂O (બે હાઇડ્રોજન + એક ઑક્સિજન)",
+        "hi": "पानी = H₂O (दो हाइड्रोजन, एक ऑक्सीजन)",
+        "en": "Water is H₂O — two hydrogen, one oxygen."
+      },
+      "marks": 1
+    },
+    {
+      "id": "q-science-03",
+      "cat": "science",
+      "grade": "7",
+      "diff": "medium",
+      "q": {
+        "gu": "માનવ શરીરમાં લોહી પંપ કોણ કરે?",
+        "hi": "मानव शरीर में रक्त कौन पंप करता है?",
+        "en": "Which organ pumps blood in the human body?"
+      },
+      "opts": [
+        {
+          "gu": "હૃદય",
+          "hi": "हृदय",
+          "en": "Heart"
+        },
+        {
+          "gu": "ફેફસું",
+          "hi": "फेफड़ा",
+          "en": "Lung"
+        },
+        {
+          "gu": "કિડની",
+          "hi": "गुर्दा",
+          "en": "Kidney"
+        },
+        {
+          "gu": "યકૃત",
+          "hi": "लिवर",
+          "en": "Liver"
+        }
+      ],
+      "a": 0,
+      "ex": {
+        "gu": "હૃદય લોહી પંપ કરે છે; ફેફસું ઑક્સિજન પૂરો પાડે.",
+        "hi": "हृदय रक्त पंप करता है; फेफड़ा ऑक्सीजन देता है।",
+        "en": "The heart pumps blood; the lungs supply oxygen."
+      },
+      "marks": 1
+    },
+    {
+      "id": "q-social-01",
+      "cat": "social",
+      "grade": "5",
+      "diff": "easy",
+      "q": {
+        "gu": "ભારત કયા ખંડમાં આવેલો?",
+        "hi": "भारत किस महाद्वीप में है?",
+        "en": "In which continent is India?"
+      },
+      "opts": [
+        {
+          "gu": "એશિયા",
+          "hi": "एशिया",
+          "en": "Asia"
+        },
+        {
+          "gu": "અફ્રિકા",
+          "hi": "अफ़्रीका",
+          "en": "Africa"
+        },
+        {
+          "gu": "યુરોપ",
+          "hi": "यूरोप",
+          "en": "Europe"
+        },
+        {
+          "gu": "ઓસ્ટ્રેલિયા",
+          "hi": "ऑस्ट्रेलिया",
+          "en": "Australia"
+        }
+      ],
+      "a": 0,
+      "ex": {
+        "gu": "ભારત એશિયા ખંડમાં છે.",
+        "hi": "भारत एशिया महाद्वीप में है।",
+        "en": "India lies in Asia."
+      },
+      "marks": 1
+    },
+    {
+      "id": "q-social-02",
+      "cat": "social",
+      "grade": "7",
+      "diff": "medium",
+      "q": {
+        "gu": "ભારતનું બંધારણ અમલમાં ક્યારે આવ્યું?",
+        "hi": "भारत का संविधान कब लागू हुआ?",
+        "en": "When did the Indian Constitution come into force?"
+      },
+      "opts": [
+        {
+          "gu": "૨૬ જાન્યુઆરી ૧૯૫૦",
+          "hi": "26 जनवरी 1950",
+          "en": "26 January 1950"
+        },
+        {
+          "gu": "૨૬ નવેમ્બર ૧૯૪૯",
+          "hi": "26 नवम्बर 1949",
+          "en": "26 November 1949"
+        },
+        {
+          "gu": "૧૫ ઑગસ્ટ ૧૯૪૭",
+          "hi": "15 अगस्त 1947",
+          "en": "15 August 1947"
+        },
+        {
+          "gu": "૨ ઑક્ટોબર ૧૯૫૦",
+          "hi": "2 अक्तूबर 1950",
+          "en": "2 October 1950"
+        }
+      ],
+      "a": 0,
+      "ex": {
+        "gu": "બંધારણ ૨૬ નવેમ્બર ૧૯૪૯ ના રોજ અપનાવાયું, અમલ ૨૬ જાન્યુઆરી ૧૯૫૦ ના રોજ.",
+        "hi": "संविधान 26 नवम्बर 1949 को अपनाया गया, लागू 26 जनवरी 1950 को।",
+        "en": "Adopted on 26 Nov 1949, it came into force on 26 Jan 1950."
+      },
+      "marks": 1
+    },
+    {
+      "id": "q-gujarati-01",
+      "cat": "gujarati",
+      "grade": "4",
+      "diff": "easy",
+      "q": {
+        "gu": "«વન» શબ્દનો અર્થ શું?",
+        "hi": "'वन' शब्द का अर्थ क्या है?",
+        "en": "What does the word 'વન' mean?"
+      },
+      "opts": [
+        {
+          "gu": "જંગલ",
+          "hi": "जंगल",
+          "en": "Forest"
+        },
+        {
+          "gu": "પાણી",
+          "hi": "पानी",
+          "en": "Water"
+        },
+        {
+          "gu": "ફૂલ",
+          "hi": "फूल",
+          "en": "Flower"
+        },
+        {
+          "gu": "પહાડ",
+          "hi": "पहाड़",
+          "en": "Hill"
+        }
+      ],
+      "a": 0,
+      "ex": {
+        "gu": "વન = જંગલ.",
+        "hi": "वन = जंगल।",
+        "en": "'वन' means forest."
+      },
+      "marks": 1
+    },
+    {
+      "id": "q-gujarati-02",
+      "cat": "gujarati",
+      "grade": "6",
+      "diff": "medium",
+      "q": {
+        "gu": "«વિદ્યાલય» શબ્દમાં કયો સમાસ?",
+        "hi": "'विद्यालय' शब्द में कौन-सा समास है?",
+        "en": "Which samās is present in 'વિદ્યાલય'?"
+      },
+      "opts": [
+        {
+          "gu": "તત્પુરુષ",
+          "hi": "तत्पुरुष",
+          "en": "Tatpuruṣa"
+        },
+        {
+          "gu": "દ્વિગુ",
+          "hi": "द्विगु",
+          "en": "Dvigu"
+        },
+        {
+          "gu": "બહુવ્રીહિ",
+          "hi": "बहुव्रीहि",
+          "en": "Bahuvrīhi"
+        },
+        {
+          "gu": "દ્વંદ્વ",
+          "hi": "द्वंद्व",
+          "en": "Dvandva"
+        }
+      ],
+      "a": 0,
+      "ex": {
+        "gu": "વિદ્યા + આલય → વિદ્યાલય (તત્પુરુષ સમાસ).",
+        "hi": "विद्या + आलय → विद्यालय (तत्पुरुष)।",
+        "en": "vidyā + ālaya → a tatpuruṣa compound."
+      },
+      "marks": 1
+    },
+    {
+      "id": "q-english-01",
+      "cat": "english",
+      "grade": "5",
+      "diff": "easy",
+      "q": {
+        "gu": "સાચી spelling પસંદ કરો.",
+        "hi": "सही वर्तनी चुनें।",
+        "en": "Choose the correct spelling."
+      },
+      "opts": [
+        {
+          "gu": "Teacher",
+          "hi": "Teacher",
+          "en": "Teacher"
+        },
+        {
+          "gu": "Techer",
+          "hi": "Techer",
+          "en": "Techer"
+        },
+        {
+          "gu": "Teachar",
+          "hi": "Teachar",
+          "en": "Teachar"
+        },
+        {
+          "gu": "Teatcheer",
+          "hi": "Teatcheer",
+          "en": "Teatcheer"
+        }
+      ],
+      "a": 0,
+      "ex": {
+        "gu": "સાચું સ્વરૂપ — Teacher.",
+        "hi": "सही रूप — Teacher।",
+        "en": "The correct form is Teacher."
+      },
+      "marks": 1
+    },
+    {
+      "id": "q-english-02",
+      "cat": "english",
+      "grade": "8",
+      "diff": "medium",
+      "q": {
+        "gu": "Fill in the blank: She ___ to school every day.",
+        "hi": "Fill in the blank: She ___ to school every day.",
+        "en": "Fill in the blank: She ___ to school every day."
+      },
+      "opts": [
+        {
+          "gu": "goes",
+          "hi": "goes",
+          "en": "goes"
+        },
+        {
+          "gu": "go",
+          "hi": "go",
+          "en": "go"
+        },
+        {
+          "gu": "going",
+          "hi": "going",
+          "en": "going"
+        },
+        {
+          "gu": "gone",
+          "hi": "gone",
+          "en": "gone"
+        }
+      ],
+      "a": 0,
+      "ex": {
+        "gu": "Third person singular સાથે goes વપરાય.",
+        "hi": "Third person singular के साथ goes लगता है।",
+        "en": "With 'she' we use 'goes'."
+      },
+      "marks": 1
+    },
+    {
+      "id": "q-sanskrit-01",
+      "cat": "sanskrit",
+      "grade": "7",
+      "diff": "easy",
+      "q": {
+        "gu": "«યોગ» શબ્દનો મુખ્ય અર્થ?",
+        "hi": "'योग' शब्द का मुख्य अर्थ क्या है?",
+        "en": "What is the main meaning of 'योग'?"
+      },
+      "opts": [
+        {
+          "gu": "જોડાણ / મિલન",
+          "hi": "जोड़ / मिलन",
+          "en": "Union"
+        },
+        {
+          "gu": "યુદ્ધ",
+          "hi": "युद्ध",
+          "en": "War"
+        },
+        {
+          "gu": "ગતિ",
+          "hi": "गति",
+          "en": "Motion"
+        },
+        {
+          "gu": "જ્ઞાન",
+          "hi": "ज्ञान",
+          "en": "Knowledge"
+        }
+      ],
+      "a": 0,
+      "ex": {
+        "gu": "યોગ = જોડાણ (√યુજ્ ધાતુથી બનેલો).",
+        "hi": "योग = मिलन (√युज् से बना है)।",
+        "en": "Yoga means union, from the root √yuj."
+      },
+      "marks": 1
+    },
+    {
+      "id": "q-sanskrit-02",
+      "cat": "sanskrit",
+      "grade": "6",
+      "diff": "easy",
+      "q": {
+        "gu": "«સૂર્ય» શબ્દનો પર્યાયવાચક કયો?",
+        "hi": "'सूर्य' का पर्यायवाची कौन सा है?",
+        "en": "Which is a synonym of 'સૂર્ય' (Sun)?"
+      },
+      "opts": [
+        {
+          "gu": "રવિ",
+          "hi": "रवि",
+          "en": "Ravi"
+        },
+        {
+          "gu": "શશી",
+          "hi": "शशी",
+          "en": "Shashi"
+        },
+        {
+          "gu": "અનિલ",
+          "hi": "अनिल",
+          "en": "Anila"
+        },
+        {
+          "gu": "પાવક",
+          "hi": "पावक",
+          "en": "Pāvaka"
+        }
+      ],
+      "a": 0,
+      "ex": {
+        "gu": "રવિ / ભાનુ = સૂર્ય; શશી = ચંદ્ર, પાવક = અગ્નિ.",
+        "hi": "रवि = सूर्य; शशी = चंद्र; पावक = अग्नि।",
+        "en": "Ravi means the Sun; Shashi is the Moon; Pāvaka is fire."
+      },
+      "marks": 1
+    },
+    {
+      "id": "q-tat-01",
+      "cat": "tat",
+      "grade": "all",
+      "diff": "medium",
+      "q": {
+        "gu": "TAT પરીક્ષા મુખ્યત્વે કયા ધોરણની શિક્ષક ભરતી માટે?",
+        "hi": "TAT परीक्षा मुख्यतः किन कक्षाओं की शिक्षक भर्ती के लिए है?",
+        "en": "The TAT exam is mainly for teacher recruitment to which classes?"
+      },
+      "opts": [
+        {
+          "gu": "ધોરણ ૧ થી ૮",
+          "hi": "कक्षा 1 से 8",
+          "en": "Classes 1 to 8"
+        },
+        {
+          "gu": "ધોરણ ૯ થી ૧૨",
+          "hi": "कक्षा 9 से 12",
+          "en": "Classes 9 to 12"
+        },
+        {
+          "gu": "ફક્ત બાલવાટિકા",
+          "hi": "केवल बालवाटिका",
+          "en": "Balvatika only"
+        },
+        {
+          "gu": "કોલેજ સ્તર",
+          "hi": "कॉलेज स्तर",
+          "en": "College level"
+        }
+      ],
+      "a": 0,
+      "ex": {
+        "gu": "TAT = ધોરણ ૧–૮ ના શિક્ષકોની ભરતી પરીક્ષા.",
+        "hi": "TAT = कक्षा 1–8 के शिक्षकों की भर्ती परीक्षा।",
+        "en": "TAT is the recruitment test for teachers of classes I–VIII."
+      },
+      "marks": 1
+    },
+    {
+      "id": "q-tat-02",
+      "cat": "tat",
+      "grade": "all",
+      "diff": "medium",
+      "q": {
+        "gu": "બાળક-કેન્દ્રિત શિક્ષણમાં સૌથી મહત્વનું?",
+        "hi": "बाल-केंद्रित शिक्षण में सबसे महत्वपूर्ण क्या है?",
+        "en": "What matters most in child-centred teaching?"
+      },
+      "opts": [
+        {
+          "gu": "બાળકની સક્રિય ભૂમિકા",
+          "hi": "बालक की सक्रिय भूमिका",
+          "en": "The child's active role"
+        },
+        {
+          "gu": "શિક્ષકનું એકતરફી પ્રવચન",
+          "hi": "शिक्षक का एकतरफा व्याख्यान",
+          "en": "Only the teacher's lecture"
+        },
+        {
+          "gu": "પાઠ રટણ કરાવવો",
+          "hi": "पाठ रटवाना",
+          "en": "Rote learning"
+        },
+        {
+          "gu": "સજા આપવી",
+          "hi": "सजा देना",
+          "en": "Punishment"
+        }
+      ],
+      "a": 0,
+      "ex": {
+        "gu": "બાળક કેન્દ્રમાં રહે અને સક્રિયપણે શીખે.",
+        "hi": "बालक केंद्र में रहे और सक्रिय रूप से सीखे।",
+        "en": "The child stays at the centre and learns actively."
+      },
+      "marks": 1
+    },
+    {
+      "id": "q-tat-03",
+      "cat": "tat",
+      "grade": "all",
+      "diff": "hard",
+      "q": {
+        "gu": "શિક્ષણના અધિકારનો અનુચ્છેદ કયો?",
+        "hi": "शिक्षा के अधिकार का अनुच्छेद कौन सा है?",
+        "en": "Which article deals with the right to education?"
+      },
+      "opts": [
+        {
+          "gu": "અનુચ્છેદ ૨૧(A)",
+          "hi": "अनुच्छेद 21(A)",
+          "en": "Article 21(A)"
+        },
+        {
+          "gu": "અનુચ્છેદ ૧૯",
+          "hi": "अनुच्छेद 19",
+          "en": "Article 19"
+        },
+        {
+          "gu": "અનુચ્છેદ ૩૨",
+          "hi": "अनुच्छेद 32",
+          "en": "Article 32"
+        },
+        {
+          "gu": "અનુચ્છેદ ૩૭",
+          "hi": "अनुच्छेद 37",
+          "en": "Article 37"
+        }
+      ],
+      "a": 0,
+      "ex": {
+        "gu": "અનુચ્છેદ ૨૧(A) — ૬ થી ૧૪ વર્ષના બાળકોનું મફત ફરજિયાત શિક્ષણ.",
+        "hi": "अनुच्छेद 21(A) — 6 से 14 वर्ष के बच्चों का निःशुल्क अनिवार्य शिक्षा।",
+        "en": "Article 21(A) gives free, compulsory education for ages 6–14."
+      },
+      "marks": 1
+    },
+    {
+      "id": "q-htat-01",
+      "cat": "htat",
+      "grade": "all",
+      "diff": "medium",
+      "q": {
+        "gu": "HTAT પરીક્ષા કયા સ્તરની શિક્ષક ભરતી માટે?",
+        "hi": "HTAT परीक्षा किस स्तर की शिक्षक भर्ती के लिए है?",
+        "en": "HTAT is the recruitment test for teachers at which level?"
+      },
+      "opts": [
+        {
+          "gu": "ધોરણ ૯ થી ૧૨ (ઉચ્ચ માધ્યમિક)",
+          "hi": "कक्षा 9 से 12 (उच्च माध्यमिक)",
+          "en": "Classes 9 to 12"
+        },
+        {
+          "gu": "ધોરણ ૧ થી ૫",
+          "hi": "कक्षा 1 से 5",
+          "en": "Classes 1 to 5"
+        },
+        {
+          "gu": "પ્રી-પ્રાથમિક",
+          "hi": "प्री-प्राइमरी",
+          "en": "Pre-primary"
+        },
+        {
+          "gu": "વિશ્વવિદ્યાલય",
+          "hi": "विश्वविद्यालय",
+          "en": "University"
+        }
+      ],
+      "a": 0,
+      "ex": {
+        "gu": "HTAT = ઉચ્ચ માધ્યમિક (ધોરણ ૯–૧૨) શિક્ષક ભરતી પરીક્ષા.",
+        "hi": "HTAT = उच्च माध्यमिक (कक्षा 9–12) शिक्षक भर्ती परीक्षा।",
+        "en": "HTAT is for higher-secondary (classes IX–XII) teachers."
+      },
+      "marks": 1
+    },
+    {
+      "id": "q-reasoning-01",
+      "cat": "reasoning",
+      "grade": "5",
+      "diff": "easy",
+      "q": {
+        "gu": "શ્રેણી પૂરી કરો: ૨, ૪, ૮, ૧૬, ?",
+        "hi": "श्रेणी पूरी करें: 2, 4, 8, 16, ?",
+        "en": "Complete the series: 2, 4, 8, 16, ?"
+      },
+      "opts": [
+        {
+          "gu": "૩૨",
+          "hi": "32",
+          "en": "32"
+        },
+        {
+          "gu": "૨૪",
+          "hi": "24",
+          "en": "24"
+        },
+        {
+          "gu": "૨૦",
+          "hi": "20",
+          "en": "20"
+        },
+        {
+          "gu": "૩૦",
+          "hi": "30",
+          "en": "30"
+        }
+      ],
+      "a": 0,
+      "ex": {
+        "gu": "દરેક સંખ્યા બમણી થાય છે — ૧૬ × ૨ = ૩૨.",
+        "hi": "हर संख्या दोगुनी होती है — 16 × 2 = 32।",
+        "en": "Each number doubles, so 16 × 2 = 32."
+      },
+      "marks": 1
+    },
+    {
+      "id": "q-reasoning-02",
+      "cat": "reasoning",
+      "grade": "6",
+      "diff": "medium",
+      "q": {
+        "gu": "AKC, BLD, CME, ? — આગલું શું?",
+        "hi": "AKC, BLD, CME, ? — आगे क्या आएगा?",
+        "en": "AKC, BLD, CME, ? — what comes next?"
+      },
+      "opts": [
+        {
+          "gu": "DNF",
+          "hi": "DNF",
+          "en": "DNF"
+        },
+        {
+          "gu": "DNE",
+          "hi": "DNE",
+          "en": "DNE"
+        },
+        {
+          "gu": "END",
+          "hi": "END",
+          "en": "END"
+        },
+        {
+          "gu": "FND",
+          "hi": "FND",
+          "en": "FND"
+        }
+      ],
+      "a": 0,
+      "ex": {
+        "gu": "દરેક અક્ષર એક પગલું આગળ વધે છે → DNF.",
+        "hi": "हर अक्षर एक कदम आगे बढ़ता है → DNF।",
+        "en": "Each letter moves one step forward → DNF."
+      },
+      "marks": 1
+    },
+    {
+      "id": "q-current-01",
+      "cat": "current",
+      "grade": "all",
+      "diff": "easy",
+      "q": {
+        "gu": "TAT અને HTAT શિક્ષક ભરતી પરીક્ષા કયા રાજ્યની?",
+        "hi": "TAT और HTAT शिक्षक भर्ती परीक्षा किस राज्य की हैं?",
+        "en": "TAT and HTAT teacher recruitment tests belong to which state?"
+      },
+      "opts": [
+        {
+          "gu": "ગુજરાત",
+          "hi": "गुजरात",
+          "en": "Gujarat"
+        },
+        {
+          "gu": "મહારાષ્ટ્ર",
+          "hi": "महाराष्ट्र",
+          "en": "Maharashtra"
+        },
+        {
+          "gu": "રાજસ્થાન",
+          "hi": "राजस्थान",
+          "en": "Rajasthan"
+        },
+        {
+          "gu": "કર્ણાટક",
+          "hi": "कर्नाटक",
+          "en": "Karnataka"
+        }
+      ],
+      "a": 0,
+      "ex": {
+        "gu": "TAT અને HTAT ગુજરાતની શિક્ષક ભરતી પરીક્ષા છે.",
+        "hi": "TAT और HTAT गुजरात की शिक्षक भर्ती परीक्षाएँ हैं।",
+        "en": "TAT and HTAT are Gujarat's teacher recruitment tests."
+      },
+      "marks": 1
+    },
+    {
+      "id": "q-current-02",
+      "cat": "current",
+      "grade": "all",
+      "diff": "easy",
+      "q": {
+        "gu": "ગુજરાતનાં શાળા પાઠ્યપુસ્તક કઈ સંસ્થા બનાવે?",
+        "hi": "गुजरात की पाठ्यपुस्तकें कौन सी संस्था बनाती है?",
+        "en": "Which body prepares Gujarat's school textbooks?"
+      },
+      "opts": [
+        {
+          "gu": "GCERT",
+          "hi": "GCERT",
+          "en": "GCERT"
+        },
+        {
+          "gu": "NCERT",
+          "hi": "NCERT",
+          "en": "NCERT"
+        },
+        {
+          "gu": "UGC",
+          "hi": "UGC",
+          "en": "UGC"
+        },
+        {
+          "gu": "NCTE",
+          "hi": "NCTE",
+          "en": "NCTE"
+        }
+      ],
+      "a": 0,
+      "ex": {
+        "gu": "ગુજરાત રાજ્ય શિક્ષણ સંશોધન અને પ્રશિક્ષણ પરિષદ (GCERT) પાઠ્યપુસ્તક બનાવે છે.",
+        "hi": "गुजरात राज्य शिक्षण शोध एवं प्रशिक्षण परिषद (GCERT) पाठ्यपुस्तकें बनाती हैं।",
+        "en": "GCERT prepares Gujarat's textbooks."
+      },
+      "marks": 1
+    },
+    {
+      "id": "q-gk-10",
+      "cat": "gk",
+      "grade": "1",
+      "diff": "easy",
+      "q": {
+        "gu": "અંગ્રેજી વર્ણમાળામાં કેટલા અક્ષર?",
+        "hi": "अंग्रेज़ी वर्णमाला में कितने अक्षर होते हैं?",
+        "en": "How many letters in the English alphabet?"
+      },
+      "opts": [
+        {
+          "gu": "૨૬",
+          "hi": "26",
+          "en": "26"
+        },
+        {
+          "gu": "૨૪",
+          "hi": "24",
+          "en": "24"
+        },
+        {
+          "gu": "૨૫",
+          "hi": "25",
+          "en": "25"
+        },
+        {
+          "gu": "૨૭",
+          "hi": "27",
+          "en": "27"
+        }
+      ],
+      "a": 0,
+      "ex": {
+        "gu": "અંગ્રેજીમાં ૨૬ અક્ષર (A–Z) હોય.",
+        "hi": "अंग्रेज़ी में 26 अक्षर (A–Z) होते हैं।",
+        "en": "English has 26 letters, A to Z."
+      },
+      "marks": 1
+    }
+  ]
+}

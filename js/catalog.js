@@ -11,13 +11,108 @@ OEG.state = {
   gh: { owner: "", repo: "", branch: "main", token: "" } // token: memory only
 };
 
+/* ---------- 🏷️ Taxonomy (Admin માંથી ઉમેર/કાઢી શકાય — data/site-config.json) ---------- */
+const DEF_TYPES = [
+  { key: "textbook", icon: "📚", route: "textbooks" },
+  { key: "workbook", icon: "📝", route: "workbooks" },
+  { key: "quiz", icon: "🧠", route: "quiz" },
+  { key: "game", icon: "🎮", route: "games" },
+  { key: "office", icon: "🗂️", route: "office" },
+  { key: "teacher", icon: "👩‍🏫", route: "teachers" },
+  { key: "student", icon: "🧑‍🎓", route: "students" },
+  { key: "video", icon: "▶️", route: "videos" },
+  { key: "post", icon: "📰", route: "blog" },
+  { key: "link", icon: "🔗", route: "links" }
+];
+const DEF_GRADES = [{ key: "balvatika", icon: "\uD83E\uDDF8" }, { key: "1", icon: "1\uFE0F\u20E3" }, { key: "2", icon: "2\uFE0F\u20E3" }, { key: "3", icon: "3\uFE0F\u20E3" }, { key: "4", icon: "4\uFE0F\u20E3" }, { key: "5", icon: "5\uFE0F\u20E3" }, { key: "6", icon: "6\uFE0F\u20E3" }, { key: "7", icon: "7\uFE0F\u20E3" }, { key: "8", icon: "8\uFE0F\u20E3" }];
+const DEF_SUBJECTS = ["gujarati", "hindi", "english", "maths", "science", "social", "sanskrit", "office", "planning", "exam", "news", "official", "blog"].map(k => ({ key: k }));
+/* ધોરણ-પેજ માટે ફક્ત શૈક્ષણિક વિષયો (૭) */
+const DEF_GRADE_SUBJECTS = ["gujarati", "english", "hindi", "maths", "science", "social", "sanskrit"].map(k => ({ key: k }));
+const DEF_QUIZ_CATS = [
+  { key: "grade", icon: "🎓" },
+  { key: "gk", icon: "🌍" },
+  { key: "tat", icon: "📝" },
+  { key: "htat", icon: "🏫" },
+  { key: "reasoning", icon: "🧩" },
+  { key: "current", icon: "📰" }
+];
+const normList = (arr, def) => (Array.isArray(arr) && arr.length ? arr : def).map(x => (typeof x === "string" ? { key: x } : x)).filter(x => x && x.key);
+
+OEG.tax = () => {
+  const t = (OEG.state.config && OEG.state.config.taxonomy) || {};
+  return {
+    types: normList(t.types, DEF_TYPES),
+    grades: normList(t.grades, DEF_GRADES),
+    subjects: normList(t.subjects, DEF_SUBJECTS),
+    gradeSubjects: normList(t.gradeSubjects, DEF_GRADE_SUBJECTS),
+    quizCats: normList(t.quizCats, DEF_QUIZ_CATS)
+  };
+};
+OEG.taxFind = (list, key) => list.find(x => x.key === key) || { key: key };
+OEG.taxLabel = (obj, i18nPrefix) => {
+  if (!obj || !obj.key) return "";
+  const l = obj.label;
+  if (l && typeof l === "object") return l[OEG.state.lang] || l.en || l.gu || l.hi || obj.key;
+  if (typeof l === "string" && l) return l;
+  const tr = OEG.t(i18nPrefix + "." + obj.key);
+  return tr && tr !== i18nPrefix + "." + obj.key ? tr : obj.key;
+};
+OEG.typeOf = (k) => OEG.taxFind(OEG.tax().types, k);
+OEG.gradeOf = (k) => OEG.taxFind(OEG.tax().grades, k);
+OEG.typeIcon = (k) => OEG.typeOf(k).icon || "📄";
+OEG.gradeIcon = (k) => OEG.gradeOf(k).icon || "🎓";
+OEG.typeRoute = (k) => OEG.typeOf(k).route || "";
+OEG.typeOfRoute = (route) => OEG.tax().types.find(x => x.route === route) || null;
+
 OEG.t = (key) => (OEG_I18N[OEG.state.lang] && OEG_I18N[OEG.state.lang][key]) || OEG_I18N.gu[key] || key;
 OEG.title = (item) => (item.title && (item.title[OEG.state.lang] || item.title.gu || item.title.en)) || item.title || "";
 OEG.desc = (item) => (item.desc && (item.desc[OEG.state.lang] || item.desc.gu || item.desc.en)) || (typeof item.desc === "string" ? item.desc : "");
 OEG.langField = (v) => (v && typeof v === "object" && !Array.isArray(v)) ? (v[OEG.state.lang] || v.gu || v.hi || v.en || "") : (v == null ? "" : v);
-OEG.gradeLabel = (g) => OEG.t("grade." + g) || g;
-OEG.typeLabel = (t) => OEG.t("type." + t) || t;
-OEG.subjectLabel = (s) => OEG.t("subject." + s) || s;
+OEG.gradeLabel = (g) => (!g || g === "all") ? OEG.t("grade.all") : OEG.taxLabel(OEG.gradeOf(g), "grade");
+OEG.typeLabel = (t) => OEG.taxLabel(OEG.typeOf(t), "type");
+OEG.subjectLabel = (s) => (!s || s === "all") ? OEG.t("subject.all") : OEG.taxLabel(OEG.taxFind(OEG.tax().subjects, s), "subject");
+
+/* ---------- 🔗 લિંક / શેર — "જ્યાંથી શેર કરે ત્યાંનું" address ----------
+   iframe (Blogger) માં ચાલતી હોય તો parent નું host, નહીં તો અત્યારનું origin.
+   ક્યારેય hard-code કરેલું github.io નહીં. */
+OEG.shareBase = () => {
+  let base = location.origin + location.pathname;
+  try {
+    if (window.top !== window.self && document.referrer) {
+      const u = new URL(document.referrer, location.href);
+      if (u.origin !== location.origin) base = u.origin + u.pathname;
+    }
+  } catch (e) {}
+  let forced = "";
+  try { forced = new URLSearchParams(location.search).get("shareBase") || ""; } catch (e) {}
+  if (forced) { try { const u = new URL(forced); base = u.origin + u.pathname; } catch (e) {} }
+  return base.replace(/\/index\.html$/, "/");
+};
+OEG.shareUrl = (hash) => {
+  const raw = hash ? String(hash) : (location.hash || "");
+  const clean = raw ? (raw.charAt(0) === "#" ? raw : "#" + raw) : "";
+  return OEG.shareBase() + clean;
+};
+OEG.pageUrl = () => {
+  const r = (location.hash || "").replace(/^#\/?/, "").split("?")[0].split("/")[0] || "";
+  return OEG.shareBase() + (r ? "#/" + (r === "home" ? "" : r) : "");
+};
+OEG.siteName = () => (OEG.state.config && OEG.state.config.siteName) || "Online Education Guru";
+OEG.siteHost = () => { try { return new URL(OEG.shareBase()).host; } catch (e) { return location.host || "onlineeducationguru.github.io"; } };
+OEG.thumbFrom = (url) => { const id = OEG.youtubeId(url); return id ? "https://i.ytimg.com/vi/" + id + "/hqdefault.jpg" : ""; };
+OEG.thumbnail = (item) => (item && (item.image || OEG.thumbFrom(item.fileUrl))) || "";
+
+/* ---------- 🗄️ JSON data ફાઈલ લખવા/વાંચવા (admin) ---------- */
+OEG.data = {
+  async readJson(path, fallback) {
+    try { const r = await fetch(path, { cache: "no-store" }); if (r.ok) return await r.json(); } catch (e) {}
+    return fallback;
+  },
+  async writeJson(path, obj, msg) {
+    if (!OEG.gh || !OEG.gh.connected()) throw new Error(OEG.t("admin.notConnected"));
+    return OEG.gh.putFile(path, JSON.stringify(obj, null, 2) + "\n", msg);
+  }
+};
 
 OEG.youtubeId = (url) => {
   if (!url) return null;

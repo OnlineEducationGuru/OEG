@@ -651,6 +651,246 @@
         "Blog",
         "Jobs"
       ]
+    },
+    {
+      "id": "tb-std4-sanskrit",
+      "type": "textbook",
+      "grade": "4",
+      "subject": "sanskrit",
+      "title": {
+        "gu": "સંસ્કૃત પાઠ્યપુસ્તક — ધોરણ ૪ (GCERT)",
+        "hi": "संस्कृत પાઠ્યપુસ્તક — कक्षा ૪ (GCERT)",
+        "en": "Sanskrit પાઠ્યપુસ્તક — Class ૪ (GCERT)"
+      },
+      "desc": {
+        "gu": "ગુજરાત માધ્યમ માટેનું સંસ્કૃત પાઠ્યપુસ્તક — Grade 4. GCERT ની રિસોર્સ બેંક પરથી. વાંચન અહીંની પેજ પર જ (ડાઉનલોડ નહીં).",
+        "hi": "गुजरात माध्यम के लिए संस्कृत पाठ्यपुस्तक — Grade 4. GCERT रिसोर्स बैंक से. पठन यहीं पेज पर (डाउनलोड नहीं).",
+        "en": "Sanskrit textbook for Gujarat medium — Grade 4. From the GCERT resource bank. Read right here on the page (no download)."
+      },
+      "body": {
+        "gu": "સંસ્કૃત ભાષાનું પાઠ્યપુસ્તક — દેવનાગરી લિપિ, શ્લોક, સંધિ, સમાસ, અનುವાદ અને વ્યાકરણનાં પાઠ. ધોરણ ૪ માટે GCERT દ્વારા મંજૂર.",
+        "hi": "संस्कृत भाषा का पाठ्यपुस्तक — देवनागरी लिपि, श्लोक, संधि, समास, अनुवाद और व्याकरण के पाठ। कक्षा ૪ के लिए GCERT द्वारा स्वीकृत।",
+        "en": "Sanskrit textbook — Devanagari script, shlokas, sandhi, samas, translation and grammar lessons. Approved by GCERT for Class ૪."
+      },
+      "image": "",
+      "fileUrl": "https://gcert.gujarat.gov.in/gcert/resourcebank/textbooks-list.htm",
+      "fileType": "link",
+      "date": "2026-01-10",
+      "tags": [
+        "sanskrit",
+        "સંસ્કૃત",
+        "gcert"
+      ]
+    },
+    {
+      "id": "tb-std5-sanskrit",
+      "type": "textbook",
+      "grade": "5",
+      "subject": "sanskrit",
+      "title": {
+        "gu": "સંસ્કૃત પાઠ્યપુસ્તક — ધોરણ ૫ (GCERT)",
+        "hi": "संस्कृत પાઠ્યપુસ્તક — कक्षा ૫ (GCERT)",
+        "en": "Sanskrit પાઠ્યપુસ્તક — Class ૫ (GCERT)"
+      },
+      "desc": {
+        "gu": "ગુજરાત માધ્યમ માટેનું સંસ્કૃત પાઠ્યપુસ્તક — Grade 5. GCERT ની રિસોર્સ બેંક પરથી. વાંચન અહીંની પેજ પર જ (ડાઉનલોડ નહીં).",
+        "hi": "गुजरात माध्यम के लिए संस्कृत पाठ्यपुस्तक — Grade 5. GCERT रिसोर्स बैंक से. पठन यहीं पेज पर (डाउनलोड नहीं).",
+        "en": "Sanskrit textbook for Gujarat medium — Grade 5. From the GCERT resource bank. Read right here on the page (no download)."
+      },
+      "body": {
+        "gu": "સંસ્કૃત ભાષાનું પાઠ્યપુસ્તક — દેવનાગરી લિપિ, શ્લોક, સંધિ, સમાસ, અનುವાદ અને વ્યાકરણનાં પાઠ. ધોરણ ૫ માટે GCERT દ્વારા મંજૂર.",
+        "hi": "संस्कृत भाषा का पाठ्यपुस्तक — देवनागरी लिपि, श्लोक, संधि, समास, अनुवाद और व्याकरण के पाठ। कक्षा ૫ के लिए GCERT द्वारा स्वीकृत।",
+        "en": "Sanskrit textbook — Devanagari script, shlokas, sandhi, samas, translation and grammar lessons. Approved by GCERT for Class ૫."
+      },
+      "image": "",
+      "fileUrl": "https://gcert.gujarat.gov.in/gcert/resourcebank/textbooks-list.htm",
+      "fileType": "link",
+      "date": "2026-01-10",
+      "tags": [
+        "sanskrit",
+        "સંસ્કૃત",
+        "gcert"
+      ]
+    },
+    {
+      "id": "tb-std6-sanskrit",
+      "type": "textbook",
+      "grade": "6",
+      "subject": "sanskrit",
+      "title": {
+        "gu": "સંસ્કૃત પાઠ્યપુસ્તક — ધોરણ ૬ (GCERT)",
+        "hi": "संस्कृत પાઠ્યપુસ્તક — कक्षा ૬ (GCERT)",
+        "en": "Sanskrit પાઠ્યપુસ્તક — Class ૬ (GCERT)"
+      },
+      "desc": {
+        "gu": "ગુજરાત માધ્યમ માટેનું સંસ્કૃત પાઠ્યપુસ્તક — Grade 6. GCERT ની રિસોર્સ બેંક પરથી. વાંચન અહીંની પેજ પર જ (ડાઉનલોડ નહીં).",
+        "hi": "गुजरात माध्यम के लिए संस्कृत पाठ्यपुस्तक — Grade 6. GCERT रिसोर्स बैंक से. पठन यहीं पेज पर (डाउनलोड नहीं).",
+        "en": "Sanskrit textbook for Gujarat medium — Grade 6. From the GCERT resource bank. Read right here on the page (no download)."
+      },
+      "body": {
+        "gu": "સંસ્કૃત ભાષાનું પાઠ્યપુસ્તક — દેવનાગરી લિપિ, શ્લોક, સંધિ, સમાસ, અનುವાદ અને વ્યાકરણનાં પાઠ. ધોરણ ૬ માટે GCERT દ્વારા મંજૂર.",
+        "hi": "संस्कृत भाषा का पाठ्यपुस्तक — देवनागरी लिपि, श्लोक, संधि, समास, अनुवाद और व्याकरण के पाठ। कक्षा ૬ के लिए GCERT द्वारा स्वीकृत।",
+        "en": "Sanskrit textbook — Devanagari script, shlokas, sandhi, samas, translation and grammar lessons. Approved by GCERT for Class ૬."
+      },
+      "image": "",
+      "fileUrl": "https://gcert.gujarat.gov.in/gcert/resourcebank/textbooks-list.htm",
+      "fileType": "link",
+      "date": "2026-01-10",
+      "tags": [
+        "sanskrit",
+        "સંસ્કૃત",
+        "gcert"
+      ]
+    },
+    {
+      "id": "tb-std7-sanskrit",
+      "type": "textbook",
+      "grade": "7",
+      "subject": "sanskrit",
+      "title": {
+        "gu": "સંસ્કૃત પાઠ્યપુસ્તક — ધોરણ ૭ (GCERT)",
+        "hi": "संस्कृत પાઠ્યપુસ્તક — कक्षा ૭ (GCERT)",
+        "en": "Sanskrit પાઠ્યપુસ્તક — Class ૭ (GCERT)"
+      },
+      "desc": {
+        "gu": "ગુજરાત માધ્યમ માટેનું સંસ્કૃત પાઠ્યપુસ્તક — Grade 7. GCERT ની રિસોર્સ બેંક પરથી. વાંચન અહીંની પેજ પર જ (ડાઉનલોડ નહીં).",
+        "hi": "गुजरात माध्यम के लिए संस्कृत पाठ्यपुस्तक — Grade 7. GCERT रिसोर्स बैंक से. पठन यहीं पेज पर (डाउनलोड नहीं).",
+        "en": "Sanskrit textbook for Gujarat medium — Grade 7. From the GCERT resource bank. Read right here on the page (no download)."
+      },
+      "body": {
+        "gu": "સંસ્કૃત ભાષાનું પાઠ્યપુસ્તક — દેવનાગરી લિપિ, શ્લોક, સંધિ, સમાસ, અનುವાદ અને વ્યાકરણનાં પાઠ. ધોરણ ૭ માટે GCERT દ્વારા મંજૂર.",
+        "hi": "संस्कृत भाषा का पाठ्यपुस्तक — देवनागरी लिपि, श्लोक, संधि, समास, अनुवाद और व्याकरण के पाठ। कक्षा ૭ के लिए GCERT द्वारा स्वीकृत।",
+        "en": "Sanskrit textbook — Devanagari script, shlokas, sandhi, samas, translation and grammar lessons. Approved by GCERT for Class ૭."
+      },
+      "image": "",
+      "fileUrl": "https://gcert.gujarat.gov.in/gcert/resourcebank/textbooks-list.htm",
+      "fileType": "link",
+      "date": "2026-01-10",
+      "tags": [
+        "sanskrit",
+        "સંસ્કૃત",
+        "gcert"
+      ]
+    },
+    {
+      "id": "tb-std8-sanskrit",
+      "type": "textbook",
+      "grade": "8",
+      "subject": "sanskrit",
+      "title": {
+        "gu": "સંસ્કૃત પાઠ્યપુસ્તક — ધોરણ ૮ (GCERT)",
+        "hi": "संस्कृत પાઠ્યપુસ્તક — कक्षा ૮ (GCERT)",
+        "en": "Sanskrit પાઠ્યપુસ્તક — Class ૮ (GCERT)"
+      },
+      "desc": {
+        "gu": "ગુજરાત માધ્યમ માટેનું સંસ્કૃત પાઠ્યપુસ્તક — Grade 8. GCERT ની રિસોર્સ બેંક પરથી. વાંચન અહીંની પેજ પર જ (ડાઉનલોડ નહીં).",
+        "hi": "गुजरात माध्यम के लिए संस्कृत पाठ्यपुस्तक — Grade 8. GCERT रिसोर्स बैंक से. पठन यहीं पेज पर (डाउनलोड नहीं).",
+        "en": "Sanskrit textbook for Gujarat medium — Grade 8. From the GCERT resource bank. Read right here on the page (no download)."
+      },
+      "body": {
+        "gu": "સંસ્કૃત ભાષાનું પાઠ્યપુસ્તક — દેવનાગરી લિપિ, શ્લોક, સંધિ, સમાસ, અનುವાદ અને વ્યાકરણનાં પાઠ. ધોરણ ૮ માટે GCERT દ્વારા મંજૂર.",
+        "hi": "संस्कृत भाषा का पाठ्यपुस्तक — देवनागरी लिपि, श्लोक, संधि, समास, अनुवाद और व्याकरण के पाठ। कक्षा ૮ के लिए GCERT द्वारा स्वीकृत।",
+        "en": "Sanskrit textbook — Devanagari script, shlokas, sandhi, samas, translation and grammar lessons. Approved by GCERT for Class ૮."
+      },
+      "image": "",
+      "fileUrl": "https://gcert.gujarat.gov.in/gcert/resourcebank/textbooks-list.htm",
+      "fileType": "link",
+      "date": "2026-01-10",
+      "tags": [
+        "sanskrit",
+        "સંસ્કૃત",
+        "gcert"
+      ]
+    },
+    {
+      "id": "wb-std6-sanskrit",
+      "type": "workbook",
+      "grade": "6",
+      "subject": "sanskrit",
+      "title": {
+        "gu": "સંસ્કૃત સ્વાધ્યાયપોથી — ધોરણ ૬ (GCERT)",
+        "hi": "संस्कृत સ્વાધ્યાયપોથી — कक्षा ૬ (GCERT)",
+        "en": "Sanskrit સ્વાધ્યાયપોથી — Class ૬ (GCERT)"
+      },
+      "desc": {
+        "gu": "ગુજરાત માધ્યમ માટેનું સંસ્કૃત પાઠ્યપુસ્તક — worksheet book for Grade ૬. GCERT ની રિસોર્સ બેંક પરથી. વાંચન અહીંની પેજ પર જ (ડાઉનલોડ નહીં).",
+        "hi": "गुजरात माध्यम के लिए संस्कृत पाठ्यपुस्तक — worksheet book for Grade ૬. GCERT रिसोर्स बैंक से. पठन यहीं पेज पर (डाउनलोड नहीं).",
+        "en": "Sanskrit textbook for Gujarat medium — worksheet book for Grade ૬. From the GCERT resource bank. Read right here on the page (no download)."
+      },
+      "body": {
+        "gu": "સંસ્કૃત ભાષાનું પાઠ્યપુસ્તક — દેવનાગરી લિપિ, શ્લોક, સંધિ, સમાસ, અનುವાદ અને વ્યાકરણનાં પાઠ. ધોરણ ૬ માટે GCERT દ્વારા મંજૂર.",
+        "hi": "संस्कृत भाषा का पाठ्यपुस्तक — देवनागरी लिपि, श्लोक, संधि, समास, अनुवाद और व्याकरण के पाठ। कक्षा ૬ के लिए GCERT द्वारा स्वीकृत।",
+        "en": "Sanskrit textbook — Devanagari script, shlokas, sandhi, samas, translation and grammar lessons. Approved by GCERT for Class ૬."
+      },
+      "image": "",
+      "fileUrl": "https://gcert.gujarat.gov.in/gcert/resourcebank/textbooks-list.htm",
+      "fileType": "link",
+      "date": "2026-01-10",
+      "tags": [
+        "sanskrit",
+        "સંસ્કૃત",
+        "gcert"
+      ]
+    },
+    {
+      "id": "wb-std7-sanskrit",
+      "type": "workbook",
+      "grade": "7",
+      "subject": "sanskrit",
+      "title": {
+        "gu": "સંસ્કૃત સ્વાધ્યાયપોથી — ધોરણ ૭ (GCERT)",
+        "hi": "संस्कृत સ્વાધ્યાયપોથી — कक्षा ૭ (GCERT)",
+        "en": "Sanskrit સ્વાધ્યાયપોથી — Class ૭ (GCERT)"
+      },
+      "desc": {
+        "gu": "ગુજરાત માધ્યમ માટેનું સંસ્કૃત પાઠ્યપુસ્તક — worksheet book for Grade ૭. GCERT ની રિસોર્સ બેંક પરથી. વાંચન અહીંની પેજ પર જ (ડાઉનલોડ નહીં).",
+        "hi": "गुजरात माध्यम के लिए संस्कृत पाठ्यपुस्तक — worksheet book for Grade ૭. GCERT रिसोर्स बैंक से. पठन यहीं पेज पर (डाउनलोड नहीं).",
+        "en": "Sanskrit textbook for Gujarat medium — worksheet book for Grade ૭. From the GCERT resource bank. Read right here on the page (no download)."
+      },
+      "body": {
+        "gu": "સંસ્કૃત ભાષાનું પાઠ્યપુસ્તક — દેવનાગરી લિપિ, શ્લોક, સંધિ, સમાસ, અનುವાદ અને વ્યાકરણનાં પાઠ. ધોરણ ૭ માટે GCERT દ્વારા મંજૂર.",
+        "hi": "संस्कृत भाषा का पाठ्यपुस्तक — देवनागरी लिपि, श्लोक, संधि, समास, अनुवाद और व्याकरण के पाठ। कक्षा ૭ के लिए GCERT द्वारा स्वीकृत।",
+        "en": "Sanskrit textbook — Devanagari script, shlokas, sandhi, samas, translation and grammar lessons. Approved by GCERT for Class ૭."
+      },
+      "image": "",
+      "fileUrl": "https://gcert.gujarat.gov.in/gcert/resourcebank/textbooks-list.htm",
+      "fileType": "link",
+      "date": "2026-01-10",
+      "tags": [
+        "sanskrit",
+        "સંસ્કૃત",
+        "gcert"
+      ]
+    },
+    {
+      "id": "wb-std8-sanskrit",
+      "type": "workbook",
+      "grade": "8",
+      "subject": "sanskrit",
+      "title": {
+        "gu": "સંસ્કૃત સ્વાધ્યાયપોથી — ધોરણ ૮ (GCERT)",
+        "hi": "संस्कृत સ્વાધ્યાયપોથી — कक्षा ૮ (GCERT)",
+        "en": "Sanskrit સ્વાધ્યાયપોથી — Class ૮ (GCERT)"
+      },
+      "desc": {
+        "gu": "ગુજરાત માધ્યમ માટેનું સંસ્કૃત પાઠ્યપુસ્તક — worksheet book for Grade ૮. GCERT ની રિસોર્સ બેંક પરથી. વાંચન અહીંની પેજ પર જ (ડાઉનલોડ નહીં).",
+        "hi": "गुजरात माध्यम के लिए संस्कृत पाठ्यपुस्तक — worksheet book for Grade ૮. GCERT रिसोर्स बैंक से. पठन यहीं पेज पर (डाउनलोड नहीं).",
+        "en": "Sanskrit textbook for Gujarat medium — worksheet book for Grade ૮. From the GCERT resource bank. Read right here on the page (no download)."
+      },
+      "body": {
+        "gu": "સંસ્કૃત ભાષાનું પાઠ્યપુસ્તક — દેવનાગરી લિપિ, શ્લોક, સંધિ, સમાસ, અનುವાદ અને વ્યાકરણનાં પાઠ. ધોરણ ૮ માટે GCERT દ્વારા મંજૂર.",
+        "hi": "संस्कृत भाषा का पाठ्यपुस्तक — देवनागरी लिपि, श्लोक, संधि, समास, अनुवाद और व्याकरण के पाठ। कक्षा ૮ के लिए GCERT द्वारा स्वीकृत।",
+        "en": "Sanskrit textbook — Devanagari script, shlokas, sandhi, samas, translation and grammar lessons. Approved by GCERT for Class ૮."
+      },
+      "image": "",
+      "fileUrl": "https://gcert.gujarat.gov.in/gcert/resourcebank/textbooks-list.htm",
+      "fileType": "link",
+      "date": "2026-01-10",
+      "tags": [
+        "sanskrit",
+        "સંસ્કૃત",
+        "gcert"
+      ]
     }
   ]
 }
