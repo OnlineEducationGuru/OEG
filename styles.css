@@ -17,6 +17,11 @@
   --border:#262b44; --shadow:0 10px 30px rgba(0,0,0,.35); --shadow-lg:0 24px 60px rgba(0,0,0,.5);
   --green:#4ade80; --green-bg:rgba(74,222,128,.14); --green-fg:#4ade80;
 }
+/* ---------- 🛡️ Protection (anti-copy / anti-save) ---------- */
+body{-webkit-user-select:none;-moz-user-select:none;user-select:none;-webkit-touch-callout:none}
+input,textarea,select,[contenteditable]{-webkit-user-select:text;-moz-user-select:text;user-select:text;-webkit-touch-callout:default}
+img{-webkit-user-drag:none}
+.lock-tag{margin-left:auto;font-size:.74rem;color:var(--muted);background:var(--surface-2);border-radius:999px;padding:3px 10px;font-weight:700}
 *{box-sizing:border-box;margin:0;padding:0}
 html{scroll-behavior:smooth}
 body{font-family:var(--font-body);background:var(--bg);color:var(--text);line-height:1.6;min-height:100vh;transition:background .3s,color .3s}

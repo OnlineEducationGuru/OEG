@@ -137,11 +137,9 @@
     const kind = OEG.fileKind(item);
     const icon = item.image ? "" : (TYPE_ICONS[item.type] || "📄");
     const img = item.image ? `<div class="card-img"><img src="${OEG.esc(item.image)}" alt="" loading="lazy"></div>` : `<div class="card-img">${icon}</div>`;
-    const action = item.type === "video" && OEG.youtubeId(item.fileUrl)
-      ? `<a class="btn btn-brand btn-sm" href="#/videos">${t("btn.play")}</a>`
-      : item.fileUrl
-        ? `<a class="btn btn-brand btn-sm" href="#/view/${item.id}">${t("btn.view")}</a><a class="btn btn-outline btn-sm" href="${OEG.esc(item.fileUrl)}" download ${item.external ? 'target="_blank" rel="noopener"' : ""}>${t("btn.download")}</a>`
-        : `<a class="btn btn-outline btn-sm" href="#/view/${item.id}">${t("btn.readMore")}</a>`;
+    const action = item.fileUrl
+      ? `<a class="btn btn-brand btn-sm" href="#/view/${item.id}">${item.type === "video" && OEG.youtubeId(item.fileUrl) ? t("btn.play") : t("btn.view")}</a>`
+      : `<a class="btn btn-outline btn-sm" href="#/view/${item.id}">${t("btn.readMore")}</a>`;
     return `<article class="card reveal">${img}<div class="card-body">
       <span class="badge">${OEG.typeLabel(item.type)} • ${OEG.gradeLabel(item.grade)}</span>
       <h3>${OEG.esc(OEG.title(item))}</h3><p>${OEG.esc(OEG.desc(item))}</p>
@@ -258,18 +256,22 @@
       viewer = `<div class="viewer"><div class="viewer-head"><b>▶️ ${OEG.esc(OEG.title(item))}</b></div>
         <div class="ratio" style="position:relative;padding-top:56.25%"><iframe style="position:absolute;inset:0;width:100%;height:100%;border:none" src="https://www.youtube-nocookie.com/embed/${yt}" allowfullscreen allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"></iframe></div></div>`;
     } else if (kind === "pdf" && item.fileUrl) {
-      viewer = `<div class="viewer"><div class="viewer-head"><b>📄 ${t("viewer.pdf")}</b><a class="btn btn-brand btn-sm" style="margin-left:auto" href="${OEG.esc(item.fileUrl)}" download>${t("btn.download")}</a></div>
+      viewer = `<div class="viewer"><div class="viewer-head"><b>📄 ${t("viewer.pdf")}</b><span class="lock-tag">🔒</span></div>
         <iframe src="${OEG.esc(item.fileUrl)}" title="${OEG.esc(OEG.title(item))}"></iframe></div>`;
     } else if (kind === "html" && item.fileUrl) {
-      viewer = `<div class="viewer"><div class="viewer-head"><b>🌐 ${t("viewer.html")}</b><a class="btn btn-brand btn-sm" style="margin-left:auto" href="${OEG.esc(item.fileUrl)}" target="_blank" rel="noopener">${t("btn.open")}</a></div>
-        <iframe src="${OEG.esc(item.fileUrl)}" title="${OEG.esc(OEG.title(item))}" sandbox="allow-scripts allow-same-origin"></iframe></div>`;
+      viewer = `<div class="viewer"><div class="viewer-head"><b>🌐 ${t("viewer.html")}</b><span class="lock-tag">🔒</span></div>
+        <iframe src="${OEG.esc(item.fileUrl)}" title="${OEG.esc(OEG.title(item))}" sandbox="allow-scripts allow-same-origin allow-popups allow-forms"></iframe></div>`;
     } else if (kind === "image" && item.fileUrl) {
-      viewer = `<div class="viewer"><div class="viewer-head"><b>🖼️ ${t("viewer.image")}</b></div><img class="view-img" src="${OEG.esc(item.fileUrl)}" alt=""></div>`;
+      viewer = `<div class="viewer"><div class="viewer-head"><b>🖼️ ${t("viewer.image")}</b><span class="lock-tag">🔒</span></div><img class="view-img" src="${OEG.esc(item.fileUrl)}" alt="" draggable="false"></div>`;
     } else if (kind === "doc" && item.fileUrl) {
-      viewer = `<div class="viewer"><div class="viewer-note"><div style="font-size:2.4rem;margin-bottom:10px">📑</div><p>${t("viewer.doc")}</p>
-        <div style="margin-top:16px;display:flex;gap:10px;justify-content:center;flex-wrap:wrap">
-        <a class="btn btn-brand" href="${OEG.esc(item.fileUrl)}" download>${t("btn.download")}</a>
-        <a class="btn btn-outline" target="_blank" rel="noopener" href="https://view.officeapps.live.com/op/view.aspx?src=${encodeURIComponent(item.fileUrl)}">${t("viewer.openOffice")}</a></div></div></div>`;
+      const emb = `https://view.officeapps.live.com/op/embed.aspx?src=${encodeURIComponent(item.fileUrl)}`;
+      viewer = `<div class="viewer"><div class="viewer-head"><b>${t("viewer.doc")}</b><span class="lock-tag">🔒</span></div>
+        <iframe src="${emb}" title="${OEG.esc(OEG.title(item))}" allowfullscreen></iframe></div>`;
+    } else if (kind === "link" && item.fileUrl) {
+      viewer = `<div class="viewer"><div class="viewer-head"><b>🔗 ${OEG.esc(OEG.title(item))}</b>
+        <span class="lock-tag" style="margin-left:auto">${t("viewer.linkNote")}</span>
+        <a class="btn btn-outline btn-sm" target="_blank" rel="noopener" href="${OEG.esc(item.fileUrl)}">↗</a></div>
+        <iframe src="${OEG.esc(item.fileUrl)}" title="${OEG.esc(OEG.title(item))}" referrerpolicy="no-referrer-when-downgrade"></iframe></div>`;
     }
     return `<div class="page-head"><div class="breadcrumb"><a href="#/">${t("nav.home")}</a> / <a href="#/${TYPE_ROUTE[item.type] || ""}">${OEG.typeLabel(item.type)}</a></div>
       <h1>${OEG.esc(OEG.title(item))}</h1>
@@ -471,6 +473,22 @@
   };
   document.getElementById("globalSearch").addEventListener("keydown", (e) => {
     if (e.key === "Enter" && e.target.value.trim()) location.hash = "#/search?q=" + encodeURIComponent(e.target.value.trim());
+  });
+
+  /* ---------- 🛡️ કોપી/રાઈટ-ક્લિક સુરક્ષા ----------
+     ટેક્સ્ટ સિલેક્શન CSS માં બંધ છે (user-select:none);
+     અહીં right-click, drag, copy, view-source/save/print, devtools શોર્ટકટ રોકાય છે.
+     ફોર્મ ફીલ્ડ્સ (input/textarea) છૂટછાટ ધરાવે છે — admin કામ ચાલુ રહે. */
+  const guardAllow = (el) => !!(el && el.closest && el.closest("input,textarea,select,[contenteditable],[data-allow-select]"));
+  document.addEventListener("contextmenu", (e) => { if (guardAllow(e.target)) return; e.preventDefault(); OEG.toast(t("prot.copy")); });
+  document.addEventListener("dragstart", (e) => { if (!guardAllow(e.target)) e.preventDefault(); });
+  document.addEventListener("copy", (e) => { if (guardAllow(e.target)) return; e.preventDefault(); OEG.toast(t("prot.copy")); });
+  document.addEventListener("keydown", (e) => {
+    const typing = guardAllow(document.activeElement);
+    const k = (e.key || "").toLowerCase();
+    if ((e.ctrlKey || e.metaKey) && !typing && ["u", "s", "p", "c", "x", "a"].includes(k)) { e.preventDefault(); OEG.toast(t("prot.copy")); return; }
+    if ((e.ctrlKey || e.metaKey) && e.shiftKey && ["i", "j", "c"].includes(k)) { e.preventDefault(); OEG.toast(t("prot.copy")); return; }
+    if (k === "f12" && !typing) { e.preventDefault(); OEG.toast(t("prot.copy")); }
   });
 
   window.addEventListener("hashchange", render);
