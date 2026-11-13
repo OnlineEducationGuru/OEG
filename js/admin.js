@@ -12,6 +12,41 @@ OEG.admin = (() => {
   const typeOpts = (sel) => opts(TYPES, sel, t => OEG.typeLabel(t));
   const subjOpts = (sel) => opts(SUBJECTS, sel, s => OEG.subjectLabel(s));
 
+  /* ---------- 🌐 ભાષાંતર (એક ભાષા → બાકીની ભાષાઓ auto-fill) ---------- */
+  const TR_LANGS = ["gu", "hi", "en"];
+  async function trText(text, from, to) {
+    text = String(text || "").trim();
+    if (!text || from === to) return text;
+    const short = text.slice(0, 1200);
+    try {
+      const r = await fetch(`https://translate.googleapis.com/translate_a/single?client=gtx&sl=${from}&tl=${to}&dt=t&q=${encodeURIComponent(short)}`, { cache: "no-store" });
+      if (r.ok) {
+        const j = await r.json();
+        const out = ((j && j[0]) || []).map(x => x && x[0]).filter(Boolean).join("").trim();
+        if (out) return out;
+      }
+    } catch (e) {}
+    try {
+      const r2 = await fetch(`https://api.mymemory.translated.net/get?q=${encodeURIComponent(short.slice(0, 500))}&langpair=${from}|${to}`, { cache: "no-store" });
+      if (r2.ok) {
+        const j2 = await r2.json();
+        const o = j2 && j2.responseData && j2.responseData.translatedText;
+        if (o && String(o).trim() && String(o).indexOf("INVALID") < 0) return String(o).trim();
+      }
+    } catch (e) {}
+    return text; /* ઑફલાઈન / બ્લોક હોય તો એ જ લખાણ રાખો — કોઈ ભાષા ખાલી રહે નહીં */
+  }
+  async function fillLangs(vals, translate) {
+    const out = {};
+    TR_LANGS.forEach(k => { out[k] = String(vals[k] == null ? "" : vals[k]).trim(); });
+    const src = TR_LANGS.find(k => out[k]);
+    if (!src) return out;
+    for (const k of TR_LANGS) {
+      if (!out[k]) out[k] = translate ? await trText(out[src], src, k) : out[src];
+    }
+    return out;
+  }
+
   function render(root) {
     const gh = OEG.state.gh, cfg = OEG.state.config;
     root.innerHTML = `
@@ -61,8 +96,14 @@ OEG.admin = (() => {
           <div class="field"><label>${OEG.t("admin.grade")}</label><select id="pGrade">${gradeOpts("all")}</select></div>
         </div>
         <div class="field"><label>${OEG.t("admin.subject")}</label><select id="pSubject">${subjOpts("all")}</select></div>
-        <div class="field"><label>${OEG.t("admin.desc")}</label><textarea id="pDesc"></textarea></div>
-        <div class="field"><label>${OEG.t("admin.body")}</label><textarea id="pBody"></textarea></div>
+        <div class="alert alert-info">🌐 ${OEG.t("admin.autoLangNote")}</div>
+        <div class="form-row">
+          <div class="field"><label>${OEG.t("admin.srcLang")}</label><select id="pSrcLang"><option value="gu">ગુજરાતી</option><option value="hi">हिन्दी / Hindi</option><option value="en">English</option></select></div>
+          <div class="field"><label>&nbsp;</label><button type="button" class="btn btn-outline" id="pTrBtn" style="width:100%;justify-content:center">🌐 ${OEG.t("admin.trBtn")}</button></div>
+        </div>
+        <div class="field"><label>${OEG.t("admin.desc")}</label><textarea id="pDesc" placeholder="${OEG.t("admin.autoLangPh")}"></textarea></div>
+        <div class="field"><label>${OEG.t("admin.body")}</label><textarea id="pBody" placeholder="${OEG.t("admin.autoLangPh")}"></textarea></div>
+        <div id="pTrOut" class="help-box" style="display:none"></div>
         <div class="field"><label>${OEG.t("admin.image")}</label><input id="pImage" placeholder="https://..."></div>
         <div class="field"><label>${OEG.t("admin.fileUrl")}</label><input id="pFileUrl" placeholder="https://.../file.pdf"></div>
         <div class="field"><label>${OEG.t("admin.youtube")}</label><input id="pYoutube" placeholder="https://youtube.com/watch?v=..."></div>
@@ -173,32 +214,57 @@ OEG.admin = (() => {
     $("pSave").onclick = async () => {
       if (!needGh()) return;
       const yt = $("pYoutube").value.trim();
-      const item = {
-        id: "item-" + Date.now(),
-        type: yt ? "video" : $("pType").value,
-        grade: $("pGrade").value,
-        subject: $("pSubject").value,
-        title: { gu: $("pTitleGu").value || $("pTitleEn").value, hi: $("pTitleHi").value || $("pTitleGu").value, en: $("pTitleEn").value || $("pTitleGu").value },
-        desc: { gu: $("pDesc").value, hi: $("pDesc").value, en: $("pDesc").value },
-        body: $("pBody").value,
-        image: $("pImage").value.trim(),
-        fileUrl: yt || $("pFileUrl").value.trim(),
-        fileType: yt ? "video" : undefined,
-        date: new Date().toISOString().slice(0, 10),
-        tags: []
-      };
-      if (!item.title.gu) { msg("pMsg", OEG.t("admin.error") + " title", false); return; }
+      const srcLang = ($("pSrcLang") || {}).value || "gu";
+      const btn = $("pSave");
+      btn.disabled = true; btn.textContent = "⏳ " + OEG.t("admin.trBusy");
+      let item;
       try {
+        const title = await fillLangs({ gu: $("pTitleGu").value, hi: $("pTitleHi").value, en: $("pTitleEn").value }, true);
+        const desc = await fillLangs({ [srcLang]: $("pDesc").value }, true);
+        const bodyObj = String($("pBody").value || "").trim() ? await fillLangs({ [srcLang]: $("pBody").value }, true) : "";
+        item = {
+          id: "item-" + Date.now(),
+          type: yt ? "video" : $("pType").value,
+          grade: $("pGrade").value,
+          subject: $("pSubject").value,
+          title, desc, body: bodyObj,
+          image: $("pImage").value.trim(),
+          fileUrl: yt || encodeURI($("pFileUrl").value.trim()),
+          fileType: yt ? "video" : undefined,
+          date: new Date().toISOString().slice(0, 10),
+          tags: []
+        };
+        if (!item.title.gu && !item.title.hi && !item.title.en) { msg("pMsg", OEG.t("admin.error") + " title", false); return; }
         const cur = await OEG.gh.getFile("data/catalog.json");
         const catalog = JSON.parse(cur.content);
         catalog.items = catalog.items || [];
         catalog.items.unshift(item);
         catalog.updated = new Date().toISOString().slice(0, 10);
-        await OEG.gh.saveCatalog(catalog, `Add: ${item.title.gu}`);
+        await OEG.gh.saveCatalog(catalog, `Add: ${item.title.gu || item.title.en}`);
         await OEG.loadCatalog();
-        msg("pMsg", "✅ " + OEG.t("admin.saved"), true);
+        msg("pMsg", "✅ " + OEG.t("admin.saved") + " · 🌐 gu/hi/en", true);
         ["pTitleGu", "pTitleHi", "pTitleEn", "pDesc", "pBody", "pImage", "pFileUrl", "pYoutube"].forEach(id => $(id).value = "");
       } catch (e) { msg("pMsg", OEG.t("admin.error") + " " + e.message, false); }
+      finally { btn.disabled = false; btn.textContent = OEG.t("btn.save"); }
+    };
+
+    /* 🌐 અગાઉથી ભાષાંતર જોઈ/ભરી લો (save પહેલાં તપાસ) */
+    if ($("pTrBtn")) $("pTrBtn").onclick = async () => {
+      const btn = $("pTrBtn");
+      btn.disabled = true; btn.textContent = "⏳ " + OEG.t("admin.trBusy");
+      const srcLang = ($("pSrcLang") || {}).value || "gu";
+      try {
+        const t = await fillLangs({ gu: $("pTitleGu").value, hi: $("pTitleHi").value, en: $("pTitleEn").value }, true);
+        const map = { gu: "pTitleGu", hi: "pTitleHi", en: "pTitleEn" };
+        TR_LANGS.forEach(k => { const el = $(map[k]); if (el && !el.value.trim()) el.value = t[k]; });
+        const d = await fillLangs({ [srcLang]: $("pDesc").value }, true);
+        const b2 = await fillLangs({ [srcLang]: $("pBody").value }, true);
+        const rows = TR_LANGS.map(k => `<p><b>${OEG.t("lang." + k) || k}</b><br>📌 ${OEG.esc(t[k] || "—")}</p>${d[k] ? `<p>📝 ${OEG.esc(d[k])}</p>` : ""}${b2[k] ? `<p>📄 ${OEG.esc(String(b2[k]).slice(0, 220))}${String(b2[k]).length > 220 ? "…" : ""}</p>` : ""}`).join("");
+        const out = $("pTrOut");
+        out.innerHTML = `<b>🌐 ${OEG.t("admin.trPreview")}</b>${rows}`;
+        out.style.display = "block";
+      } catch (e) { msg("pMsg", OEG.t("admin.error") + " " + e.message, false); }
+      btn.disabled = false; btn.textContent = "🌐 " + OEG.t("admin.trBtn");
     };
 
     $("adSave").onclick = async () => {

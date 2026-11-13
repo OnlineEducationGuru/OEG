@@ -278,7 +278,7 @@
       <div class="card-meta" style="margin-top:8px"><span class="badge">${OEG.gradeLabel(item.grade)}</span><span>📅 ${OEG.esc(item.date || "")}</span><span>🏷️ ${OEG.subjectLabel(item.subject)}</span></div></div>
       ${item.image ? `<div class="post-hero"><img src="${OEG.esc(item.image)}" alt=""></div>` : ""}
       ${viewer}
-      ${item.body ? `<div class="post-body" style="margin-top:22px">${OEG.esc(item.body)}</div>` : ""}
+      ${OEG.langField(item.body) ? `<div class="post-body" style="margin-top:22px">${OEG.esc(OEG.langField(item.body))}</div>` : ""}
       <div class="share-row">${shareButtons()}</div>
       ${adSlot("contentBottom")}`;
   }
@@ -401,28 +401,26 @@
     renderNav();
   }
 
+  /* બ્રાઉઝર autofill/password-manager રોકે: readonly → focus પર ખુલે */
+  const noFill = 'autocomplete="off" data-lpignore="true" data-1p-ignore="true" readonly onfocus="this.removeAttribute(\'readonly\')"';
   async function adminLoginPage() {
     const adm = await OEG.auth.getAdminFile();
-    const setup = !adm.email || !adm.passHash;
+    const setup = !OEG.auth.adminConfigured(adm);
     return `<div class="form-card" style="margin-top:34px">
       <h2>🛡️ ${t("admin.loginTitle")}</h2>
       ${setup ? "" : `<p class="sub">${t("admin.loginSub")}</p>`}
       <div id="admMsg"></div>
-      <form id="admForm">
-        <div class="field"><label>${t("auth.email")}</label><input name="email" type="email" required autocomplete="username" ${setup ? "" : `value="${OEG.esc(adm.email)}"`}></div>
-        <div class="field"><label>${t("auth.password")}</label><input name="password" type="password" required minlength="6" autocomplete="current-password"></div>
+      <form id="admForm" autocomplete="off">
+        <div class="field"><label>${t("auth.email")}</label><input name="email" type="email" required ${noFill}></div>
+        <div class="field"><label>${t("auth.password")}</label><input name="password" type="password" required minlength="6" ${noFill}></div>
         ${setup ? "" : `<button type="button" class="linklike" id="admTokToggle" style="margin-bottom:10px">🔑 ${t("admin.useSecret")}</button>`}
         <div class="field"${setup ? "" : ` id="admTokWrap" style="display:none"`}><label>${t("admin.token")}</label>
-          <input name="token" type="password" autocomplete="off">
-          <button type="button" class="linklike" id="admHelpBtn">${t("admin.howTo")}</button>
-          <div class="help-box" id="admHelp" style="display:none">${t("admin.howBody")}</div></div>
+          <input name="token" type="password" ${noFill}></div>
         <button class="btn btn-brand" style="width:100%;justify-content:center" type="submit">🔓 ${t("admin.enterBtn")}</button>
       </form>
     </div>`;
   }
   function bindAdminLogin() {
-    const hb = document.getElementById("admHelpBtn");
-    if (hb) hb.onclick = (e) => { e.preventDefault(); const bx = document.getElementById("admHelp"); bx.style.display = bx.style.display === "none" ? "block" : "none"; };
     const tt = document.getElementById("admTokToggle");
     if (tt) tt.onclick = (e) => {
       e.preventDefault();

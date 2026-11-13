@@ -3,311 +3,610 @@
   "updated": "2026-11-13",
   "items": [
     {
+      "id": "item-1794562014963",
+      "type": "post",
+      "grade": "all",
+      "subject": "all",
+      "title": {
+        "gu": "હ્ફ્ઘ",
+        "hi": "હ્ફ્ઘ",
+        "en": "હ્ફ્ઘ"
+      },
+      "desc": {
+        "gu": "",
+        "hi": "",
+        "en": ""
+      },
+      "body": "",
+      "image": "",
+      "fileUrl": "https://onlineeducationguru.github.io/OEG/uploads/posts/WhatsApp%20Image%202026-09-01%20at%207.31.24%20PM.jpeg",
+      "date": "2026-11-13",
+      "tags": []
+    },
+    {
       "id": "tb-balvatika-1",
       "type": "textbook",
       "grade": "balvatika",
       "subject": "all",
-      "title": { "gu": "બાલવાટિકા — પાઠ્યપુસ્તક સંગ્રહ", "hi": "बालवाटिका — पाठ्यपुस्तक संग्रह", "en": "Balvatika — Textbook Collection" },
-      "desc": { "gu": "બાલવાટિકા (પાયો) માટેના સત્તાવાર પાઠ્યપુસ્તકો GCERT / DIKSHA પરથી ડાઉનલોડ કરો.", "hi": "बालवाटिका के लिए आधिकारिक पाठ्यपुस्तकें GCERT / DIKSHA से डाउनलोड करें।", "en": "Download official Balvatika textbooks from GCERT / DIKSHA." },
+      "title": {
+        "gu": "બાલવાટિકા — પાઠ્યપુસ્તક સંગ્રહ",
+        "hi": "बालवाटिका — पाठ्यपुस्तक संग्रह",
+        "en": "Balvatika — Textbook Collection"
+      },
+      "desc": {
+        "gu": "બાલવાટિકા (પાયો) માટેના સત્તાવાર પાઠ્યપુસ્તકો GCERT / DIKSHA પરથી ડાઉનલોડ કરો.",
+        "hi": "बालवाटिका के लिए आधिकारिक पाठ्यपुस्तकें GCERT / DIKSHA से डाउनलोड करें।",
+        "en": "Download official Balvatika textbooks from GCERT / DIKSHA."
+      },
       "fileUrl": "https://gcert.gujarat.gov.in/gcert/resourcebank/textbooks-list.htm",
       "fileType": "link",
       "external": true,
       "date": "2026-11-01",
-      "tags": ["GCERT", "Balvatika", "textbook"]
+      "tags": [
+        "GCERT",
+        "Balvatika",
+        "textbook"
+      ]
     },
     {
       "id": "tb-std1-gujarati",
       "type": "textbook",
       "grade": "1",
       "subject": "gujarati",
-      "title": { "gu": "ધોરણ 1 — ગુજરાતી પાઠ્યપુસ્તક", "hi": "कक्षा 1 — गुजराती पाठ्यपुस्तक", "en": "Std 1 — Gujarati Textbook" },
-      "desc": { "gu": "ધોરણ 1 ગુજરાતી વિષયનું સંપૂર્ણ પાઠ્યપુસ્તક (GCERT).", "hi": "कक्षा 1 गुजराती विषय की संपूर्ण पाठ्यपुस्तक (GCERT)।", "en": "Complete Std 1 Gujarati textbook (GCERT)." },
+      "title": {
+        "gu": "ધોરણ 1 — ગુજરાતી પાઠ્યપુસ્તક",
+        "hi": "कक्षा 1 — गुजराती पाठ्यपुस्तक",
+        "en": "Std 1 — Gujarati Textbook"
+      },
+      "desc": {
+        "gu": "ધોરણ 1 ગુજરાતી વિષયનું સંપૂર્ણ પાઠ્યપુસ્તક (GCERT).",
+        "hi": "कक्षा 1 गुजराती विषय की संपूर्ण पाठ्यपुस्तक (GCERT)।",
+        "en": "Complete Std 1 Gujarati textbook (GCERT)."
+      },
       "fileUrl": "https://gcert.gujarat.gov.in/gcert/resourcebank/textbooks-list.htm",
       "fileType": "link",
       "external": true,
       "date": "2026-11-01",
-      "tags": ["GCERT", "Std 1", "Gujarati"]
+      "tags": [
+        "GCERT",
+        "Std 1",
+        "Gujarati"
+      ]
     },
     {
       "id": "tb-std2-maths",
       "type": "textbook",
       "grade": "2",
       "subject": "maths",
-      "title": { "gu": "ધોરણ 2 — ગણિત પાઠ્યપુસ્તક", "hi": "कक्षा 2 — गणित पाठ्यपुस्तक", "en": "Std 2 — Mathematics Textbook" },
-      "desc": { "gu": "ધોરણ 2 ગણિતનું પાઠ્યપુસ્તક — PDF ડાઉનલોડ.", "hi": "कक्षा 2 गणित पाठ्यपुस्तक — PDF डाउनलोड।", "en": "Std 2 Mathematics textbook — PDF download." },
+      "title": {
+        "gu": "ધોરણ 2 — ગણિત પાઠ્યપુસ્તક",
+        "hi": "कक्षा 2 — गणित पाठ्यपुस्तक",
+        "en": "Std 2 — Mathematics Textbook"
+      },
+      "desc": {
+        "gu": "ધોરણ 2 ગણિતનું પાઠ્યપુસ્તક — PDF ડાઉનલોડ.",
+        "hi": "कक्षा 2 गणित पाठ्यपुस्तक — PDF डाउनलोड।",
+        "en": "Std 2 Mathematics textbook — PDF download."
+      },
       "fileUrl": "https://gcert.gujarat.gov.in/gcert/resourcebank/textbooks-list.htm",
       "fileType": "link",
       "external": true,
       "date": "2026-11-01",
-      "tags": ["GCERT", "Std 2", "Maths"]
+      "tags": [
+        "GCERT",
+        "Std 2",
+        "Maths"
+      ]
     },
     {
       "id": "tb-std3-english",
       "type": "textbook",
       "grade": "3",
       "subject": "english",
-      "title": { "gu": "ધોરણ 3 — અંગ્રેજી પાઠ્યપુસ્તક", "hi": "कक्षा 3 — अंग्रेज़ी पाठ्यपुस्तक", "en": "Std 3 — English Textbook" },
-      "desc": { "gu": "ધોરણ 3 અંગ્રેજી પાઠ્યપુસ્તક (GCERT).", "hi": "कक्षा 3 अंग्रेज़ी पाठ्यपुस्तक (GCERT)।", "en": "Std 3 English textbook (GCERT)." },
+      "title": {
+        "gu": "ધોરણ 3 — અંગ્રેજી પાઠ્યપુસ્તક",
+        "hi": "कक्षा 3 — अंग्रेज़ी पाठ्यपुस्तक",
+        "en": "Std 3 — English Textbook"
+      },
+      "desc": {
+        "gu": "ધોરણ 3 અંગ્રેજી પાઠ્યપુસ્તક (GCERT).",
+        "hi": "कक्षा 3 अंग्रेज़ी पाठ्यपुस्तक (GCERT)।",
+        "en": "Std 3 English textbook (GCERT)."
+      },
       "fileUrl": "https://gcert.gujarat.gov.in/gcert/resourcebank/textbooks-list.htm",
       "fileType": "link",
       "external": true,
       "date": "2026-11-01",
-      "tags": ["GCERT", "Std 3", "English"]
+      "tags": [
+        "GCERT",
+        "Std 3",
+        "English"
+      ]
     },
     {
       "id": "tb-std4-science",
       "type": "textbook",
       "grade": "4",
       "subject": "science",
-      "title": { "gu": "ધોરણ 4 — પર્યાવરણ પાઠ્યપુસ્તક", "hi": "कक्षा 4 — पर्यावरण पाठ्यपुस्तक", "en": "Std 4 — Environmental Science Textbook" },
-      "desc": { "gu": "ધોરણ 4 પર્યાવરણ અભ્યાસનું પાઠ્યપુસ્તક.", "hi": "कक्षा 4 पर्यावरण अध्ययन पाठ्यपुस्तक।", "en": "Std 4 Environmental Studies textbook." },
+      "title": {
+        "gu": "ધોરણ 4 — પર્યાવરણ પાઠ્યપુસ્તક",
+        "hi": "कक्षा 4 — पर्यावरण पाठ्यपुस्तक",
+        "en": "Std 4 — Environmental Science Textbook"
+      },
+      "desc": {
+        "gu": "ધોરણ 4 પર્યાવરણ અભ્યાસનું પાઠ્યપુસ્તક.",
+        "hi": "कक्षा 4 पर्यावरण अध्ययन पाठ्यपुस्तक।",
+        "en": "Std 4 Environmental Studies textbook."
+      },
       "fileUrl": "https://gcert.gujarat.gov.in/gcert/resourcebank/textbooks-list.htm",
       "fileType": "link",
       "external": true,
       "date": "2026-11-01",
-      "tags": ["GCERT", "Std 4", "Science"]
+      "tags": [
+        "GCERT",
+        "Std 4",
+        "Science"
+      ]
     },
     {
       "id": "tb-std5-hindi",
       "type": "textbook",
       "grade": "5",
       "subject": "hindi",
-      "title": { "gu": "ધોરણ 5 — હિન્દી પાઠ્યપુસ્તક", "hi": "कक्षा 5 — हिंदी पाठ्यपुस्तक", "en": "Std 5 — Hindi Textbook" },
-      "desc": { "gu": "ધોરણ 5 હિન્દી વિષયનું પાઠ્યપુસ્તક.", "hi": "कक्षा 5 हिंदी विषय की पाठ्यपुस्तक।", "en": "Std 5 Hindi textbook." },
+      "title": {
+        "gu": "ધોરણ 5 — હિન્દી પાઠ્યપુસ્તક",
+        "hi": "कक्षा 5 — हिंदी पाठ्यपुस्तक",
+        "en": "Std 5 — Hindi Textbook"
+      },
+      "desc": {
+        "gu": "ધોરણ 5 હિન્દી વિષયનું પાઠ્યપુસ્તક.",
+        "hi": "कक्षा 5 हिंदी विषय की पाठ्यपुस्तक।",
+        "en": "Std 5 Hindi textbook."
+      },
       "fileUrl": "https://gcert.gujarat.gov.in/gcert/resourcebank/textbooks-list.htm",
       "fileType": "link",
       "external": true,
       "date": "2026-11-01",
-      "tags": ["GCERT", "Std 5", "Hindi"]
+      "tags": [
+        "GCERT",
+        "Std 5",
+        "Hindi"
+      ]
     },
     {
       "id": "tb-std6-maths",
       "type": "textbook",
       "grade": "6",
       "subject": "maths",
-      "title": { "gu": "ધોરણ 6 — ગણિત પાઠ્યપુસ્તક", "hi": "कक्षा 6 — गणित पाठ्यपुस्तक", "en": "Std 6 — Mathematics Textbook" },
-      "desc": { "gu": "ધોરણ 6 ગણિત પાઠ્યપુસ્તક (GCERT).", "hi": "कक्षा 6 गणित पाठ्यपुस्तक (GCERT)।", "en": "Std 6 Mathematics textbook (GCERT)." },
+      "title": {
+        "gu": "ધોરણ 6 — ગણિત પાઠ્યપુસ્તક",
+        "hi": "कक्षा 6 — गणित पाठ्यपुस्तक",
+        "en": "Std 6 — Mathematics Textbook"
+      },
+      "desc": {
+        "gu": "ધોરણ 6 ગણિત પાઠ્યપુસ્તક (GCERT).",
+        "hi": "कक्षा 6 गणित पाठ्यपुस्तक (GCERT)।",
+        "en": "Std 6 Mathematics textbook (GCERT)."
+      },
       "fileUrl": "https://gcert.gujarat.gov.in/gcert/resourcebank/textbooks-list.htm",
       "fileType": "link",
       "external": true,
       "date": "2026-11-01",
-      "tags": ["GCERT", "Std 6", "Maths"]
+      "tags": [
+        "GCERT",
+        "Std 6",
+        "Maths"
+      ]
     },
     {
       "id": "tb-std7-science",
       "type": "textbook",
       "grade": "7",
       "subject": "science",
-      "title": { "gu": "ધોરણ 7 — વિજ્ઞાન પાઠ્યપુસ્તક", "hi": "कक्षा 7 — विज्ञान पाठ्यपुस्तक", "en": "Std 7 — Science Textbook" },
-      "desc": { "gu": "ધોરણ 7 વિજ્ઞાન પાઠ્યપુસ્તક.", "hi": "कक्षा 7 विज्ञान पाठ्यपुस्तक।", "en": "Std 7 Science textbook." },
+      "title": {
+        "gu": "ધોરણ 7 — વિજ્ઞાન પાઠ્યપુસ્તક",
+        "hi": "कक्षा 7 — विज्ञान पाठ्यपुस्तक",
+        "en": "Std 7 — Science Textbook"
+      },
+      "desc": {
+        "gu": "ધોરણ 7 વિજ્ઞાન પાઠ્યપુસ્તક.",
+        "hi": "कक्षा 7 विज्ञान पाठ्यपुस्तक।",
+        "en": "Std 7 Science textbook."
+      },
       "fileUrl": "https://gcert.gujarat.gov.in/gcert/resourcebank/textbooks-list.htm",
       "fileType": "link",
       "external": true,
       "date": "2026-11-01",
-      "tags": ["GCERT", "Std 7", "Science"]
+      "tags": [
+        "GCERT",
+        "Std 7",
+        "Science"
+      ]
     },
     {
       "id": "tb-std8-social",
       "type": "textbook",
       "grade": "8",
       "subject": "social",
-      "title": { "gu": "ધોરણ 8 — સામાજિક વિજ્ઞાન પાઠ્યપુસ્તક", "hi": "कक्षा 8 — सामाजिक विज्ञान पाठ्यपुस्तक", "en": "Std 8 — Social Science Textbook" },
-      "desc": { "gu": "ધોરણ 8 સામાજિક વિજ્ઞાન પાઠ્યપુસ્તક.", "hi": "कक्षा 8 सामाजिक विज्ञान पाठ्यपुस्तक।", "en": "Std 8 Social Science textbook." },
+      "title": {
+        "gu": "ધોરણ 8 — સામાજિક વિજ્ઞાન પાઠ્યપુસ્તક",
+        "hi": "कक्षा 8 — सामाजिक विज्ञान पाठ्यपुस्तक",
+        "en": "Std 8 — Social Science Textbook"
+      },
+      "desc": {
+        "gu": "ધોરણ 8 સામાજિક વિજ્ઞાન પાઠ્યપુસ્તક.",
+        "hi": "कक्षा 8 सामाजिक विज्ञान पाठ्यपुस्तक।",
+        "en": "Std 8 Social Science textbook."
+      },
       "fileUrl": "https://gcert.gujarat.gov.in/gcert/resourcebank/textbooks-list.htm",
       "fileType": "link",
       "external": true,
       "date": "2026-11-01",
-      "tags": ["GCERT", "Std 8", "Social Science"]
+      "tags": [
+        "GCERT",
+        "Std 8",
+        "Social Science"
+      ]
     },
     {
       "id": "wb-std1-5",
       "type": "workbook",
       "grade": "1-5",
       "subject": "all",
-      "title": { "gu": "ધોરણ 1–5 — સ્વાધ્યાયપોથી સંગ્રહ", "hi": "कक्षा 1–5 — स्वाध्यायपोथी संग्रह", "en": "Std 1–5 — Workbook Collection" },
-      "desc": { "gu": "પ્રાથમિક વિભાગની સ્વાધ્યાયપોથીઓ — GCERT GROWER રિસોર્સ બેંક.", "hi": "प्राथमिक विभाग की स्वाध्यायपोथियाँ — GCERT GROWER रिसोर्स बैंक।", "en": "Primary section workbooks — GCERT GROWER resource bank." },
+      "title": {
+        "gu": "ધોરણ 1–5 — સ્વાધ્યાયપોથી સંગ્રહ",
+        "hi": "कक्षा 1–5 — स्वाध्यायपोथी संग्रह",
+        "en": "Std 1–5 — Workbook Collection"
+      },
+      "desc": {
+        "gu": "પ્રાથમિક વિભાગની સ્વાધ્યાયપોથીઓ — GCERT GROWER રિસોર્સ બેંક.",
+        "hi": "प्राथमिक विभाग की स्वाध्यायपोथियाँ — GCERT GROWER रिसोर्स बैंक।",
+        "en": "Primary section workbooks — GCERT GROWER resource bank."
+      },
       "fileUrl": "https://gcert.gujarat.gov.in/gcert/Default.aspx?id=100&lg=en",
       "fileType": "link",
       "external": true,
       "date": "2026-11-02",
-      "tags": ["GCERT", "GROWER", "Workbook"]
+      "tags": [
+        "GCERT",
+        "GROWER",
+        "Workbook"
+      ]
     },
     {
       "id": "wb-std6-8",
       "type": "workbook",
       "grade": "6-8",
       "subject": "all",
-      "title": { "gu": "ધોરણ 6–8 — સ્વાધ્યાયપોથી સંગ્રહ", "hi": "कक्षा 6–8 — स्वाध्यायपोथी संग्रह", "en": "Std 6–8 — Workbook Collection" },
-      "desc": { "gu": "માધ્યમિક વિભાગની સ્વાધ્યાયપોથીઓ અને પ્રેક્ટિસ પેપર્સ.", "hi": "माध्यमिक विभाग की स्वाध्यायपोथियाँ और प्रैक्टिस पेपर।", "en": "Secondary section workbooks and practice papers." },
+      "title": {
+        "gu": "ધોરણ 6–8 — સ્વાધ્યાયપોથી સંગ્રહ",
+        "hi": "कक्षा 6–8 — स्वाध्यायपोथी संग्रह",
+        "en": "Std 6–8 — Workbook Collection"
+      },
+      "desc": {
+        "gu": "માધ્યમિક વિભાગની સ્વાધ્યાયપોથીઓ અને પ્રેક્ટિસ પેપર્સ.",
+        "hi": "माध्यमिक विभाग की स्वाध्यायपोथियाँ और प्रैक्टिस पेपर।",
+        "en": "Secondary section workbooks and practice papers."
+      },
       "fileUrl": "https://gcert.gujarat.gov.in/gcert/Default.aspx?id=100&lg=en",
       "fileType": "link",
       "external": true,
       "date": "2026-11-02",
-      "tags": ["GCERT", "GROWER", "Workbook"]
+      "tags": [
+        "GCERT",
+        "GROWER",
+        "Workbook"
+      ]
     },
     {
       "id": "of-leave-form",
       "type": "office",
       "grade": "all",
       "subject": "office",
-      "title": { "gu": "રજા અરજી પત્રક (Leave Application)", "hi": "छुट्टी आवेदन पत्र (Leave Application)", "en": "Leave Application Form" },
-      "desc": { "gu": "શિક્ષક/કર્મચારી માટે તૈયાર રજા અરજી — DOC/PDF.", "hi": "शिक्षक/कर्मचारी हेतु तैयार छुट्टी आवेदन — DOC/PDF।", "en": "Ready leave application for teachers/staff — DOC/PDF." },
+      "title": {
+        "gu": "રજા અરજી પત્રક (Leave Application)",
+        "hi": "छुट्टी आवेदन पत्र (Leave Application)",
+        "en": "Leave Application Form"
+      },
+      "desc": {
+        "gu": "શિક્ષક/કર્મચારી માટે તૈયાર રજા અરજી — DOC/PDF.",
+        "hi": "शिक्षक/कर्मचारी हेतु तैयार छुट्टी आवेदन — DOC/PDF।",
+        "en": "Ready leave application for teachers/staff — DOC/PDF."
+      },
       "fileUrl": "",
       "fileType": "doc",
       "date": "2026-11-03",
-      "tags": ["Office", "Form", "Leave"]
+      "tags": [
+        "Office",
+        "Form",
+        "Leave"
+      ]
     },
     {
       "id": "of-timetable",
       "type": "office",
       "grade": "all",
       "subject": "office",
-      "title": { "gu": "સમયપત્રક નમૂનો (Time Table)", "hi": "समय सारणी नमूना (Time Table)", "en": "Time Table Template" },
-      "desc": { "gu": "શાળા સમયપત્રક બનાવવા માટેનો નમૂનો — PPT/DOC.", "hi": "विद्यालय समय सारणी हेतु नमूना — PPT/DOC।", "en": "School time table template — PPT/DOC." },
+      "title": {
+        "gu": "સમયપત્રક નમૂનો (Time Table)",
+        "hi": "समय सारणी नमूना (Time Table)",
+        "en": "Time Table Template"
+      },
+      "desc": {
+        "gu": "શાળા સમયપત્રક બનાવવા માટેનો નમૂનો — PPT/DOC.",
+        "hi": "विद्यालय समय सारणी हेतु नमूना — PPT/DOC।",
+        "en": "School time table template — PPT/DOC."
+      },
       "fileUrl": "",
       "fileType": "ppt",
       "date": "2026-11-03",
-      "tags": ["Office", "Time Table"]
+      "tags": [
+        "Office",
+        "Time Table"
+      ]
     },
     {
       "id": "th-lesson-plan",
       "type": "teacher",
       "grade": "all",
       "subject": "planning",
-      "title": { "gu": "પાઠ આયોજન નમૂનો (Lesson Plan)", "hi": "पाठ योजना नमूना (Lesson Plan)", "en": "Lesson Plan Template" },
-      "desc": { "gu": "દરરોજના પાઠ માટેનું આયોજન પત્રક — DOC/PDF.", "hi": "दैनिक पाठ हेतु योजना पत्रक — DOC/PDF।", "en": "Daily lesson plan format — DOC/PDF." },
+      "title": {
+        "gu": "પાઠ આયોજન નમૂનો (Lesson Plan)",
+        "hi": "पाठ योजना नमूना (Lesson Plan)",
+        "en": "Lesson Plan Template"
+      },
+      "desc": {
+        "gu": "દરરોજના પાઠ માટેનું આયોજન પત્રક — DOC/PDF.",
+        "hi": "दैनिक पाठ हेतु योजना पत्रक — DOC/PDF।",
+        "en": "Daily lesson plan format — DOC/PDF."
+      },
       "fileUrl": "",
       "fileType": "doc",
       "date": "2026-11-04",
-      "tags": ["Teacher", "Lesson Plan"]
+      "tags": [
+        "Teacher",
+        "Lesson Plan"
+      ]
     },
     {
       "id": "th-exam-paper",
       "type": "teacher",
       "grade": "all",
       "subject": "exam",
-      "title": { "gu": "પ્રશ્નપત્ર નમૂનો (Question Paper)", "hi": "प्रश्नपत्र नमूना (Question Paper)", "en": "Question Paper Template" },
-      "desc": { "gu": "એકમ કસોટી / પરીક્ષા પ્રશ્નપત્રનો નમૂનો.", "hi": "इकाई परीक्षा / प्रश्नपत्र नमूना।", "en": "Unit test / exam question paper template." },
+      "title": {
+        "gu": "પ્રશ્નપત્ર નમૂનો (Question Paper)",
+        "hi": "प्रश्नपत्र नमूना (Question Paper)",
+        "en": "Question Paper Template"
+      },
+      "desc": {
+        "gu": "એકમ કસોટી / પરીક્ષા પ્રશ્નપત્રનો નમૂનો.",
+        "hi": "इकाई परीक्षा / प्रश्नपत्र नमूना।",
+        "en": "Unit test / exam question paper template."
+      },
       "fileUrl": "",
       "fileType": "doc",
       "date": "2026-11-04",
-      "tags": ["Teacher", "Exam"]
+      "tags": [
+        "Teacher",
+        "Exam"
+      ]
     },
     {
       "id": "st-homework",
       "type": "student",
       "grade": "all",
       "subject": "all",
-      "title": { "gu": "ગૃહકાર્ય પ્લાનર (Homework Planner)", "hi": "गृहकार्य प्लानर (Homework Planner)", "en": "Homework Planner" },
-      "desc": { "gu": "વિદ્યાર્થીઓ માટે રોજનું ગૃહકાર્ય આયોજન.", "hi": "छात्रों हेतु दैनिक गृहकार्य योजना।", "en": "Daily homework planner for students." },
+      "title": {
+        "gu": "ગૃહકાર્ય પ્લાનર (Homework Planner)",
+        "hi": "गृहकार्य प्लानर (Homework Planner)",
+        "en": "Homework Planner"
+      },
+      "desc": {
+        "gu": "વિદ્યાર્થીઓ માટે રોજનું ગૃહકાર્ય આયોજન.",
+        "hi": "छात्रों हेतु दैनिक गृहकार्य योजना।",
+        "en": "Daily homework planner for students."
+      },
       "fileUrl": "",
       "fileType": "pdf",
       "date": "2026-11-05",
-      "tags": ["Student", "Homework"]
+      "tags": [
+        "Student",
+        "Homework"
+      ]
     },
     {
       "id": "vd-gcert-home-learning",
       "type": "video",
       "grade": "all",
       "subject": "all",
-      "title": { "gu": "GCERT હોમ લર્નિંગ — ધોરણ 1 થી 12", "hi": "GCERT होम लर्निंग — कक्षा 1 से 12", "en": "GCERT Home Learning — Std 1 to 12" },
-      "desc": { "gu": "GCERT દ્વારા ધોરણ 1–12 માટેનું હોમ લર્નિંગ મટીરિયલ.", "hi": "GCERT द्वारा कक्षा 1–12 हेतु होम लर्निंग सामग्री।", "en": "GCERT home learning material for Std 1–12." },
+      "title": {
+        "gu": "GCERT હોમ લર્નિંગ — ધોરણ 1 થી 12",
+        "hi": "GCERT होम लर्निंग — कक्षा 1 से 12",
+        "en": "GCERT Home Learning — Std 1 to 12"
+      },
+      "desc": {
+        "gu": "GCERT દ્વારા ધોરણ 1–12 માટેનું હોમ લર્નિંગ મટીરિયલ.",
+        "hi": "GCERT द्वारा कक्षा 1–12 हेतु होम लर्निंग सामग्री।",
+        "en": "GCERT home learning material for Std 1–12."
+      },
       "fileUrl": "https://www.youtube.com/watch?v=YK55WNMpi8c",
       "fileType": "video",
       "date": "2026-11-06",
-      "tags": ["GCERT", "Home Learning", "Video"]
+      "tags": [
+        "GCERT",
+        "Home Learning",
+        "Video"
+      ]
     },
     {
       "id": "post-welcome",
       "type": "post",
       "grade": "all",
       "subject": "news",
-      "title": { "gu": "Online Education Guru માં આપનું સ્વાગત છે!", "hi": "Online Education Guru में आपका स्वागत है!", "en": "Welcome to Online Education Guru!" },
-      "desc": { "gu": "બાલવાટિકાથી ધોરણ 8 સુધીનું સંપૂર્ણ શૈક્ષણિક મટીરિયલ, ગેમ્સ, વિડિયો અને ઓફિસ દસ્તાવેજો એક જ જગ્યાએ.", "hi": "बालवाटिका से कक्षा 8 तक संपूर्ण शैक्षणिक सामग्री, गेम्स, वीडियो और ऑफिस दस्तावेज़ एक ही स्थान पर।", "en": "Complete study material from Balvatika to Std 8, games, videos and office documents — all in one place." },
+      "title": {
+        "gu": "Online Education Guru માં આપનું સ્વાગત છે!",
+        "hi": "Online Education Guru में आपका स्वागत है!",
+        "en": "Welcome to Online Education Guru!"
+      },
+      "desc": {
+        "gu": "બાલવાટિકાથી ધોરણ 8 સુધીનું સંપૂર્ણ શૈક્ષણિક મટીરિયલ, ગેમ્સ, વિડિયો અને ઓફિસ દસ્તાવેજો એક જ જગ્યાએ.",
+        "hi": "बालवाटिका से कक्षा 8 तक संपूर्ण शैक्षणिक सामग्री, गेम्स, वीडियो और ऑफिस दस्तावेज़ एक ही स्थान पर।",
+        "en": "Complete study material from Balvatika to Std 8, games, videos and office documents — all in one place."
+      },
       "body": "આ વેબસાઈટ શિક્ષકો, વિદ્યાર્થીઓ અને આચાર્યો માટે બનાવવામાં આવી છે. અહીં તમને પાઠ્યપુસ્તકો, સ્વાધ્યાયપોથીઓ, શૈક્ષણિક ગેમ્સ, ઓફિસ દસ્તાવેજો અને વિડિયો પાઠ મળશે. Admin Panel માંથી નવી પોસ્ટ, ફાઈલ અને વિડિયો ઉમેરી શકાય છે.",
       "image": "",
       "fileUrl": "",
       "fileType": "post",
       "date": "2026-11-13",
-      "tags": ["Welcome", "OEG"]
+      "tags": [
+        "Welcome",
+        "OEG"
+      ]
     },
     {
       "id": "ln-gcert",
       "type": "link",
       "grade": "all",
       "subject": "official",
-      "title": { "gu": "GCERT — ગુજરાત શૈક્ષણિક સંશોધન અને તાલીમ પરિષદ", "hi": "GCERT — गुजरात शैक्षणिक अनुसंधान और प्रशिक्षण परिषद", "en": "GCERT — Gujarat Council of Educational Research and Training" },
-      "desc": { "gu": "ગુજરાતના સત્તાવાર શિક્ષણ પોર્ટલ — પાઠ્યપુસ્તકો, GROWER, પરિપત્રો.", "hi": "गुजरात का आधिकारिक शिक्षा पोर्टल — पाठ्यपुस्तकें, GROWER, परिपत्र।", "en": "Official Gujarat education portal — textbooks, GROWER, circulars." },
+      "title": {
+        "gu": "GCERT — ગુજરાત શૈક્ષણિક સંશોધન અને તાલીમ પરિષદ",
+        "hi": "GCERT — गुजरात शैक्षणिक अनुसंधान और प्रशिक्षण परिषद",
+        "en": "GCERT — Gujarat Council of Educational Research and Training"
+      },
+      "desc": {
+        "gu": "ગુજરાતના સત્તાવાર શિક્ષણ પોર્ટલ — પાઠ્યપુસ્તકો, GROWER, પરિપત્રો.",
+        "hi": "गुजरात का आधिकारिक शिक्षा पोर्टल — पाठ्यपुस्तकें, GROWER, परिपत्र।",
+        "en": "Official Gujarat education portal — textbooks, GROWER, circulars."
+      },
       "fileUrl": "https://gcert.gujarat.gov.in/gcert/",
       "fileType": "link",
       "external": true,
       "date": "2026-11-01",
-      "tags": ["Official", "GCERT"]
+      "tags": [
+        "Official",
+        "GCERT"
+      ]
     },
     {
       "id": "ln-diksha",
       "type": "link",
       "grade": "all",
       "subject": "official",
-      "title": { "gu": "DIKSHA — રાષ્ટ્રીય ડિજિટલ શિક્ષણ પ્લેટફોર્મ", "hi": "DIKSHA — राष्ट्रीय डिजिटल शिक्षा मंच", "en": "DIKSHA — National Digital Education Platform" },
-      "desc": { "gu": "NCERT પાઠ્યપુસ્તકો, વિડિયો પાઠ અને ક્વિઝ — મફત.", "hi": "NCERT पाठ्यपुस्तकें, वीडियो पाठ और क्विज़ — मुफ़्त।", "en": "NCERT textbooks, video lessons and quizzes — free." },
+      "title": {
+        "gu": "DIKSHA — રાષ્ટ્રીય ડિજિટલ શિક્ષણ પ્લેટફોર્મ",
+        "hi": "DIKSHA — राष्ट्रीय डिजिटल शिक्षा मंच",
+        "en": "DIKSHA — National Digital Education Platform"
+      },
+      "desc": {
+        "gu": "NCERT પાઠ્યપુસ્તકો, વિડિયો પાઠ અને ક્વિઝ — મફત.",
+        "hi": "NCERT पाठ्यपुस्तकें, वीडियो पाठ और क्विज़ — मुफ़्त।",
+        "en": "NCERT textbooks, video lessons and quizzes — free."
+      },
       "fileUrl": "https://diksha.gov.in/",
       "fileType": "link",
       "external": true,
       "date": "2026-11-01",
-      "tags": ["Official", "DIKSHA", "NCERT"]
+      "tags": [
+        "Official",
+        "DIKSHA",
+        "NCERT"
+      ]
     },
     {
       "id": "ln-gseb",
       "type": "link",
       "grade": "all",
       "subject": "official",
-      "title": { "gu": "GSEB — ગુજરાત માધ્યમિક અને ઉચ્ચતર માધ્યમિક શિક્ષણ બોર્ડ", "hi": "GSEB — गुजरात माध्यमिक और उच्चतर माध्यमिक शिक्षा बोर्ड", "en": "GSEB — Gujarat Secondary and Higher Secondary Education Board" },
-      "desc": { "gu": "બોર્ડ પરીક્ષા, પરિણામ અને પરિપત્રો.", "hi": "बोर्ड परीक्षा, परिणाम और परिपत्र।", "en": "Board exams, results and circulars." },
+      "title": {
+        "gu": "GSEB — ગુજરાત માધ્યમિક અને ઉચ્ચતર માધ્યમિક શિક્ષણ બોર્ડ",
+        "hi": "GSEB — गुजरात माध्यमिक और उच्चतर माध्यमिक शिक्षा बोर्ड",
+        "en": "GSEB — Gujarat Secondary and Higher Secondary Education Board"
+      },
+      "desc": {
+        "gu": "બોર્ડ પરીક્ષા, પરિણામ અને પરિપત્રો.",
+        "hi": "बोर्ड परीक्षा, परिणाम और परिपत्र।",
+        "en": "Board exams, results and circulars."
+      },
       "fileUrl": "https://www.gseb.org",
       "fileType": "link",
       "external": true,
       "date": "2026-11-01",
-      "tags": ["Official", "GSEB"]
+      "tags": [
+        "Official",
+        "GSEB"
+      ]
     },
     {
       "id": "ln-gsbstb",
       "type": "link",
       "grade": "all",
       "subject": "official",
-      "title": { "gu": "GSBSTB — પાઠ્યપુસ્તક બોર્ડ", "hi": "GSBSTB — पाठ्यपुस्तक बोर्ड", "en": "GSBSTB — Textbook Board" },
-      "desc": { "gu": "ધોરણ 1–12 પાઠ્યપુસ્તકો ડાઉનલોડ કરો.", "hi": "कक्षा 1–12 पाठ्यपुस्तकें डाउनलोड करें।", "en": "Download Std 1–12 textbooks." },
+      "title": {
+        "gu": "GSBSTB — પાઠ્યપુસ્તક બોર્ડ",
+        "hi": "GSBSTB — पाठ्यपुस्तक बोर्ड",
+        "en": "GSBSTB — Textbook Board"
+      },
+      "desc": {
+        "gu": "ધોરણ 1–12 પાઠ્યપુસ્તકો ડાઉનલોડ કરો.",
+        "hi": "कक्षा 1–12 पाठ्यपुस्तकें डाउनलोड करें।",
+        "en": "Download Std 1–12 textbooks."
+      },
       "fileUrl": "https://gsbstb.online",
       "fileType": "link",
       "external": true,
       "date": "2026-11-01",
-      "tags": ["Official", "Textbooks"]
+      "tags": [
+        "Official",
+        "Textbooks"
+      ]
     },
     {
       "id": "ln-etushar",
       "type": "link",
       "grade": "all",
       "subject": "blog",
-      "title": { "gu": "E-Tushar — શિક્ષક બ્લોગ", "hi": "E-Tushar — शिक्षक ब्लॉग", "en": "E-Tushar — Teacher Blog" },
-      "desc": { "gu": "ગુજરાતી શિક્ષકો માટે ઉપયોગી બ્લોગ — મટીરિયલ અને માહિતી.", "hi": "गुजराती शिक्षकों हेतु उपयोगी ब्लॉग — सामग्री और जानकारी।", "en": "Useful blog for Gujarati teachers — material and information." },
+      "title": {
+        "gu": "E-Tushar — શિક્ષક બ્લોગ",
+        "hi": "E-Tushar — शिक्षक ब्लॉग",
+        "en": "E-Tushar — Teacher Blog"
+      },
+      "desc": {
+        "gu": "ગુજરાતી શિક્ષકો માટે ઉપયોગી બ્લોગ — મટીરિયલ અને માહિતી.",
+        "hi": "गुजराती शिक्षकों हेतु उपयोगी ब्लॉग — सामग्री और जानकारी।",
+        "en": "Useful blog for Gujarati teachers — material and information."
+      },
       "fileUrl": "https://tusharpsoni.blogspot.com",
       "fileType": "link",
       "external": true,
       "date": "2026-11-01",
-      "tags": ["Blog", "Teacher"]
+      "tags": [
+        "Blog",
+        "Teacher"
+      ]
     },
     {
       "id": "ln-marugujarat",
       "type": "link",
       "grade": "all",
       "subject": "blog",
-      "title": { "gu": "Maru Gujarat — નોકરી અને શિક્ષણ માહિતી", "hi": "Maru Gujarat — नौकरी और शिक्षा जानकारी", "en": "Maru Gujarat — Jobs and Education Information" },
-      "desc": { "gu": "સરકારી નોકરી, પરીક્ષા અને શૈક્ષણિક માહિતી.", "hi": "सरकारी नौकरी, परीक्षा और शैक्षणिक जानकारी।", "en": "Government jobs, exams and education information." },
+      "title": {
+        "gu": "Maru Gujarat — નોકરી અને શિક્ષણ માહિતી",
+        "hi": "Maru Gujarat — नौकरी और शिक्षा जानकारी",
+        "en": "Maru Gujarat — Jobs and Education Information"
+      },
+      "desc": {
+        "gu": "સરકારી નોકરી, પરીક્ષા અને શૈક્ષણિક માહિતી.",
+        "hi": "सरकारी नौकरी, परीक्षा और शैक्षणिक जानकारी।",
+        "en": "Government jobs, exams and education information."
+      },
       "fileUrl": "https://www.marugujarat.net",
       "fileType": "link",
       "external": true,
       "date": "2026-11-01",
-      "tags": ["Blog", "Jobs"]
+      "tags": [
+        "Blog",
+        "Jobs"
+      ]
     }
   ]
 }

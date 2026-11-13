@@ -18,10 +18,26 @@ OEG.gh = (() => {
     return j;
   }
 
+  /* base64 ⇄ UTF-8 (ગુજરાતી/હિન્દી text ખરાબ ન થાય — Latin-1 round-trip બ્લોક) */
+  const b64d = (b64) => {
+    const bin = atob(String(b64).replace(/\n/g, ""));
+    if (typeof TextDecoder !== "undefined") {
+      const bytes = Uint8Array.from(bin, (c) => c.charCodeAt(0));
+      return new TextDecoder("utf-8").decode(bytes);
+    }
+    return decodeURIComponent(escape(bin));
+  };
+  const b64e = (s) => btoa(unescape(encodeURIComponent(s)));
+  /* જો ફાઈલ પહેલેથી double-encoded (mojibake) હોય તો વાંચતી વખતે સુધારો */
+  const demojibake = (s) => {
+    if (!/[\u00C2-\u00F4][\u0080-\u00BF]/.test(s)) return s;
+    try { const f = decodeURIComponent(escape(s)); return f && f !== s ? f : s; } catch (e) { return s; }
+  };
+
   /* --- Read a file (returns {content, sha}) --- */
   async function getFile(path) {
     const j = await req("GET", `/contents/${encodeURIComponent(path).replace(/%2F/g, "/")}?ref=${OEG.state.gh.branch}`);
-    return { content: atob(j.content.replace(/\n/g, "")), sha: j.sha };
+    return { content: demojibake(b64d(j.content)), sha: j.sha };
   }
 
   /* --- Write/update a file via Contents API (≤1MB) --- */

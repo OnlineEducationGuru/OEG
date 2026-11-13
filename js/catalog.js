@@ -13,7 +13,8 @@ OEG.state = {
 
 OEG.t = (key) => (OEG_I18N[OEG.state.lang] && OEG_I18N[OEG.state.lang][key]) || OEG_I18N.gu[key] || key;
 OEG.title = (item) => (item.title && (item.title[OEG.state.lang] || item.title.gu || item.title.en)) || item.title || "";
-OEG.desc = (item) => (item.desc && (item.desc[OEG.state.lang] || item.desc.gu || item.desc.en)) || "";
+OEG.desc = (item) => (item.desc && (item.desc[OEG.state.lang] || item.desc.gu || item.desc.en)) || (typeof item.desc === "string" ? item.desc : "");
+OEG.langField = (v) => (v && typeof v === "object" && !Array.isArray(v)) ? (v[OEG.state.lang] || v.gu || v.hi || v.en || "") : (v == null ? "" : v);
 OEG.gradeLabel = (g) => OEG.t("grade." + g) || g;
 OEG.typeLabel = (t) => OEG.t("type." + t) || t;
 OEG.subjectLabel = (s) => OEG.t("subject." + s) || s;
@@ -60,12 +61,32 @@ OEG.loadConfig = async () => {
   OEG.state.gh.branch = OEG.state.config.github.branch || "main";
 };
 
+/* double-encoded (mojibake) UTF-8 સુધારે — જૂની corrupted data સામે સુરક્ષા */
+OEG.demojibake = (s) => {
+  s = String(s == null ? "" : s);
+  if (!/[\u00C2-\u00F4][\u0080-\u00BF]/.test(s)) return s;
+  try { const f = decodeURIComponent(escape(s)); return f && f !== s ? f : s; } catch (e) { return s; }
+};
+const fixLang = (v) => {
+  if (v && typeof v === "object" && !Array.isArray(v)) {
+    const o = {};
+    Object.keys(v).forEach((k) => { o[k] = OEG.demojibake(v[k]); });
+    return o;
+  }
+  return typeof v === "string" ? OEG.demojibake(v) : v;
+};
+
 OEG.loadCatalog = async () => {
   try {
     const r = await fetch("data/catalog.json", { cache: "no-store" });
     if (r.ok) {
       const j = await r.json();
-      OEG.state.catalog = Array.isArray(j.items) ? j.items : [];
+      OEG.state.catalog = (Array.isArray(j.items) ? j.items : []).map((it) => {
+        const o = Object.assign({}, it);
+        ["title", "desc", "body"].forEach((k) => { if (o[k] !== undefined) o[k] = fixLang(o[k]); });
+        if (Array.isArray(o.tags)) o.tags = o.tags.map(OEG.demojibake);
+        return o;
+      });
     }
   } catch (e) { OEG.state.catalog = []; }
   return OEG.state.catalog;
