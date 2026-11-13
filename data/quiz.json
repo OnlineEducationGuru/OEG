@@ -298,6 +298,47 @@
   ],
   "questions": [
     {
+      "id": "q-grade-17-8o54",
+      "cat": "grade",
+      "grade": "1",
+      "diff": "medium",
+      "q": {
+        "gu": "ગાંધીનગર ક્યા રાજયનું પાટનગર છે?",
+        "hi": "गांधीनगर किस राज्य की राजधानी है?",
+        "en": "Gandhinagar is the capital of which state?"
+      },
+      "opts": [
+        {
+          "gu": "રાજસ્થાન",
+          "hi": "राजस्थान",
+          "en": "Rajasthan"
+        },
+        {
+          "gu": "ગુજરાત",
+          "hi": "गुजरात",
+          "en": "Gujarat"
+        },
+        {
+          "gu": "અસમ",
+          "hi": "असम",
+          "en": "Assam"
+        },
+        {
+          "gu": "મહારાષ્ટ્ર",
+          "hi": "महाराष्ट्र",
+          "en": "Maharashtra"
+        }
+      ],
+      "a": 1,
+      "ex": {
+        "gu": "",
+        "hi": "",
+        "en": ""
+      },
+      "marks": 1,
+      "subject": "gujarati"
+    },
+    {
       "id": "q-grade-16-5rnm",
       "cat": "grade",
       "grade": "1",
