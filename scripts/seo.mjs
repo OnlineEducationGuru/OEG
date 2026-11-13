@@ -284,7 +284,8 @@ for (const key of quizCats) {
       const n = inCat.filter((q) => q.chap === ch.key && (key === "grade" ? (q.subject || "") === node.key : (q.sub || "") === node.key)).length;
       const mid = key === "grade" ? `subject=${node.key}` : `sub=${node.key}`;
       const href = `../#/quiz?cat=${key}&${mid}${ch.grade ? `&grade=${ch.grade}&` : "&"}chap=${ch.key}`;
-      const nm = [ch.num ? `ચેપ્ટર ${ch.num}` : "", labelOf(ch)].filter(Boolean).join(" · ");
+      const nm = [ch.num ? `ચેપ્ટર ${ch.num}` : "", labelOf(ch)].filter(Boolean).join(" · ").replace(/[\s.,;:-]+$/, "").trim();
+      if (!n || !nm) continue;   /* પ્રશ્ન ન હોય કે નામ ન હોય એવું ચેપ્ટર SEO પાનાં પર નહીં */
       chapRows.push(`<a href="${href}">📗 ${esc(nm)} <small>${n} ${tr("qs", "gu")}</small></a>`);
     }
   }

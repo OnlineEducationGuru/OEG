@@ -31,6 +31,14 @@
 
   const $app = () => document.getElementById("app");
   const t = OEG.t;
+  /* 👁 મુલાકાતી/વિદ્યાર્થીને "Admin માંથી ઉમેરો" જેવી સૂચના દેખાતી નથી —
+     એ લીટી ફક્ત Admin લોગિન હોય ત્યારે જ જોવાય (સાઈટ સાજી કરવાનું કામ માલિકનું) */
+  const adminTip = (k) => {
+    let on = false;
+    try { on = !!(OEG.canAdmin && OEG.canAdmin()); } catch (e) { on = false; }
+    return on ? " " + t(k) : "";
+  };
+  const emptySub = () => t("empty.sub") + adminTip("empty.subAdmin");
 
   /* ---------- i18n apply ---------- */
   function applyI18n() {
@@ -170,13 +178,14 @@
       <div class="side-kids">${kids.map(k => sideItem(k, depth + 1)).join("")}</div>
     </div>`;
   };
+  const canAdminNow = () => { try { return !!(OEG.canAdmin && OEG.canAdmin()); } catch (e) { return false; } };
   function renderSidebar() {
     const tree = navTree();
     const custom = !!customNav();
     document.getElementById("sideNav").innerHTML = tree.map((g) => navKids(g).length
       ? `<div class="side-grp"><span class="side-cap">${g.icon ? OEG.esc(g.icon) + " " : ""}${OEG.esc(g.label)}</span>${navKids(g).map(k => sideItem(k, 1)).join("")}</div>`
       : sideItem(Object.assign({ kids: [] }, g), 1)).join("");
-    if (custom) document.getElementById("sideNav").insertAdjacentHTML("beforeend", `<p class="side-note">🧭 ${t("nav.customNote")}</p>`);
+    if (custom && canAdminNow()) document.getElementById("sideNav").insertAdjacentHTML("beforeend", `<p class="side-note">🧭 ${t("nav.customNote")}</p>`);
     document.querySelectorAll("#sideNav .side-open").forEach(b => {
       b.onclick = (e) => { e.preventDefault(); e.stopPropagation(); b.closest(".side-branch").classList.toggle("open"); };
     });
@@ -334,7 +343,7 @@
     const label = OEG.typeLabel(typeKey);
     const body = items.length
       ? gridWithAd(items, 6, "listMid")
-      : `<div class="panel" style="text-align:center;padding:50px 20px"><div style="font-size:3rem">📭</div><h3>${t("empty.title")}</h3><p style="color:var(--muted)">${t("empty.sub")}</p></div>`;
+      : `<div class="panel" style="text-align:center;padding:50px 20px"><div style="font-size:3rem">📭</div><h3>${t("empty.title")}</h3><p style="color:var(--muted)">${OEG.esc(emptySub())}</p></div>`;
     return `<div class="page-head"><div class="breadcrumb"><a href="#/">${t("nav.home")}</a> / ${OEG.esc(label)}</div>
       <h1>${OEG.typeIcon(typeKey)} ${OEG.esc(label)}</h1>
       <p class="sub">${items.length} ${t("grade.items")}</p></div>
@@ -548,7 +557,7 @@
       <p class="sub">${vids.length} ${t("grade.items")} · ${t("yt.byUrlNote")}</p></div>
       <div class="filters"><label>${t("filter.grade")}</label><select id="fGrade"><option value="all">${t("filter.all")}</option>${GRADES().map(g => `<option value="${g}" ${g === grade ? "selected" : ""}>${OEG.esc(OEG.gradeLabel(g))}</option>`).join("")}</select></div>
       ${adSlot("videoTop")}
-      ${vids.length ? `<div class="video-grid">${vids.map(videoCard).join("")}</div>` : `<div class="panel" style="text-align:center;padding:50px"><h3>${t("empty.title")}</h3><p style="color:var(--muted)">${t("empty.sub")}</p></div>`}
+      ${vids.length ? `<div class="video-grid">${vids.map(videoCard).join("")}</div>` : `<div class="panel" style="text-align:center;padding:50px"><h3>${t("empty.title")}</h3><p style="color:var(--muted)">${OEG.esc(emptySub())}</p></div>`}
       ${adSlot("contentBottom")}`;
   }
 
@@ -734,7 +743,7 @@
     if (!sectionOn(route) && CORE.indexOf(route) < 0) {
       app.innerHTML = `<section class="panel empty-state" style="text-align:center;padding:56px 20px">
         <div style="font-size:2.4rem">🚧</div><h2>${OEG.esc(t("ui.sectionOff"))}</h2>
-        <p style="color:var(--muted);margin-top:8px">${OEG.esc(t("ui.sectionOffSub"))}</p>
+        <p style="color:var(--muted);margin-top:8px">${OEG.esc(t("ui.sectionOffSub") + adminTip("ui.sectionOffSubAdmin"))}</p>
         <div style="margin-top:16px"><a class="btn btn-brand" href="#/">← ${t("btn.home")}</a></div></section>`;
       renderSidebar();
       return;
