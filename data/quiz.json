@@ -25,7 +25,7 @@
         "hi": "सामान्य ज्ञान",
         "en": "General Knowledge"
       },
-      "mode": "sub",
+      "mode": "none",
       "subs": [
         {
           "key": "india",
