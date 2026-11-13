@@ -273,6 +273,10 @@ h1,h2,h3,h4{font-family:var(--font-display);line-height:1.25;font-weight:700}
 
 /* ---------- Admin login card ---------- */
 #admForm .btn{margin-top:6px}
+.chk{display:flex;align-items:center;gap:8px;font-size:.88rem;font-weight:600;color:var(--muted);cursor:pointer;margin-top:8px;line-height:1.4}
+.chk input[type=checkbox]{width:16px;height:16px;margin:0;flex:none;accent-color:var(--brand);cursor:pointer}
+.vault-warn{display:block;margin-top:6px;font-size:.78rem;color:var(--muted);opacity:.85;line-height:1.45}
+.vault-state{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:8px;font-size:.82rem;color:var(--muted)}
 .linklike{background:none;border:none;color:var(--brand);font-size:.8rem;font-weight:700;padding:4px 0;cursor:pointer;text-decoration:underline dotted}
 .linklike:hover{color:var(--accent-2)}
 .help-box{margin-top:8px;padding:13px 15px;border-radius:12px;background:var(--surface-2);border:1px solid var(--border);font-size:.84rem;line-height:1.75;color:var(--muted);text-align:left}

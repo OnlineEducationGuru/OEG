@@ -388,7 +388,7 @@
       case "register": html = authPage("register"); after = () => bindAuth("register"); break;
       case "admin":
         if (!OEG.canAdmin()) { html = await adminLoginPage(); after = bindAdminLogin; }
-        else { html = `<div id="adminMount"></div>`; after = () => OEG.admin.render(document.getElementById("adminMount")); }
+        else { await OEG.auth.recallSecret(); html = `<div id="adminMount"></div>`; after = () => OEG.admin.render(document.getElementById("adminMount")); }
         break;
       case "search": html = searchPage(query.q || ""); break;
       default: html = homePage();
@@ -406,6 +406,13 @@
   async function adminLoginPage() {
     const adm = await OEG.auth.getAdminFile();
     const setup = !OEG.auth.adminConfigured(adm);
+    const needTok = setup || !OEG.auth.hasSecret();
+    const tokBlock = needTok
+      ? `${setup ? "" : `<button type="button" class="linklike" id="admTokToggle" style="margin-bottom:10px">🔑 ${t("admin.useSecret")}</button>`}
+         <div class="field"${setup ? "" : ` id="admTokWrap" style="display:none"`}><label>${t("admin.token")}</label>
+           <input name="token" type="password" ${noFill}>
+           <label class="chk"><input type="checkbox" name="remember" checked> ${t("admin.remember")}</label></div>`
+      : `<p class="sub" style="margin-top:4px">${t("admin.onDevice")}</p>`;
     return `<div class="form-card" style="margin-top:34px">
       <h2>🛡️ ${t("admin.loginTitle")}</h2>
       ${setup ? "" : `<p class="sub">${t("admin.loginSub")}</p>`}
@@ -413,9 +420,7 @@
       <form id="admForm" autocomplete="off">
         <div class="field"><label>${t("auth.email")}</label><input name="email" type="email" required ${noFill}></div>
         <div class="field"><label>${t("auth.password")}</label><input name="password" type="password" required minlength="6" ${noFill}></div>
-        ${setup ? "" : `<button type="button" class="linklike" id="admTokToggle" style="margin-bottom:10px">🔑 ${t("admin.useSecret")}</button>`}
-        <div class="field"${setup ? "" : ` id="admTokWrap" style="display:none"`}><label>${t("admin.token")}</label>
-          <input name="token" type="password" ${noFill}></div>
+        ${tokBlock}
         <button class="btn btn-brand" style="width:100%;justify-content:center" type="submit">🔓 ${t("admin.enterBtn")}</button>
       </form>
     </div>`;
@@ -436,7 +441,7 @@
       e.preventDefault();
       const fd = new FormData(e.target);
       try {
-        await OEG.auth.loginAdmin({ email: fd.get("email"), password: fd.get("password"), token: fd.get("token") });
+        await OEG.auth.loginAdmin({ email: fd.get("email"), password: fd.get("password"), token: fd.get("token"), remember: !!fd.get("remember") });
         renderAuthArea();
         render();
       } catch (err) {
