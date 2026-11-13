@@ -49,8 +49,12 @@ OEG.loadConfig = async () => {
       OEG.state.config.adsense = Object.assign({}, (window.OEG_CONFIG.adsense || {}), j.adsense || {});
       OEG.state.config.firebase = Object.assign({}, (window.OEG_CONFIG.firebase || {}), j.firebase || {});
       OEG.state.config.github = Object.assign({}, (window.OEG_CONFIG.github || {}), j.github || {});
+      OEG.state.config.admin = Object.assign({}, (window.OEG_CONFIG.admin || {}), j.admin || {});
     }
-  } catch (e) { /* defaults from config.js */ }
+  } catch (e) {
+    OEG.state.configError = true; /* invalid JSON — config.js ના defaults વાપરાશે */
+    console.warn("OEG: data/site-config.json parse થયું નહીં — JSON માં કોઈક વાક્ય ફિક્સ કરો (દા.ત. ઈમેઈલને \" કોટ મૂકો).");
+  }
   OEG.state.gh.owner = OEG.state.config.github.owner || "";
   OEG.state.gh.repo = OEG.state.config.github.repo || "";
   OEG.state.gh.branch = OEG.state.config.github.branch || "main";
