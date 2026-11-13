@@ -177,19 +177,21 @@ OEG.loadCatalog = async () => {
     const r = await fetch("data/catalog.json", { cache: "no-store" });
     if (r.ok) {
       const j = await r.json();
-      OEG.state.catalog = (Array.isArray(j.items) ? j.items : []).map((it) => {
+      const all = (Array.isArray(j.items) ? j.items : []).map((it) => {
         const o = Object.assign({}, it);
         ["title", "desc", "body"].forEach((k) => { if (o[k] !== undefined) o[k] = fixLang(o[k]); });
         if (Array.isArray(o.tags)) o.tags = o.tags.map(OEG.demojibake);
         return o;
       });
+      OEG.state.catalogAll = all;
+      OEG.state.catalog = all.filter(it => !it.hidden);   /* 🙈 Admin માંથી છુપાવેલું ક્યાંય દેખાતું નથી */
     }
-  } catch (e) { OEG.state.catalog = []; }
+  } catch (e) { OEG.state.catalog = []; OEG.state.catalogAll = []; }
   return OEG.state.catalog;
 };
 
 OEG.byType = (type) => OEG.state.catalog.filter(i => i.type === type);
-OEG.byId = (id) => OEG.state.catalog.find(i => i.id === id);
+OEG.byId = (id) => (OEG.state.catalogAll || OEG.state.catalog).find(i => i.id === id);
 OEG.search = (q) => {
   q = (q || "").toLowerCase().trim();
   if (!q) return [];

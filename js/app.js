@@ -5,9 +5,15 @@
   /* ---------- 🧭 Nav & taxonomy (Admin માંથી શ્રેણી/ધોરણ ઉમેર-કાઢ થાય છે) ---------- */
   const HOME_NAV = { route: "home", icon: "🏠", key: "nav.home" };
   const ADMIN_NAV = { route: "admin", icon: "🛠️", key: "nav.admin" };
+  /* ⚙️ Admin → સાઇટ સેટિંગ્સ માંથી આવતી ટૉગલ (સેક્શન બતાવવા/છુપાવવા, ગાર્ડ, શોધ…) */
+  const uiCfg = () => (OEG.state.config && OEG.state.config.ui) || {};
+  const sectionOn = (route) => { const sec = uiCfg().sections; return !sec || sec[route] !== false; };
+  const guardOn = () => uiCfg().antiCopy !== false;
+  const uiText = (k, fallback) => { const v = uiCfg()[k]; const t2 = v && typeof v === "object" ? OEG.langField(v) : (v || ""); return t2 || fallback; };
+
   const NAV = () => [HOME_NAV].concat(
     OEG.tax().types.filter(x => x.route).map(x => ({ route: x.route, icon: x.icon || "📄", key: "type." + x.key, label: OEG.typeLabel(x.key) })),
-    [ADMIN_NAV]);
+    [ADMIN_NAV]).filter(n => n.route === "home" || n.route === "admin" || sectionOn(n.route));
   const GRADES = () => OEG.tax().grades.filter(g => g.key !== "all").map(g => g.key);
   const REAL_GRADES = () => GRADES().filter(k => k === "balvatika" || /^\d+$/.test(k));
   const SUBJECTS = () => OEG.tax().subjects.map(s => s.key);
@@ -22,6 +28,14 @@
     document.querySelectorAll("[data-i18n]").forEach(el => el.textContent = t(el.dataset.i18n));
     document.querySelectorAll("[data-i18n-ph]").forEach(el => el.placeholder = t(el.dataset.i18nPh));
     document.getElementById("langSelect").value = OEG.state.lang;
+    const tag = uiText("tagline", "");
+    const tagEl = document.getElementById("logoTagline");
+    if (tagEl) tagEl.textContent = tag || t("hero.title");
+    const sw = document.querySelector(".search-box");
+    if (sw) sw.style.display = uiCfg().showSearch === false ? "none" : "";
+    const lg = document.querySelector(".logo-mark");
+    if (lg && uiCfg().logoEmoji) lg.textContent = uiCfg().logoEmoji;
+    document.body.classList.toggle("allow-select", !guardOn());
     renderNav(); renderSidebar(); renderFooter(); renderAuthArea();
   }
 
@@ -65,6 +79,16 @@
     document.getElementById("footerLinks").innerHTML = NAV().slice(0, 9).map(n =>
       `<a href="#/${n.route === "home" ? "" : n.route}">${OEG.esc(n.label || t(n.key))}</a>`).join("");
     document.getElementById("footerSocial").innerHTML = `<span class="fs-title">${t("follow.title")}</span>` + followButtons("fb-foot");
+    const note = document.getElementById("footerNote");
+    if (note) {
+      const txtNote = uiText("footerNote", "");
+      note.textContent = txtNote;
+      note.style.display = txtNote ? "" : "none";
+    }
+    const about = document.getElementById("footerAbout");
+    if (about) { const a = uiText("footerAbout", ""); if (a) about.textContent = a; }
+    const ft = document.getElementById("footerTitle");
+    if (ft) { const n2 = uiText("siteTitle", ""); ft.textContent = n2 ? "🎓 " + n2 : "🎓 Online Education Guru"; }
   }
 
   function followIcon(k) {
@@ -272,7 +296,7 @@
     const quizN = OEG.state.catalog.filter(i => i.type === "quiz").length;
     return `
     <section class="hero">
-      <h1>${t("hero.title")}</h1><p>${t("hero.sub")}</p>
+      <h1>${OEG.esc(uiText("heroTitle", t("hero.title")))}</h1><p>${OEG.esc(uiText("heroSub", t("hero.sub")))}</p>
       <div class="hero-cta"><a class="btn btn-primary" href="#/textbooks">${t("hero.cta1")}</a><a class="btn btn-ghost" href="#/quiz">🧠 ${t("nav.quiz")}</a></div>
       <div class="hero-stats">
         <div><b>${total}+</b><span>${t("nav.textbooks")}</span></div>
@@ -495,12 +519,26 @@
   async function render() {
     const { seg, query } = parseHash();
     const route = seg[0] || "home";
+    /* Admin માં ઉમેર્યું/કાઢ્યું/બદલ્યું હોય તો સાઇટ પર પાછા આવતાં જ તરત નવું દેખાય */
+    if (OEG.state.__dirty && route !== "admin") {
+      OEG.state.__dirty = false;
+      try { await Promise.all([OEG.loadConfig(), OEG.loadCatalog(), OEG.quiz ? OEG.quiz.load() : Promise.resolve()]); } catch (e) {}
+    }
     const app = $app();
     window.scrollTo({ top: 0 });
     closeSidebar();
     let html = "", after = null;
 
     const ty = OEG.typeOfRoute(route);
+    const CORE = ["home", "admin", "login", "register", "view", "search", "grade", "quiz"];
+    if (!sectionOn(route) && CORE.indexOf(route) < 0) {
+      app.innerHTML = `<section class="panel empty-state" style="text-align:center;padding:56px 20px">
+        <div style="font-size:2.4rem">🚧</div><h2>${OEG.esc(t("ui.sectionOff"))}</h2>
+        <p style="color:var(--muted);margin-top:8px">${OEG.esc(t("ui.sectionOffSub"))}</p>
+        <div style="margin-top:16px"><a class="btn btn-brand" href="#/">← ${t("btn.home")}</a></div></section>`;
+      renderSidebar();
+      return;
+    }
     switch (route) {
       case "home": html = homePage(); break;
       case "games": html = gamesPage(); after = () => {
@@ -650,6 +688,14 @@
 
   function applyTheme() {
     document.documentElement.dataset.theme = OEG.state.theme;
+    const acc = uiCfg().accent;
+    if (acc && /^#[0-9a-fA-F]{6}$/.test(acc)) {
+      document.documentElement.style.setProperty("--brand", acc);
+      document.documentElement.style.setProperty("--brand-2", acc);
+    } else {
+      document.documentElement.style.removeProperty("--brand");
+      document.documentElement.style.removeProperty("--brand-2");
+    }
     document.getElementById("themeToggle").textContent = OEG.state.theme === "dark" ? "☀️" : "🌙";
   }
   document.getElementById("themeToggle").onclick = () => {
@@ -671,10 +717,11 @@
      અહીં right-click, drag, copy, view-source/save/print, devtools શોર્ટકટ રોકાય છે.
      ફોર્મ ફીલ્ડ્સ (input/textarea) છૂટછાટ ધરાવે છે — admin કામ ચાલુ રહે. */
   const guardAllow = (el) => !!(el && el.closest && el.closest("input,textarea,select,[contenteditable],[data-allow-select]"));
-  document.addEventListener("contextmenu", (e) => { if (guardAllow(e.target)) return; e.preventDefault(); OEG.toast(t("prot.copy")); });
-  document.addEventListener("dragstart", (e) => { if (!guardAllow(e.target)) e.preventDefault(); });
-  document.addEventListener("copy", (e) => { if (guardAllow(e.target)) return; e.preventDefault(); OEG.toast(t("prot.copy")); });
+  document.addEventListener("contextmenu", (e) => { if (!guardOn() || guardAllow(e.target)) return; e.preventDefault(); OEG.toast(t("prot.copy")); });
+  document.addEventListener("dragstart", (e) => { if (guardOn() && !guardAllow(e.target)) e.preventDefault(); });
+  document.addEventListener("copy", (e) => { if (!guardOn() || guardAllow(e.target)) return; e.preventDefault(); OEG.toast(t("prot.copy")); });
   document.addEventListener("keydown", (e) => {
+    if (!guardOn()) return;
     const typing = guardAllow(document.activeElement);
     const k = (e.key || "").toLowerCase();
     if ((e.ctrlKey || e.metaKey) && !typing && ["u", "s", "p", "c", "x", "a"].includes(k)) { e.preventDefault(); OEG.toast(t("prot.copy")); return; }
@@ -683,11 +730,26 @@
   });
 
   window.addEventListener("hashchange", render);
+  /* Admin માંથી કંઈ બદલાય/કઢાણ થાય એટલે સાઇટ તરત જ અપડેટ (reload કરવાની જરૂર નહીં) */
+  OEG.refreshSite = async () => {
+    try { await OEG.loadConfig(); } catch (e) {}
+    try { await Promise.all([OEG.loadCatalog(), OEG.quiz ? OEG.quiz.load() : Promise.resolve()]); } catch (e) {}
+    if (OEG.ads) { OEG.ads.head(); OEG.ads.flush(); }
+    applyTheme();
+    applyI18n();
+    await render();
+  };
+  OEG.render = render;
   document.addEventListener("click", () => document.querySelectorAll(".nav-more.open").forEach(x => x.classList.remove("open")));
 
   /* ---------- Boot ---------- */
   (async () => {
     await OEG.loadConfig();
+    try {
+      const u0 = (OEG.state.config && OEG.state.config.ui) || {};
+      if (u0.defaultLang && !localStorage.getItem("oeg-lang") && ["gu", "hi", "en"].indexOf(u0.defaultLang) >= 0) OEG.state.lang = u0.defaultLang;
+      if (u0.defaultTheme && !localStorage.getItem("oeg-theme") && ["light", "dark"].indexOf(u0.defaultTheme) >= 0) OEG.state.theme = u0.defaultTheme;
+    } catch (e) {}
     if (OEG.seo) OEG.seo.init();          // ?lang=… + pre-render meta
     if (OEG.ads) OEG.ads.head();          // AdSense script (publisher ભર્યું હોય તો)
     await Promise.all([OEG.loadCatalog(), OEG.quiz ? OEG.quiz.load() : Promise.resolve()]);

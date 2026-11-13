@@ -55,21 +55,41 @@ OEG.cert = (() => {
       hi: { presented: "यह प्रमाणपत्र गर्व से प्रदान किया जाता है", to: "को", for: "के लिए", score: "अंक", date: "दिनांक", no: "प्रमाणपत्र क्रमांक", pass: "पास मार्क", grade: "कक्षा", subject: "विषय", questions: "प्रश्न", right: "सही", badge: "सत्यापित" },
       en: { presented: "This certificate is proudly presented to", to: "", for: "for", score: "Score", date: "Date", no: "Certificate no.", pass: "Pass mark", grade: "Grade", subject: "Subject", questions: "Questions", right: "Correct", badge: "Verified" }
     }[OEG.state.lang] || {};
-    return {
+    const I = {
       title: txt(o.title) || T("quiz.certTitle"),
       sub: txt(o.sub) || T("quiz.certSub"),
       site: o.site || OEG.siteName(),
       url: (o.url || OEG.siteUrl() || "").replace(/^https?:\/\//, "").replace(/\/$/, ""),
       name: name,
-      praise: txt(praise),
+      praise: txt(o.praise) || txt(praise),
+      issuer: txt(o.issuer) || OEG.siteName(),
       subject: txt(o.subjectLabel) || txt(SUBJECT_LABEL[subjKey] || ""),
       subjectKey: subjKey,
       catLabel: o.catLabel || txt(cat.label || key) || T("page.quiz"),
       grade: o.grade && o.grade !== "all" ? OEG.gradeLabel(o.grade) : "",
       body: body,
       pct: pct, right: Number(o.right) || 0, total: Number(o.total) || 0, pass: Number(o.pass) || 60,
-      date: date, id: o.id || "", lang: OEG.state.lang
+      date: date, id: o.id || "", lang: OEG.state.lang,
+      showUrl: o.showUrl !== false, showSeal: o.showSeal !== false, showScore: o.showScore !== false,
+      footer: txt(o.footer) || T("quiz.certFooter"),
+      catName: txt(cat.label || key) || T("page.quiz"),
+      chips: (function () {
+        const list = [
+          { k: body.right, v: (Number(o.right) || 0) + " / " + (Number(o.total) || 0) },
+          { k: body.score, v: pct + "%" },
+          { k: body.pass, v: (Number(o.pass) || 60) + "%" }
+        ];
+        if (subjKey) list.push({ k: body.subject, v: txt(SUBJECT_LABEL[subjKey] || "") });
+        if (o.grade && o.grade !== "all") list.push({ k: body.grade, v: OEG.gradeLabel(o.grade) });
+        return list.filter(function (x) { return x.v; });
+      })()
     };
+    I.awarded = String(o.awarded || "").trim() || (I.lang === "en"
+      ? "has successfully completed the " + I.catName + " online assessment"
+      : I.lang === "hi"
+        ? "ने “" + I.catName + "” ऑनलाइन प्रश्नोत्तरी सफलतापूर्वक पूरी की है"
+        : "એ “" + I.catName + "” ઓનલાઇન પ્રશ્નોત્તરી સફળતાપૂર્વક પૂરી કરી છે");
+    return I;
   }
 
   /* ---------- canvas helper ---------- */
@@ -81,30 +101,43 @@ OEG.cert = (() => {
     c.lineTo(x + k, y + h); c.quadraticCurveTo(x, y + h, x, y + h - k);
     c.lineTo(x, y + k); c.quadraticCurveTo(x, y, x + k, y); c.closePath();
   };
-  const measured = (c, text, font) => { c.font = font; return c.measureText(text).width; };
-  /* મોટાઈ ઘટાડીને લાઈન ફિટ કરો */
-  const fit = (c, text, weight, size, family, maxW) => {
-    let s = size;
-    while (s > 14 && measured(c, text, weight + " " + s + "px " + family) > maxW) s -= Math.max(1, s * 0.04);
-    return s;
-  };
+  /* ---------- ટેક્સ્ટ લેઆઉટ એન્જિન (માપ → લપેટ → જો જરૂર પડે તો ઘટાડો) ----------
+     હેતુ: બધું અંદરના પાનામાં બંધાયેલું રહે, બે લાઈન એકબીજા પર ન ચઢે અને ફ્રેમ કપાતી ન આવે. */
+  const fontOf = (weight, size, family) => weight + " " + (Math.round(size * 100) / 100) + "px " + family;
   const wrap = (c, text, font, maxW, maxLines) => {
     c.font = font;
-    const words = String(text || "").split(/\s+/).filter(Boolean);
-    const lines = []; let cur = "";
-    for (const w of words) {
+    const words = String(text == null ? "" : text).replace(/\s+/g, " ").trim().split(" ").filter(Boolean);
+    const out = [];
+    let cur = "", cut = false;
+    const ell = (t) => {
+      let x = t;
+      while (x.length > 1 && c.measureText(x + "\u2026").width > maxW) x = x.slice(0, -1);
+      return x + "\u2026";
+    };
+    for (let i = 0; i < words.length; i++) {
+      const w = words[i];
       const t = cur ? cur + " " + w : w;
-      if (c.measureText(t).width > maxW && cur) { lines.push(cur); cur = w; } else cur = t;
-      if (lines.length === maxLines) break;
+      if (c.measureText(t).width <= maxW || !cur) { cur = t; continue; }
+      if (out.length >= (maxLines || 1) - 1) { out.push(ell(cur + " " + words.slice(i).join(" "))); cut = true; return { lines: out, truncated: cut }; }
+      out.push(cur); cur = w;
     }
-    if (cur && lines.length < maxLines) lines.push(cur);
-    return lines;
+    if (cur) {
+      if (c.measureText(cur).width > maxW) { cur = ell(cur); cut = true; }
+      if (out.length < (maxLines || 1)) out.push(cur); else { out[out.length - 1] = ell(out[out.length - 1] + " " + cur); cut = true; }
+    }
+    return { lines: out.length ? out : [""], truncated: cut };
   };
-  const center = (c, text, font, y, color, maxW, weight, family) => {
-    if (maxW) { const s = fit(c, text, weight, sizeOf(font), family || BODY, maxW); font = weight + " " + s + "px " + (family || BODY); }
-    c.font = font; c.textAlign = "center"; c.fillStyle = color; c.fillText(text, W / 2, y);
-  };
-  const sizeOf = (font) => { const m = /(\d+(?:\.\d+)?)px/.exec(font); return m ? Number(m[1]) : 32; };
+  function layout(c, text, weight, size, family, maxW, maxLines) {
+    let s = Math.max(12, size), r = { lines: [""], truncated: false };
+    for (let i = 0; i < 26; i++) {
+      r = wrap(c, text, fontOf(weight, s, family), maxW, maxLines || 1);
+      let widest = 0;
+      for (const ln of r.lines) { const w = c.measureText(ln).width; if (w > widest) widest = w; }
+      if ((!r.truncated && widest <= maxW + 1) || s <= 14) break;
+      s = Math.max(14, s - Math.max(1, size * 0.045));
+    }
+    return { size: s, lines: r.lines };
+  }
 
   /* crest — grad-cap + આભામંડળ (emoji વગર, બધા બ્રાઉઝરમાં ચોખ્ખું) */
   function crest(c, cx, cy, s, color) {
@@ -137,139 +170,184 @@ OEG.cert = (() => {
   }
 
   /* ---------- મુખ્ય રેન્ડર ---------- */
+  const MAXW = W - 336;                       /* અંદરના પાનાની ટેક્સ્ટ પહોળાઈ */
+  function backdrop(c) {
+    const bg = c.createLinearGradient(0, 0, W, H);
+    bg.addColorStop(0, "#141a3c"); bg.addColorStop(0.45, "#1d2456"); bg.addColorStop(1, "#0f2036");
+    c.fillStyle = bg; c.fillRect(0, 0, W, H);
+    const glow = [[W * 0.12, H * 0.1, W * 0.5, "rgba(99,102,241,.34)"], [W * 0.92, H * 0.94, W * 0.45, "rgba(6,182,212,.24)"], [W * 0.86, H * 0.06, W * 0.3, "rgba(217,119,6,.20)"]];
+    glow.forEach((g) => {
+      const rad = c.createRadialGradient(g[0], g[1], 0, g[0], g[1], g[2]);
+      rad.addColorStop(0, g[3]); rad.addColorStop(1, "rgba(0,0,0,0)");
+      c.fillStyle = rad; c.fillRect(0, 0, W, H);
+    });
+    c.save(); c.globalAlpha = 0.06; c.strokeStyle = "#dbeafe"; c.lineWidth = 1.2;
+    for (let i = -H; i < W; i += 26) { c.beginPath(); c.moveTo(i, 0); c.lineTo(i + H, H); c.stroke(); }
+    c.restore();
+    rr(c, 40, 40, W - 80, H - 80, 30); c.lineWidth = 5; c.strokeStyle = GOLD2; c.stroke();
+    rr(c, 62, 62, W - 124, H - 124, 22); c.lineWidth = 1.6; c.strokeStyle = "rgba(232,196,106,.55)"; c.stroke();
+    c.save(); c.lineWidth = 2.4; c.strokeStyle = GOLD2;
+    const corners = [[92, 92, 1, 1], [W - 92, 92, -1, 1], [92, H - 92, 1, -1], [W - 92, H - 92, -1, -1]];
+    corners.forEach((q) => {
+      c.beginPath(); c.moveTo(q[0], q[1] + q[3] * 74); c.quadraticCurveTo(q[0], q[1], q[0] + q[2] * 74, q[1]); c.stroke();
+      c.beginPath(); c.arc(q[0] + q[2] * 30, q[1] + q[3] * 30, 9, 0, Math.PI * 2); c.stroke();
+    });
+    c.restore();
+    rr(c, 104, 104, W - 208, H - 208, 16);
+    const card = c.createLinearGradient(104, 104, W - 104, H - 104);
+    card.addColorStop(0, "#fdfaf3"); card.addColorStop(0.5, "#fbf6ea"); card.addColorStop(1, "#f6f1e4");
+    c.fillStyle = card; c.fill();
+    c.save(); rr(c, 104, 104, W - 208, H - 208, 16); c.clip();
+    c.globalAlpha = 0.045; c.strokeStyle = DEEP; c.lineWidth = 1.1;
+    for (let i = 0; i < 8; i++) { c.beginPath(); c.arc(W / 2, H * 0.5, 190 + i * 92, 0, Math.PI * 2); c.stroke(); }
+    c.restore();
+  }
+
   function paint(canvas, o) {
     const I = info(o);
     const c = canvas.getContext("2d");
     if (!c) return I;
     canvas.width = W; canvas.height = H;
     c.clearRect(0, 0, W, H);
+    backdrop(c);
 
-    /* 1) બેકગ્રાઉન્ડ: ઊંડો ગ્રેડિયન્ટ + કોણિયာશી આભા + સૂક્ષ્મ રેખાઓ */
-    const bg = c.createLinearGradient(0, 0, W, H);
-    bg.addColorStop(0, "#141a3c"); bg.addColorStop(0.45, "#1d2456"); bg.addColorStop(1, "#0f2036");
-    c.fillStyle = bg; c.fillRect(0, 0, W, H);
-    [[W * 0.12, H * 0.1, W * 0.5, "rgba(99,102,241,.34)"], [W * 0.92, H * 0.94, W * 0.45, "rgba(6,182,212,.24)"], [W * 0.86, H * 0.06, W * 0.3, "rgba(217,119,6,.20)"]]
-      .forEach(([x, y, rad, col]) => { const g = c.createRadialGradient(x, y, 0, x, y, rad); g.addColorStop(0, col); g.addColorStop(1, "rgba(0,0,0,0)"); c.fillStyle = g; c.fillRect(0, 0, W, H); });
-    c.save(); c.globalAlpha = 0.06; c.strokeStyle = "#dbeafe"; c.lineWidth = 1.2;
-    for (let i = -H; i < W; i += 26) { c.beginPath(); c.moveTo(i, 0); c.lineTo(i + H, H); c.stroke(); }
-    c.restore();
+    /* બ્લોક-પ્લાન બનાવો → કુલ ઊંચાઈ માપો → જગ્યા ઓછી પડે તો સ્કેલ ઘટાડો → વચ્ચે સેંટર કરી દોરો */
+    const TOP = 168, BOTTOM = H - 330, AVAIL = BOTTOM - TOP;
+    function build(k) {
+      const B = [];
+      const size = (n) => Math.max(11, Math.round(n * k * 100) / 100);
+      const text = (txt, weight, n, family, color, opt) => {
+        opt = opt || {};
+        const lay = layout(c, txt, weight, size(n), family, opt.maxW || MAXW, opt.lines || 1);
+        const lh = lay.size * (opt.lh || 1.24);
+        B.push({ kind: "text", lines: lay.lines, size: lay.size, lh: lh, height: lay.lines.length * lh,
+          weight: weight, family: family, color: color, gap: opt.gap || 0, grad: !!opt.grad, rule: !!opt.rule, maxW: opt.maxW || MAXW });
+      };
+      const gap = (h) => B.push({ kind: "gap", height: h * k });
+      const rule = () => B.push({ kind: "rule", height: 34 * k });
+      const chips = (list) => B.push({ kind: "chips", list: list, height: 112 * k });
+      const brand = () => B.push({ kind: "brand", height: 118 * k });
 
-    /* 2) સોનેરી ફ્રેમ + ખૂણાના ઓર્નામેન્ટ */
-    c.save();
-    rr(c, 40, 40, W - 80, H - 80, 30); c.lineWidth = 5; c.strokeStyle = GOLD2; c.stroke();
-    rr(c, 62, 62, W - 124, H - 124, 22); c.lineWidth = 1.6; c.strokeStyle = "rgba(232,196,106,.55)"; c.stroke();
-    c.lineWidth = 2.4; c.strokeStyle = GOLD2;
-    [[92, 92, 1, 1], [W - 92, 92, -1, 1], [92, H - 92, 1, -1], [W - 92, H - 92, -1, -1]].forEach(([x, y, sx, sy]) => {
-      c.beginPath(); c.moveTo(x, y + sy * 74); c.quadraticCurveTo(x, y, x + sx * 74, y); c.stroke();
-      c.beginPath(); c.arc(x + sx * 30, y + sy * 30, 9, 0, Math.PI * 2); c.stroke();
-    });
-    c.restore();
-
-    /* 3) અંદરનું ક્રીમ પાનું */
-    rr(c, 104, 104, W - 208, H - 208, 16);
-    const card = c.createLinearGradient(104, 104, W - 104, H - 104);
-    card.addColorStop(0, "#fdfaf3"); card.addColorStop(0.5, "#fbf6ea"); card.addColorStop(1, "#f6f1e4");
-    c.fillStyle = card; c.fill();
-    c.save(); rr(c, 104, 104, W - 208, H - 208, 16); c.clip();
-    c.globalAlpha = 0.05; c.fillStyle = DEEP;
-    for (let i = 0; i < 8; i++) { c.beginPath(); c.arc(W / 2, H * 0.52, 200 + i * 92, 0, Math.PI * 2); c.lineWidth = 1.1; c.strokeStyle = DEEP; c.stroke(); }
-    c.restore();
-
-    let y = 208;
-    /* 4) બ્રાન્ડ + વેબસાઈટ એડ્રેસ (નાના અક્ષરે) */
-    crest(c, W / 2 - (measured(c, I.site, "800 62px " + DISPLAY) / 2 + 46), y - 22, 30, GOLD);
-    center(c, I.site, "800 62px " + DISPLAY, y, INK, 0);
-    y += 46;
-    c.textAlign = "center"; c.font = "600 27px " + BODY;
-    const urlW = c.measureText(I.url).width;
-    c.fillStyle = "#9a7b23"; c.fillText(I.url, W / 2, y);
-    c.save(); c.strokeStyle = "rgba(185,138,31,.5)"; c.lineWidth = 1.4;
-    c.beginPath(); c.moveTo(W / 2 - urlW / 2 - 130, y - 9); c.lineTo(W / 2 - urlW / 2 - 34, y - 9); c.stroke();
-    c.beginPath(); c.moveTo(W / 2 + urlW / 2 + 34, y - 9); c.lineTo(W / 2 + urlW / 2 + 130, y - 9); c.stroke();
-    c.restore();
-
-    /* 5) શીર્ષક: પ્રમાણપત્ર */
-    y += 116;
-    const tSize = fit(c, I.title, "800", 112, DISPLAY, W - 620);
-    c.font = "800 " + tSize + "px " + DISPLAY; c.textAlign = "center";
-    const tg = c.createLinearGradient(W / 2 - 360, 0, W / 2 + 360, 0);
-    tg.addColorStop(0, "#7c5a12"); tg.addColorStop(0.42, "#c99a2e"); tg.addColorStop(0.6, "#e8c46a"); tg.addColorStop(1, "#8a6a1c");
-    c.fillStyle = tg; c.fillText(I.title, W / 2, y);
-    try { c.save(); c.lineWidth = 1.2; c.strokeStyle = "rgba(140,105,20,.45)"; c.strokeText(I.title, W / 2, y); c.restore(); } catch (e) {}
-    y += 44;
-    center(c, I.sub, "600 34px " + BODY, y, SOFT, W - 700);
-    /* પુનઃ: શીર્ષક પછીની સુશોભન રેખા */
-    c.save(); c.strokeStyle = "rgba(185,138,31,.75)"; c.lineWidth = 2;
-    c.beginPath(); c.moveTo(W / 2 - 300, y + 30); c.lineTo(W / 2 - 26, y + 30); c.stroke();
-    c.beginPath(); c.moveTo(W / 2 + 26, y + 30); c.lineTo(W / 2 + 300, y + 30); c.stroke();
-    c.fillStyle = GOLD; c.save(); c.translate(W / 2, y + 30); c.rotate(Math.PI / 4); c.fillRect(-8, -8, 16, 16); c.restore();
-    c.restore();
-
-    /* 6) "આ પ્રમાણપત્ર … આપવામાં આવે છે" */
-    y += 106;
-    center(c, I.body.presented, "400 33px " + BODY, y, SOFT, W - 640);
-
-    /* 7) નામ (સૌથી મોટું) + નીચે પ્રશંસાની લાઈન */
-    y += 92;
-    const nSize = fit(c, I.name, "800", 96, DISPLAY, W - 660);
-    c.font = "800 " + nSize + "px " + DISPLAY; c.textAlign = "center"; c.fillStyle = DEEP;
-    c.fillText(I.name, W / 2, y);
-    const nW = Math.max(360, c.measureText(I.name).width + 120);
-    c.save(); c.translate(W / 2, y + 30);
-    const ng = c.createLinearGradient(-nW / 2, 0, nW / 2, 0);
-    ng.addColorStop(0, "rgba(201,154,46,0)"); ng.addColorStop(0.2, "#c99a2e"); ng.addColorStop(0.8, "#c99a2e"); ng.addColorStop(1, "rgba(201,154,46,0)");
-    c.fillStyle = ng; c.fillRect(-nW / 2, 0, nW, 4);
-    c.beginPath(); c.arc(-nW / 2, 2, 6, 0, Math.PI * 2); c.arc(nW / 2, 2, 6, 0, Math.PI * 2); c.fillStyle = GOLD; c.fill();
-    c.restore();
-    y += 76;
-    const pl = wrap(c, I.praise, "italic 600 33px " + BODY, W - 700, 2);
-    c.font = "italic 600 33px " + BODY; c.fillStyle = "#7a5f1b"; c.textAlign = "center";
-    pl.forEach((ln, i) => c.fillText(ln, W / 2, y + i * 44));
-
-    /* 8) કયા વિષયની ક્વિઝ — મુજબનું લખાણ */
-    y += 44 * pl.length + 60;
-    const quizLine = (I.lang === "en"
-      ? "has successfully completed the " + I.catLabel + " online assessment"
-      : I.lang === "hi" ? "ने “" + I.catLabel + "” ऑनलाइन प्रश्नोत्तरी सफलतापूर्वक पूरी की"
-      : "એ “" + I.catLabel + "” ઓનલાઇન પ્રશ્નોત્તરી સફળતાપૂર્વક પૂરી કરી છે");
-    const bl = wrap(c, quizLine, "400 34px " + BODY, W - 560, 2);
-    c.font = "400 34px " + BODY; c.fillStyle = INK; c.textAlign = "center";
-    bl.forEach((ln, i) => c.fillText(ln, W / 2, y + i * 46));
-    y += 46 * bl.length + 10;
-
-    /* 9) આંકડાની પટ્ટી */
-    const chips = [
-      { k: I.body.right, v: I.right + " / " + I.total },
-      { k: I.body.score, v: I.pct + "%" },
-      { k: I.body.pass, v: I.pass + "%" },
-      { k: I.body.subject, v: I.subject || "—" }
-    ];
-    if (I.grade) chips.push({ k: I.body.grade, v: I.grade });
-    const gap = 22, cw = Math.min(318, (W - 320 - gap * (chips.length - 1)) / chips.length), tot = cw * chips.length + gap * (chips.length - 1);
-    let bx = (W - tot) / 2;
-    y += 22;
-    chips.forEach((ch) => {
-      rr(c, bx, y, cw, 104, 14); c.fillStyle = "rgba(42,47,107,.05)"; c.fill();
-      c.lineWidth = 1.4; c.strokeStyle = "rgba(185,138,31,.4)"; c.stroke();
-      c.textAlign = "center"; c.font = "700 21px " + BODY; c.fillStyle = "#8d93ad";
-      c.fillText(String(ch.k).toUpperCase(), bx + cw / 2, y + 38);
-      const vs = fit(c, String(ch.v), "800", 38, DISPLAY, cw - 26);
-      c.font = "800 " + vs + "px " + DISPLAY; c.fillStyle = DEEP;
-      c.fillText(String(ch.v), bx + cw / 2, y + 82);
-      bx += cw + gap;
-    });
-
-    /* 10) તારીખ + ક્રમાંક + મોહર */
-    const by = H - 176;
-    c.textAlign = "left"; c.font = "700 21px " + BODY; c.fillStyle = "#8d93ad";
-    c.fillText(String(I.body.date).toUpperCase(), 214, by - 34);
-    c.font = "800 33px " + DISPLAY; c.fillStyle = INK; c.fillText(I.date, 214, by + 8);
-    if (I.id) {
-      c.font = "700 21px " + BODY; c.fillStyle = "#8d93ad";
-      c.fillText(String(I.body.no).toUpperCase(), 214, by + 58);
-      c.font = "800 27px " + BODY; c.fillStyle = "#7a5f1b"; c.fillText(I.id, 214, by + 94);
+      brand();
+      text(I.title, "800", 104, DISPLAY, GOLD, { grad: true, gap: 6 });
+      text(I.sub, "600", 32, BODY, SOFT, { lines: 2 });
+      rule();
+      text(I.body.presented, "400", 30, BODY, SOFT, { lines: 1, gap: 14 });
+      text(I.name, "800", 86, DISPLAY, DEEP, { rule: true, gap: 6 });
+      text(I.praise, "italic 600", 30, BODY, "#7a5f1b", { lines: 2, gap: 16 });
+      text(I.awarded, "400", 31, BODY, INK, { lines: 2, gap: 20 });
+      if (I.showScore !== false && I.chips && I.chips.length) chips(I.chips);
+      return B;
     }
-    seal(c, W - 250, by + 8, 88, I.body.badge);
+    let blocks = build(1);
+    let total = blocks.reduce((sum, b) => sum + b.height + (b.gap || 0), 0);
+    for (let i = 0; total > AVAIL && i < 4; i++) {
+      blocks = build(Math.max(0.62, (AVAIL / total) * 0.98));
+      total = blocks.reduce((sum, b) => sum + b.height + (b.gap || 0), 0);
+    }
+    let y = TOP + Math.max(0, (AVAIL - total) / 2);
+
+    c.textAlign = "center"; c.textBaseline = "alphabetic";
+    blocks.forEach((b) => {
+      if (b.kind === "gap") { y += b.height; return; }
+      if (b.kind === "rule") {
+        c.save(); c.strokeStyle = "rgba(185,138,31,.7)"; c.lineWidth = 2;
+        c.beginPath(); c.moveTo(W / 2 - 300, y + b.height / 2); c.lineTo(W / 2 - 26, y + b.height / 2); c.stroke();
+        c.beginPath(); c.moveTo(W / 2 + 26, y + b.height / 2); c.lineTo(W / 2 + 300, y + b.height / 2); c.stroke();
+        c.translate(W / 2, y + b.height / 2); c.rotate(Math.PI / 4); c.fillStyle = GOLD; c.fillRect(-7, -7, 14, 14);
+        c.restore();
+        y += b.height; return;
+      }
+      if (b.kind === "brand") {
+        const fs0 = 56 * (b.height / 118);
+        const lay = layout(c, I.site, "800", fs0, DISPLAY, MAXW - 130, 1);
+        const fs = lay.size;
+        c.font = fontOf("800", fs, DISPLAY);
+        const tw = c.measureText(I.site).width;
+        crest(c, W / 2 - tw / 2 - 46, y + 30, 26, GOLD);
+        c.textAlign = "center"; c.fillStyle = INK;
+        c.fillText(I.site, W / 2 + 24, y + 42);
+        if (I.showUrl && I.url) {
+          const ul = layout(c, I.url, "600", fs * 0.44, BODY, MAXW - 210, 1);
+          c.font = fontOf("600", ul.size, BODY); c.fillStyle = "#9a7b23";
+          const uw = c.measureText(ul.lines[0]).width;
+          c.fillText(ul.lines[0], W / 2, y + 94);
+          c.save(); c.strokeStyle = "rgba(185,138,31,.45)"; c.lineWidth = 1.3;
+          c.beginPath(); c.moveTo(W / 2 - uw / 2 - 156, y + 87); c.lineTo(W / 2 - uw / 2 - 26, y + 87); c.stroke();
+          c.beginPath(); c.moveTo(W / 2 + uw / 2 + 26, y + 87); c.lineTo(W / 2 + uw / 2 + 156, y + 87); c.stroke();
+          c.restore();
+        }
+        y += b.height; return;
+      }
+      if (b.kind === "chips") {
+        const list = b.list, gapx = 20;
+        const cw = Math.min(330, (W - 360 - gapx * (list.length - 1)) / list.length);
+        let bx = (W - (cw * list.length + gapx * (list.length - 1))) / 2;
+        const ch = 100 * (b.height / 112);
+        list.forEach((it) => {
+          rr(c, bx, y, cw, ch, 13); c.fillStyle = "rgba(42,47,107,.05)"; c.fill();
+          c.lineWidth = 1.4; c.strokeStyle = "rgba(185,138,31,.4)"; c.stroke();
+          c.textAlign = "center";
+          c.font = fontOf("700", Math.max(11, ch * 0.2), BODY); c.fillStyle = "#8d93ad";
+          c.fillText(String(it.k).toUpperCase(), bx + cw / 2, y + ch * 0.36);
+          const lay = layout(c, String(it.v), "800", ch * 0.36, DISPLAY, cw - 22, 1);
+          c.font = fontOf("800", lay.size, DISPLAY); c.fillStyle = DEEP;
+          c.fillText(lay.lines[0], bx + cw / 2, y + ch * 0.78);
+          bx += cw + gapx;
+        });
+        y += b.height; return;
+      }
+      /* text block */
+      b.lines.forEach((ln, i) => {
+        const base = y + b.size * 0.82 + i * b.lh;
+        c.font = fontOf(b.weight, b.size, b.family);
+        if (b.grad) {
+          const g = c.createLinearGradient(W / 2 - 340, 0, W / 2 + 340, 0);
+          g.addColorStop(0, "#7c5a12"); g.addColorStop(0.42, "#c99a2e"); g.addColorStop(0.62, "#e8c46a"); g.addColorStop(1, "#8a6a1c");
+          c.fillStyle = g; c.fillText(ln, W / 2, base);
+          c.save(); c.lineWidth = 1.1; c.strokeStyle = "rgba(140,105,20,.35)"; c.strokeText(ln, W / 2, base); c.restore();
+        } else {
+          c.fillStyle = b.color; c.fillText(ln, W / 2, base);
+        }
+        if (b.rule && i === b.lines.length - 1) {
+          const tw = Math.max(340, c.measureText(ln).width + 110);
+          const uy = base + b.size * 0.16;
+          c.save();
+          const ng = c.createLinearGradient(W / 2 - tw / 2, 0, W / 2 + tw / 2, 0);
+          ng.addColorStop(0, "rgba(201,154,46,0)"); ng.addColorStop(0.18, "#c99a2e"); ng.addColorStop(0.82, "#c99a2e"); ng.addColorStop(1, "rgba(201,154,46,0)");
+          c.fillStyle = ng; c.fillRect(W / 2 - tw / 2, uy, tw, 4);
+          c.fillStyle = GOLD;
+          c.beginPath(); c.arc(W / 2 - tw / 2, uy + 2, 5.5, 0, Math.PI * 2); c.fill();
+          c.beginPath(); c.arc(W / 2 + tw / 2, uy + 2, 5.5, 0, Math.PI * 2); c.fill();
+          c.restore();
+          y += b.size * 0.2;
+        }
+      });
+      y += b.height + (b.gap || 0);
+    });
+
+    /* નીચેની પંક્તિ: તારીખ + ક્રમાંક (ડાબે), ફૂટર (વચ્ચે), મોહર (જમણે) — બધું માપીને */
+    const by = H - 300;
+    c.textAlign = "left"; c.textBaseline = "alphabetic";
+    const dl = layout(c, I.date, "800", 30, DISPLAY, 520, 1);
+    c.font = fontOf("700", 19, BODY); c.fillStyle = "#8d93ad";
+    c.fillText(String(I.body.date).toUpperCase(), 210, by);
+    c.font = fontOf("800", dl.size, DISPLAY); c.fillStyle = INK;
+    c.fillText(dl.lines[0], 210, by + 38);
+    if (I.id) {
+      c.font = fontOf("700", 19, BODY); c.fillStyle = "#8d93ad";
+      c.fillText(String(I.body.no).toUpperCase(), 210, by + 82);
+      const il = layout(c, I.id, "800", 24, BODY, 520, 1);
+      c.font = fontOf("800", il.size, BODY); c.fillStyle = "#7a5f1b";
+      c.fillText(il.lines[0], 210, by + 110);
+    }
+    if (I.showSeal) seal(c, W - 246, by + 30, 84, I.body.badge);
+    if (I.footer) {
+      const fy = H - 150;
+      const fl = layout(c, I.footer, "600", 21, BODY, W - 480, 2);
+      c.textAlign = "center"; c.font = fontOf("600", fl.size, BODY); c.fillStyle = "#9a9fb8";
+      fl.lines.forEach((ln, i) => c.fillText(ln, W / 2, fy + i * (fl.size * 1.3)));
+    }
     return I;
   }
 

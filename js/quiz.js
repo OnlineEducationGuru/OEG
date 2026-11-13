@@ -64,7 +64,8 @@ OEG.quiz = (() => {
       return {
         key: key, icon: t.icon || b.icon || s.icon || "🧠",
         label: t.label || b.label || s.label || { gu: key, hi: key, en: key },
-        useGrade: f.useGrade, useSubject: f.useSubject, count: countIn(key, "all", "all")
+        useGrade: f.useGrade, useSubject: f.useSubject, count: countIn(key, "all", "all"),
+        praise: t.praise || b.praise || "", certLine: t.certLine || b.certLine || ""
       };
     });
   }
@@ -183,6 +184,7 @@ OEG.quiz = (() => {
 
   function seconds() { return Math.max(10, Number(bank.seconds) || 45); }
   const passPct = () => Math.min(100, Math.max(1, Number(bank.passPercent) || 60));
+  const certOn = () => !bank.cert || bank.cert.enabled !== false;
 
   function question() {
     const C = t(), q = run.qs[run.i], total = run.qs.length;
@@ -300,12 +302,12 @@ OEG.quiz = (() => {
         <button class="btn btn-brand" id="qzAgain">🔄 ${C("quiz.playAgain")}</button>
         <button class="btn btn-outline" id="qzReview">📋 ${C("quiz.review")}</button>
         <button class="btn btn-outline" id="qzBack">← ${C("quiz.back")}</button>
-        ${passed ? `<button class="btn btn-gold" id="qzCert">🏅 ${C("quiz.cert")}</button>` : ""}
+        ${passed && certOn() ? `<button class="btn btn-gold" id="qzCert">🏅 ${C("quiz.cert")}</button>` : ""}
       </div>
       <div id="qzCertMount"></div>
       ${passed ? `<div class="share-row" id="qzShare">${resultShare(pct, cat)}</div>` : ""}
     </div>`);
-    if (passed) certificate();
+    if (passed && certOn()) certificate();
   }
 
   function resultShare(pct, cat) {
@@ -321,7 +323,15 @@ OEG.quiz = (() => {
   /* ---------- પ્રમાણપત્ર (canvas = એ જ PDF/Image) ---------- */
   function certData() {
     const L = run.last;
-    return { name: L.name, cat: L.cat, catLabel: catLabel(L.cat), grade: L.grade, subject: L.subject, subjectLabel: L.subject && L.subject !== "all" ? OEG.subjectLabel(L.subject) : "", right: L.right, total: L.total, pct: L.pct, pass: passPct(), id: L.cid };
+    const cc = bank.cert || {};
+    return {
+      name: L.name, cat: L.cat, catLabel: catLabel(L.cat), grade: L.grade, subject: L.subject,
+      subjectLabel: L.subject && L.subject !== "all" ? OEG.subjectLabel(L.subject) : "",
+      right: L.right, total: L.total, pct: L.pct, pass: passPct(), id: L.cid,
+      title: cc.title, sub: cc.subtitle, footer: cc.footer, issuer: cc.issuer,
+      awarded: L.cat.certLine, praise: L.cat.praise,
+      showUrl: cc.showUrl !== false, showSeal: cc.showSeal !== false, showScore: cc.showScore !== false
+    };
   }
   async function certificate() {
     const C = t(), host = mountEl.querySelector("#qzCertMount");
@@ -433,5 +443,5 @@ OEG.quiz = (() => {
   /* Admin ટૂલ: કેટેગરી ફ્લેગ + પ્રશ્નો બદલો (એક જ જગ્યાએથી લખાય) */
   function mutate(fn) { const next = fn(Object.assign({}, bank, { cats: (bank.cats || []).slice(), questions: (bank.questions || []).slice() })) || bank; bank = next; return next; }
 
-  return { load, mount, raw, save, mutate, pick, cats, catOf, flagOf, isExamCat, subjOf, countIn, passPct, seconds, all, matches };
+  return { load, mount, raw, save, mutate, pick, cats, catOf, flagOf, isExamCat, subjOf, countIn, passPct, seconds, certOn, all, matches };
 })();

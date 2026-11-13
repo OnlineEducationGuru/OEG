@@ -501,7 +501,7 @@ body.ads-preview .ad-slot.ad-empty .ad-box{border-color:var(--accent)}
 .qz-link{background:none;border:none;padding:0 4px;color:var(--brand);font-size:.8rem;font-weight:700;text-decoration:underline;cursor:pointer}
 .qr-name{margin:10px 0 2px;font-size:.95rem}
 .cert-card{padding:0;border-radius:16px;background:var(--surface);box-shadow:var(--shadow-lg);overflow:hidden;border:none}
-.cert-canvas{display:block;width:100%;height:auto;background:#141a3c;cursor:pointer}
+.cert-canvas{display:block;width:100%;height:auto;background:#141a3c}
 .cert-wrap{margin-top:22px}
 .cert-actions{margin-top:12px;flex-wrap:wrap}
 .cert-actions .btn{white-space:nowrap}
@@ -511,3 +511,64 @@ body.ads-preview .ad-slot.ad-empty .ad-box{border-color:var(--accent)}
 #qzFlags .file-item{flex-wrap:wrap;gap:10px}
 #qzFlags .chk{font-size:.84rem}
 #qzImp .file-list{max-height:240px;overflow:auto;margin-top:8px}
+
+/* Allow selection when the owner turns the anti-copy guard off in Admin → Site settings */
+body.allow-select, body.allow-select .app, body.allow-select .app * {
+  -webkit-user-select: text; user-select: text;
+}
+body.allow-select img, body.allow-select video { -webkit-user-drag: auto; }
+.footer-note { text-align: center; font-size: .88rem; color: var(--muted); padding: 4px 16px 0; }
+
+/* ---- Round 12: Admin એ ટૉબમાં વહેંચાયેલું ---- */
+.adm-tabs {
+  position: sticky; top: calc(var(--header-h, 66px) + 8px); z-index: 30;
+  display: flex; gap: 8px; flex-wrap: nowrap;
+  overflow-x: auto; overscroll-behavior-x: contain; padding: 10px; margin: 0 0 18px;
+  background: var(--card,#fff); border: 1px solid var(--line,#e6e9f2); border-radius: 14px;
+  box-shadow: 0 6px 18px rgba(20,25,60,.06); scrollbar-width: thin;
+}
+.adm-tab {
+  flex: 0 0 auto; display: inline-flex; align-items: center; gap: 8px; cursor: pointer;
+  border: 1px solid var(--line,#e6e9f2); background: transparent; color: var(--muted,#6d7392);
+  border-radius: 10px; padding: 9px 14px; font: inherit; font-weight: 700; font-size: .9rem;
+  white-space: nowrap; transition: background .15s, color .15s, border-color .15s, transform .15s;
+}
+.adm-tab:hover { background: rgba(99,102,241,.07); color: var(--ink,#1d2340); }
+.adm-tab.on { background: var(--brand,#4f46e5); border-color: var(--brand,#4f46e5); color: #fff; }
+.adm-tab b { font-size: 1.12rem; line-height: 1; }
+.adm-hint {
+  display: flex; gap: 10px; align-items: flex-start; margin: 0 0 16px; padding: 12px 14px;
+  border: 1px dashed var(--line,#dfe3ee); border-radius: 12px; background: rgba(99,102,241,.05);
+  color: var(--muted,#5d6484); font-size: .92rem;
+}
+.adm-step {
+  display: inline-flex; align-items: center; justify-content: center; min-width: 22px; height: 22px;
+  border-radius: 7px; background: var(--brand,#4f46e5); color: #fff; font-size: .78rem; font-weight: 800;
+  flex: 0 0 auto; margin-top: 1px;
+}
+.adm-sec-note { color: var(--muted,#6d7392); font-size: .9rem; margin: 2px 0 14px; }
+.admin-grid > .panel { break-inside: avoid; grid-column: 1 / -1; }
+.adm-sec { max-width: 1180px; }
+/* ટૉગલ સ્લિટ્ચ */
+.tgl { display: flex; align-items: center; gap: 10px; cursor: pointer; padding: 7px 0; }
+.tgl input { position: absolute; opacity: 0; pointer-events: none; }
+.tgl .tr { width: 42px; height: 23px; border-radius: 999px; background: #cfd5e6; position: relative; flex: 0 0 auto; transition: background .18s; }
+.tgl .tr::after { content: ""; position: absolute; top: 3px; left: 3px; width: 17px; height: 17px; border-radius: 50%; background: #fff; transition: transform .18s; box-shadow: 0 1px 3px rgba(0,0,0,.25); }
+.tgl input:checked + .tr { background: var(--brand,#4f46e5); }
+.tgl input:checked + .tr::after { transform: translateX(19px); }
+.tgl .tl { font-weight: 600; }
+.tgl-grid { display: grid; grid-template-columns: repeat(auto-fill,minmax(230px,1fr)); gap: 2px 18px; }
+.mini-label { font-size: .8rem; font-weight: 700; color: var(--muted,#6d7392); margin: 12px 0 4px; text-transform: uppercase; letter-spacing: .04em; }
+
+/* પ્રમાણપત્ર પેનલ + ટૉબ-પંક્તિની બાજુમાં વિsual polish */
+#cePra .file-item input { width: 100%; margin-top: 2px; }
+#ceCanvas { margin-top: 14px; border-radius: 12px; }
+.adm-tab:focus-visible { outline: 2px solid var(--brand, #4f46e5); outline-offset: 2px; }
+.panel > h3 { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+
+@media (max-width:720px){
+  .adm-tabs{top:calc(var(--header-h, 66px) + 2px);padding:8px;border-radius:12px}
+  .adm-tab{padding:8px 11px;font-size:.82rem;gap:6px}
+  .adm-tab b{font-size:1.05rem}
+  .adm-hint{font-size:.86rem}
+}
