@@ -1,5 +1,5 @@
 {
-  "v": 2,
+  "v": 3,
   "note": "Admin Panel → ક્વિઝ મેનેજ માંથી પ્રશ્નો ઉમેરો/કાઢી નાખો. cat = સબ-કેટેગરી; a = સાચા વિકલ્પનો ક્રમ (0–3).",
   "passPercent": 60,
   "seconds": 45,
@@ -12,8 +12,7 @@
         "hi": "कक्षा अनुसार",
         "en": "By grade"
       },
-      "useGrade": true,
-      "useSubject": false
+      "mode": "grade"
     },
     {
       "key": "gk",
@@ -23,107 +22,45 @@
         "hi": "सामान्य ज्ञान",
         "en": "General Knowledge"
       },
-      "useGrade": false,
-      "useSubject": false
-    },
-    {
-      "key": "maths",
-      "icon": "➗",
-      "label": {
-        "gu": "ગણિત",
-        "hi": "गणित",
-        "en": "Maths"
-      },
-      "useGrade": true,
-      "useSubject": false
-    },
-    {
-      "key": "science",
-      "icon": "🔬",
-      "label": {
-        "gu": "વિજ્ઞાન",
-        "hi": "विज्ञान",
-        "en": "Science"
-      },
-      "useGrade": true,
-      "useSubject": false
-    },
-    {
-      "key": "social",
-      "icon": "🗺️",
-      "label": {
-        "gu": "સામાજિક વિજ્ઞાન",
-        "hi": "सामाजिक विज्ञान",
-        "en": "Social Science"
-      },
-      "useGrade": true,
-      "useSubject": false
-    },
-    {
-      "key": "gujarati",
-      "icon": "📖",
-      "label": {
-        "gu": "ગુજરાતી",
-        "hi": "गुजराती",
-        "en": "Gujarati"
-      },
-      "useGrade": true,
-      "useSubject": false
-    },
-    {
-      "key": "english",
-      "icon": "🔤",
-      "label": {
-        "gu": "English",
-        "hi": "English",
-        "en": "English"
-      },
-      "useGrade": true,
-      "useSubject": false
-    },
-    {
-      "key": "sanskrit",
-      "icon": "🕉️",
-      "label": {
-        "gu": "સંસ્કૃત",
-        "hi": "संस्कृत",
-        "en": "Sanskrit"
-      },
-      "useGrade": true,
-      "useSubject": false
-    },
-    {
-      "key": "tat",
-      "icon": "📝",
-      "label": {
-        "gu": "TAT (૧–૮)",
-        "hi": "TAT (1–8)",
-        "en": "TAT (1–8)"
-      },
-      "useGrade": false,
-      "useSubject": false
-    },
-    {
-      "key": "htat",
-      "icon": "🏫",
-      "label": {
-        "gu": "HTAT (૯–૧૨)",
-        "hi": "HTAT (9–12)",
-        "en": "HTAT (9–12)"
-      },
-      "useGrade": false,
-      "useSubject": false
-    },
-    {
-      "key": "reasoning",
-      "icon": "🧩",
-      "label": {
-        "gu": "તર્કશક્તિ",
-        "hi": "तर्कशक्ति",
-        "en": "Reasoning"
-      },
-      "useGrade": false,
-      "useSubject": false
+      "mode": "sub",
+      "subs": [
+        {
+          "key": "india",
+          "icon": "🇮🇳",
+          "label": {
+            "gu": "ભારત",
+            "hi": "भारत",
+            "en": "India"
+          }
+        },
+        {
+          "key": "gujarat",
+          "icon": "🏛️",
+          "label": {
+            "gu": "ગુજરાત",
+            "hi": "गुजरात",
+            "en": "Gujarat"
+          }
+        },
+        {
+          "key": "general",
+          "icon": "🌍",
+          "label": {
+            "gu": "સામાન્ય",
+            "hi": "सामान्य",
+            "en": "General"
+          }
+        },
+        {
+          "key": "space",
+          "icon": "🪐",
+          "label": {
+            "gu": "અવકાશ અને વિજ્ઞાન",
+            "hi": "अंतरिक्ष और विज्ञान",
+            "en": "Space & science"
+          }
+        }
+      ]
     },
     {
       "key": "current",
@@ -133,8 +70,228 @@
         "hi": "समकालीन",
         "en": "Current Affairs"
       },
-      "useGrade": false,
-      "useSubject": false
+      "mode": "sub",
+      "subs": [
+        {
+          "key": "states",
+          "icon": "🗺️",
+          "label": {
+            "gu": "રાજ્ય કક્ષા",
+            "hi": "राज्य स्तर",
+            "en": "State level"
+          }
+        },
+        {
+          "key": "national",
+          "icon": "🇮🇳",
+          "label": {
+            "gu": "રાષ્ટ્રીય",
+            "hi": "राष्ट्रीय",
+            "en": "National"
+          }
+        },
+        {
+          "key": "international",
+          "icon": "🌐",
+          "label": {
+            "gu": "આંતરરાષ્ટ્રીય",
+            "hi": "अंतर्राष्ट्रीय",
+            "en": "International"
+          }
+        },
+        {
+          "key": "schemes",
+          "icon": "📜",
+          "label": {
+            "gu": "યોજનાઓ",
+            "hi": "योजनाएँ",
+            "en": "Schemes"
+          }
+        }
+      ]
+    },
+    {
+      "key": "reasoning",
+      "icon": "🧩",
+      "label": {
+        "gu": "તર્કશક્તિ",
+        "hi": "तर्कशक्ति",
+        "en": "Reasoning"
+      },
+      "mode": "sub",
+      "subs": [
+        {
+          "key": "series",
+          "icon": "🔢",
+          "label": {
+            "gu": "શ્રેણી",
+            "hi": "श्रेणी",
+            "en": "Series"
+          }
+        },
+        {
+          "key": "coding",
+          "icon": "🔤",
+          "label": {
+            "gu": "કોડિંગ-ડિકોડિંગ",
+            "hi": "कोडिंग-डीकोडिंग",
+            "en": "Coding-Decoding"
+          }
+        },
+        {
+          "key": "analogy",
+          "icon": "⚖️",
+          "label": {
+            "gu": "સાદૃશ્ય",
+            "hi": "सादृश्य",
+            "en": "Analogy"
+          }
+        },
+        {
+          "key": "direction",
+          "icon": "🧭",
+          "label": {
+            "gu": "દિશા અને અંતર",
+            "hi": "दिशा और दूरी",
+            "en": "Direction & distance"
+          }
+        }
+      ]
+    },
+    {
+      "key": "tat",
+      "icon": "📝",
+      "label": {
+        "gu": "TAT (૧–૮)",
+        "hi": "TAT (1–8)",
+        "en": "TAT (1–8)"
+      },
+      "mode": "sub",
+      "subs": [
+        {
+          "key": "exam",
+          "icon": "📋",
+          "label": {
+            "gu": "પરીક્ષા વિશે",
+            "hi": "परीक्षा के बारे में",
+            "en": "About the exam"
+          }
+        },
+        {
+          "key": "pedagogy",
+          "icon": "🧒",
+          "label": {
+            "gu": "બાલવિકાસ અને શિક્ષણશાસ્ત્ર",
+            "hi": "बालविकास और शिक्षणशास्त्र",
+            "en": "Child development & pedagogy"
+          }
+        },
+        {
+          "key": "policy",
+          "icon": "⚖️",
+          "label": {
+            "gu": "શિક્ષણ અધિકાર અને નીતિ",
+            "hi": "शिक्षा अधिकार और नीति",
+            "en": "Education rights & policy"
+          }
+        },
+        {
+          "key": "aptitude",
+          "icon": "🧠",
+          "label": {
+            "gu": "સક્ષમતા",
+            "hi": "अभिरुचि",
+            "en": "Aptitude"
+          }
+        }
+      ]
+    },
+    {
+      "key": "htat",
+      "icon": "🏫",
+      "label": {
+        "gu": "HTAT (૯–૧૨)",
+        "hi": "HTAT (9–12)",
+        "en": "HTAT (9–12)"
+      },
+      "mode": "sub",
+      "subs": [
+        {
+          "key": "exam",
+          "icon": "📋",
+          "label": {
+            "gu": "પરીક્ષા વિશે",
+            "hi": "परीक्षा के बारे में",
+            "en": "About the exam"
+          }
+        },
+        {
+          "key": "subject",
+          "icon": "📘",
+          "label": {
+            "gu": "વિષય આધારિત",
+            "hi": "विषय आधारित",
+            "en": "Subject based"
+          }
+        },
+        {
+          "key": "pedagogy",
+          "icon": "🧒",
+          "label": {
+            "gu": "શિક્ષણશાસ્ત્ર",
+            "hi": "शिक्षणशास्त्र",
+            "en": "Pedagogy"
+          }
+        }
+      ]
+    },
+    {
+      "key": "cet",
+      "icon": "🎯",
+      "label": {
+        "gu": "cet",
+        "hi": "cet",
+        "en": "cet"
+      },
+      "mode": "sub",
+      "subs": [
+        {
+          "key": "maths",
+          "icon": "➗",
+          "label": {
+            "gu": "ગણિત",
+            "hi": "गणित",
+            "en": "Maths"
+          }
+        },
+        {
+          "key": "physics",
+          "icon": "⚛️",
+          "label": {
+            "gu": "ભૌતિકશાસ્ત્ર",
+            "hi": "भौतिकी",
+            "en": "Physics"
+          }
+        },
+        {
+          "key": "chemistry",
+          "icon": "🧪",
+          "label": {
+            "gu": "રસાયણશાસ્ત્ર",
+            "hi": "रसायन विज्ञान",
+            "en": "Chemistry"
+          }
+        },
+        {
+          "key": "biology",
+          "icon": "🧬",
+          "label": {
+            "gu": "જીવશાસ્ત્ર",
+            "hi": "जীব विज्ञान",
+            "en": "Biology"
+          }
+        }
+      ]
     }
   ],
   "questions": [
@@ -176,7 +333,8 @@
         "hi": "भारत की राजधानी नई दिल्ली है।",
         "en": "New Delhi is the capital of India."
       },
-      "marks": 1
+      "marks": 1,
+      "sub": "india"
     },
     {
       "id": "q-gk-02",
@@ -216,7 +374,8 @@
         "hi": "गुजरात की राजधानी गांधीनगर है।",
         "en": "Gandhinagar is the capital of Gujarat."
       },
-      "marks": 1
+      "marks": 1,
+      "sub": "gujarat"
     },
     {
       "id": "q-gk-03",
@@ -256,7 +415,8 @@
         "hi": "गुजरात में 33 जिले हैं।",
         "en": "Gujarat has 33 districts."
       },
-      "marks": 1
+      "marks": 1,
+      "sub": "gujarat"
     },
     {
       "id": "q-gk-04",
@@ -296,7 +456,8 @@
         "hi": "मोर भारत का राष्ट्रीय पक्षी है।",
         "en": "The peacock is India's national bird."
       },
-      "marks": 1
+      "marks": 1,
+      "sub": "india"
     },
     {
       "id": "q-gk-05",
@@ -336,7 +497,8 @@
         "hi": "गुजरात का सर्वोच्च शिखर गुरुशिखर (1722 मी.) है।",
         "en": "Guru Shikhar (1722 m) is Gujarat's highest peak."
       },
-      "marks": 1
+      "marks": 1,
+      "sub": "gujarat"
     },
     {
       "id": "q-gk-06",
@@ -376,7 +538,8 @@
         "hi": "संविधान सभा की प्रारूप समिति के अध्यक्ष डॉ. अंबेडकर थे।",
         "en": "Dr. Ambedkar chaired the Drafting Committee."
       },
-      "marks": 1
+      "marks": 1,
+      "sub": "india"
     },
     {
       "id": "q-gk-07",
@@ -416,7 +579,8 @@
         "hi": "सामान्य वर्ष 365 और अधिकम वर्ष 366 दिन का होता है।",
         "en": "A normal year has 365 days, a leap year 366."
       },
-      "marks": 1
+      "marks": 1,
+      "sub": "general"
     },
     {
       "id": "q-gk-08",
@@ -456,7 +620,8 @@
         "hi": "बृहस्पति सबसे बड़ा ग्रह है।",
         "en": "Jupiter is the largest planet."
       },
-      "marks": 1
+      "marks": 1,
+      "sub": "space"
     },
     {
       "id": "q-gk-09",
@@ -496,11 +661,12 @@
         "hi": "सूर्य पृथ्वी के सबसे निकट का तारा है।",
         "en": "The Sun is the nearest star to Earth."
       },
-      "marks": 1
+      "marks": 1,
+      "sub": "space"
     },
     {
       "id": "q-maths-01",
-      "cat": "maths",
+      "cat": "grade",
       "grade": "3",
       "diff": "easy",
       "q": {
@@ -536,11 +702,12 @@
         "hi": "७ × ८ = ५६",
         "en": "7 × 8 = 56"
       },
-      "marks": 1
+      "marks": 1,
+      "subject": "maths"
     },
     {
       "id": "q-maths-02",
-      "cat": "maths",
+      "cat": "grade",
       "grade": "5",
       "diff": "easy",
       "q": {
@@ -576,11 +743,12 @@
         "hi": "१२ × १२ = १४४",
         "en": "12 × 12 = 144"
       },
-      "marks": 1
+      "marks": 1,
+      "subject": "maths"
     },
     {
       "id": "q-maths-03",
-      "cat": "maths",
+      "cat": "grade",
       "grade": "7",
       "diff": "medium",
       "q": {
@@ -616,11 +784,12 @@
         "hi": "परिमाप = 4 × 9 = 36 सेमी",
         "en": "Perimeter = 4 × 9 = 36 cm"
       },
-      "marks": 1
+      "marks": 1,
+      "subject": "maths"
     },
     {
       "id": "q-maths-04",
-      "cat": "maths",
+      "cat": "grade",
       "grade": "4",
       "diff": "easy",
       "q": {
@@ -656,11 +825,12 @@
         "hi": "3 ÷ 4 = 0.75",
         "en": "3 ÷ 4 = 0.75"
       },
-      "marks": 1
+      "marks": 1,
+      "subject": "maths"
     },
     {
       "id": "q-science-01",
-      "cat": "science",
+      "cat": "grade",
       "grade": "6",
       "diff": "easy",
       "q": {
@@ -696,11 +866,12 @@
         "hi": "पत्ते सूर्यप्रकाश लेकर प्रकाश-संश्लेषण से भोजन बनाते हैं।",
         "en": "Leaves use sunlight to make food by photosynthesis."
       },
-      "marks": 1
+      "marks": 1,
+      "subject": "science"
     },
     {
       "id": "q-science-02",
-      "cat": "science",
+      "cat": "grade",
       "grade": "8",
       "diff": "easy",
       "q": {
@@ -736,11 +907,12 @@
         "hi": "पानी = H₂O (दो हाइड्रोजन, एक ऑक्सीजन)",
         "en": "Water is H₂O — two hydrogen, one oxygen."
       },
-      "marks": 1
+      "marks": 1,
+      "subject": "science"
     },
     {
       "id": "q-science-03",
-      "cat": "science",
+      "cat": "grade",
       "grade": "7",
       "diff": "medium",
       "q": {
@@ -776,11 +948,12 @@
         "hi": "हृदय रक्त पंप करता है; फेफड़ा ऑक्सीजन देता है।",
         "en": "The heart pumps blood; the lungs supply oxygen."
       },
-      "marks": 1
+      "marks": 1,
+      "subject": "science"
     },
     {
       "id": "q-social-01",
-      "cat": "social",
+      "cat": "grade",
       "grade": "5",
       "diff": "easy",
       "q": {
@@ -816,11 +989,12 @@
         "hi": "भारत एशिया महाद्वीप में है।",
         "en": "India lies in Asia."
       },
-      "marks": 1
+      "marks": 1,
+      "subject": "social"
     },
     {
       "id": "q-social-02",
-      "cat": "social",
+      "cat": "grade",
       "grade": "7",
       "diff": "medium",
       "q": {
@@ -856,11 +1030,12 @@
         "hi": "संविधान 26 नवम्बर 1949 को अपनाया गया, लागू 26 जनवरी 1950 को।",
         "en": "Adopted on 26 Nov 1949, it came into force on 26 Jan 1950."
       },
-      "marks": 1
+      "marks": 1,
+      "subject": "social"
     },
     {
       "id": "q-gujarati-01",
-      "cat": "gujarati",
+      "cat": "grade",
       "grade": "4",
       "diff": "easy",
       "q": {
@@ -896,11 +1071,12 @@
         "hi": "वन = जंगल।",
         "en": "'वन' means forest."
       },
-      "marks": 1
+      "marks": 1,
+      "subject": "gujarati"
     },
     {
       "id": "q-gujarati-02",
-      "cat": "gujarati",
+      "cat": "grade",
       "grade": "6",
       "diff": "medium",
       "q": {
@@ -936,11 +1112,12 @@
         "hi": "विद्या + आलय → विद्यालय (तत्पुरुष)।",
         "en": "vidyā + ālaya → a tatpuruṣa compound."
       },
-      "marks": 1
+      "marks": 1,
+      "subject": "gujarati"
     },
     {
       "id": "q-english-01",
-      "cat": "english",
+      "cat": "grade",
       "grade": "5",
       "diff": "easy",
       "q": {
@@ -976,11 +1153,12 @@
         "hi": "सही रूप — Teacher।",
         "en": "The correct form is Teacher."
       },
-      "marks": 1
+      "marks": 1,
+      "subject": "english"
     },
     {
       "id": "q-english-02",
-      "cat": "english",
+      "cat": "grade",
       "grade": "8",
       "diff": "medium",
       "q": {
@@ -1016,11 +1194,12 @@
         "hi": "Third person singular के साथ goes लगता है।",
         "en": "With 'she' we use 'goes'."
       },
-      "marks": 1
+      "marks": 1,
+      "subject": "english"
     },
     {
       "id": "q-sanskrit-01",
-      "cat": "sanskrit",
+      "cat": "grade",
       "grade": "7",
       "diff": "easy",
       "q": {
@@ -1056,11 +1235,12 @@
         "hi": "योग = मिलन (√युज् से बना है)।",
         "en": "Yoga means union, from the root √yuj."
       },
-      "marks": 1
+      "marks": 1,
+      "subject": "sanskrit"
     },
     {
       "id": "q-sanskrit-02",
-      "cat": "sanskrit",
+      "cat": "grade",
       "grade": "6",
       "diff": "easy",
       "q": {
@@ -1096,7 +1276,8 @@
         "hi": "रवि = सूर्य; शशी = चंद्र; पावक = अग्नि।",
         "en": "Ravi means the Sun; Shashi is the Moon; Pāvaka is fire."
       },
-      "marks": 1
+      "marks": 1,
+      "subject": "sanskrit"
     },
     {
       "id": "q-tat-01",
@@ -1136,7 +1317,8 @@
         "hi": "TAT = कक्षा 1–8 के शिक्षकों की भर्ती परीक्षा।",
         "en": "TAT is the recruitment test for teachers of classes I–VIII."
       },
-      "marks": 1
+      "marks": 1,
+      "sub": "exam"
     },
     {
       "id": "q-tat-02",
@@ -1176,7 +1358,8 @@
         "hi": "बालक केंद्र में रहे और सक्रिय रूप से सीखे।",
         "en": "The child stays at the centre and learns actively."
       },
-      "marks": 1
+      "marks": 1,
+      "sub": "pedagogy"
     },
     {
       "id": "q-tat-03",
@@ -1216,7 +1399,8 @@
         "hi": "अनुच्छेद 21(A) — 6 से 14 वर्ष के बच्चों का निःशुल्क अनिवार्य शिक्षा।",
         "en": "Article 21(A) gives free, compulsory education for ages 6–14."
       },
-      "marks": 1
+      "marks": 1,
+      "sub": "policy"
     },
     {
       "id": "q-htat-01",
@@ -1256,7 +1440,8 @@
         "hi": "HTAT = उच्च माध्यमिक (कक्षा 9–12) शिक्षक भर्ती परीक्षा।",
         "en": "HTAT is for higher-secondary (classes IX–XII) teachers."
       },
-      "marks": 1
+      "marks": 1,
+      "sub": "exam"
     },
     {
       "id": "q-reasoning-01",
@@ -1296,7 +1481,8 @@
         "hi": "हर संख्या दोगुनी होती है — 16 × 2 = 32।",
         "en": "Each number doubles, so 16 × 2 = 32."
       },
-      "marks": 1
+      "marks": 1,
+      "sub": "series"
     },
     {
       "id": "q-reasoning-02",
@@ -1336,7 +1522,8 @@
         "hi": "हर अक्षर एक कदम आगे बढ़ता है → DNF।",
         "en": "Each letter moves one step forward → DNF."
       },
-      "marks": 1
+      "marks": 1,
+      "sub": "coding"
     },
     {
       "id": "q-current-01",
@@ -1376,7 +1563,8 @@
         "hi": "TAT और HTAT गुजरात की शिक्षक भर्ती परीक्षाएँ हैं।",
         "en": "TAT and HTAT are Gujarat's teacher recruitment tests."
       },
-      "marks": 1
+      "marks": 1,
+      "sub": "states"
     },
     {
       "id": "q-current-02",
@@ -1416,7 +1604,8 @@
         "hi": "गुजरात राज्य शिक्षण शोध एवं प्रशिक्षण परिषद (GCERT) पाठ्यपुस्तकें बनाती हैं।",
         "en": "GCERT prepares Gujarat's textbooks."
       },
-      "marks": 1
+      "marks": 1,
+      "sub": "states"
     },
     {
       "id": "q-gk-10",
@@ -1456,7 +1645,8 @@
         "hi": "अंग्रेज़ी में 26 अक्षर (A–Z) होते हैं।",
         "en": "English has 26 letters, A to Z."
       },
-      "marks": 1
+      "marks": 1,
+      "sub": "general"
     }
   ]
 }

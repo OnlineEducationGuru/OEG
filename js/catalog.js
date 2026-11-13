@@ -115,11 +115,69 @@ OEG.data = {
   }
 };
 
+/* YouTube — દરેક સ્વરૂપની લિંકમાંથી 11-અક્ષર id (watch / embed / shorts / live / youtu.be / nocookie / bare id) */
 OEG.youtubeId = (url) => {
   if (!url) return null;
-  const m = String(url).match(/(?:youtube\.com\/(?:watch\?v=|embed\/|shorts\/)|youtu\.be\/)([\w-]{6,})/);
-  return m ? m[1] : null;
+  const raw = String(url).trim().replace(/^[<"']|[>"']$/g, "");
+  if (!raw) return null;
+  let m = raw.match(/[?&]v=([\w-]{11})/);
+  if (m) return m[1];
+  m = raw.match(/(?:youtube(?:-nocookie)?\.com|youtu\.be)\/(?:watch\?|embed\/|shorts\/|live\/|v\/|clip\/)?([\w-]{11})/);
+  if (m && /^[\w-]{11}$/.test(m[1]) && !/^(watch|embed|shorts|live|clip|null|me)$/.test(m[1])) return m[1];
+  m = raw.match(/youtu\.be\/([\w-]{11})/);
+  if (m) return m[1];
+  if (/^[\w-]{11}$/.test(raw) && /[\dA-Za-z]/.test(raw)) return raw;   /* ફક્ત id પેસ્ટ કર્યું હોય */
+  return null;
 };
+
+/* ---------- 👁️ Views (Most Viewed Post) ----------
+   public visit → localStorage (દર વિઝિટ ગણે), admin data/views.json માં commit કરી શકે
+   જેથી બધા વિઝિટર માટે સંખ્યા સાચી રહે. */
+OEG.views = (() => {
+  const LS = "oeg.views", DAY = 864e5, FILE = "data/views.json";
+  let map = null, base = null;
+  const read = () => {
+    if (map) return map;
+    try { map = JSON.parse(localStorage.getItem(LS) || "{}") || {}; } catch (e) { map = {}; }
+    return map;
+  };
+  const write = () => { try { localStorage.setItem(LS, JSON.stringify(map)); } catch (e) {} };
+  async function load() {
+    if (base) return base;
+    base = (await OEG.data.readJson(FILE, { v: 1, items: {} })) || { v: 1, items: {} };
+    if (!base.items || typeof base.items !== "object") base.items = {};
+    return base;
+  }
+  function hit(id) {
+    if (!id) return;
+    const m = read();
+    m[id] = (m[id] || 0) + 1;
+    write();
+    try { sessionStorage.setItem("oeg.viewed." + id, String(Date.now())); } catch (e) {}
+  }
+  function count(id) { return (read()[id] || 0) + ((base && base.items && base.items[id]) || 0); }
+  /* catalog ના દરેક item માટે aggregate → desc sort */
+  function ranked(list, n) {
+    const m = read(), b = (base && base.items) || {};
+    return (list || []).map(i => ({ item: i, n: (m[i.id] || 0) + (b[i.id] || 0) }))
+      .sort((x, y) => (y.n - x.n) || String(y.item.date || "").localeCompare(String(x.item.date || "")))
+      .slice(0, n || 4);
+  }
+  async function commit() {
+    const b = await load(), m = read();
+    Object.keys(m).forEach(k => { b.items[k] = (b.items[k] || 0) + m[k]; });
+    await OEG.data.writeJson(FILE, b, "OEG: views " + Object.keys(m).length);
+    try { localStorage.removeItem(LS); map = {}; } catch (e) {}
+    return b;
+  }
+  async function seed() {           /* admin: data/views.json માં ફક્ત placeholder */
+    const b = await load();
+    await OEG.data.writeJson(FILE, b, "OEG: views file");
+    return b;
+  }
+  function reload() { base = null; map = null; return load(); }
+  return { hit, count, ranked, load, reload, commit, read, seed, LS, FILE };
+})();
 
 OEG.fileExt = (url) => {
   const m = String(url || "").split("?")[0].match(/\.([a-z0-9]{2,5})$/i);

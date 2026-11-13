@@ -74,9 +74,20 @@ OEG.auth = (() => {
     else for (let i = 0; i < 8; i++) a[i] = Math.floor(Math.random() * 256);
     return [...a].map(b => b.toString(16).padStart(2, "0")).join("");
   }
-  async function makeUserRecord({ name, email, password, role }) {
+  const cleanSub = (v) => {
+    const k = String(v || "").trim().toLowerCase();
+    const subs = ((OEG.tax && OEG.tax().gradeSubjects) || []).map(x => x.key);
+    return k && k !== "all" && subs.indexOf(k) >= 0 ? k : "all";
+  };
+  const cleanGrade = (v) => {
+    const k = String(v || "").trim().toLowerCase();
+    if (!k || k === "all") return "all";
+    const gs = ((OEG.tax && OEG.tax().grades) || []).map(x => x.key);
+    return gs.indexOf(k) >= 0 ? k : "all";
+  };
+  async function makeUserRecord({ name, email, password, role, grade, subject }) {
     const salt = randSalt();
-    return { id: "u" + Date.now().toString(36), name: String(name || email).slice(0, 60), email: norm(email), role: role || "student", salt, hash: sha256hex(salt + ":" + password), created: new Date().toISOString().slice(0, 10) };
+    return { id: "u" + Date.now().toString(36), name: String(name || email).slice(0, 60), email: norm(email), role: role || "student", grade: cleanGrade(grade), subject: cleanSub(subject), salt, hash: sha256hex(salt + ":" + password), created: new Date().toISOString().slice(0, 10) };
   }
 
   /* ---- વપરાશકર્તા-લિસ્ટ: raw.githubusercontent (તરત અપડેટ), પછી Pages કોપી ---- */
@@ -105,7 +116,7 @@ OEG.auth = (() => {
   }
 
   /* ---- રજિસ્ટર (વિદ્યાર્થી/શિક્ષક/આચાર્ય/અન્ય) — Admin મંજૂરી વાળો ફ્લો ---- */
-  async function register({ name, email, password, role }) {
+  async function register({ name, email, password, role, grade, subject }) {
     email = norm(email);
     if (isFirebase()) {
       const j = await firebaseCall("accounts:signUp", { email, password, returnSecureToken: true });
@@ -116,10 +127,10 @@ OEG.auth = (() => {
     if (users.users.some(u => norm(u.email) === email)) throw new Error(OEG.t("auth.exists"));
     try {
       const l = JSON.parse(localStorage.getItem(LS_REQ) || "[]");
-      l.push({ name, email, role, passLen: String(password).length, at: Date.now() });
+      l.push({ name, email, role, grade: cleanGrade(grade), subject: cleanSub(subject), passLen: String(password).length, at: Date.now() });
       localStorage.setItem(LS_REQ, JSON.stringify(l));
     } catch (e) {}
-    return { pending: true, name, email, role };
+    return { pending: true, name, email, role, grade: cleanGrade(grade), subject: cleanSub(subject) };
   }
 
   /* ---- લોગિન ---- */
@@ -134,7 +145,7 @@ OEG.auth = (() => {
     const u = users.users.find(x => norm(x.email) === email);
     if (!u) throw new Error(OEG.t("auth.noUser"));
     if (sha256hex(u.salt + ":" + password) !== u.hash) throw new Error(OEG.t("auth.badpass"));
-    const user = { name: u.name, email, role: u.role || "user", provider: "github" };
+    const user = { name: u.name, email, role: u.role || "user", grade: u.grade || "all", subject: cleanSub(u.subject), provider: "github" };
     save(user);
     return user;
   }
@@ -227,11 +238,11 @@ OEG.auth = (() => {
   async function saveUsers(users, message) {
     await OEG.gh.putFile(USERS_FILE, JSON.stringify({ version: 1, users }, null, 2), message);
   }
-  async function addUser({ name, email, password, role }) {
+  async function addUser({ name, email, password, role, grade, subject }) {
     email = norm(email);
     const users = await fetchUsers();
     if (users.users.some(u => norm(u.email) === email)) throw new Error(OEG.t("auth.exists"));
-    users.users.push(await makeUserRecord({ name, email, password, role }));
+    users.users.push(await makeUserRecord({ name, email, password, role, grade, subject }));
     await saveUsers(users.users, "OEG: add user " + email);
     return true;
   }
@@ -355,5 +366,6 @@ OEG.auth = (() => {
     OEG.state.gh.token = "";
   }
 
-  return { register, login, logout, load, isFirebase, fetchUsers, makeUserRecord, addUser, removeUser, resetPassword, sha256hex, getAdminFile, loginAdmin, setAdminAccount, adminRecord, parseAdminCreds, adminConfigured, unlocked, lockAdmin, saveSecret, recallSecret, hasSecret, forgetSecret };
+  const SUBJECTS7 = () => ((OEG.tax && OEG.tax().gradeSubjects) || []).slice();
+  return { SUBJECTS7, register, login, logout, load, isFirebase, fetchUsers, makeUserRecord, addUser, removeUser, resetPassword, sha256hex, getAdminFile, loginAdmin, setAdminAccount, adminRecord, parseAdminCreds, adminConfigured, unlocked, lockAdmin, saveSecret, recallSecret, hasSecret, forgetSecret };
 })();

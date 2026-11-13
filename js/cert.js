@@ -79,7 +79,8 @@ OEG.cert = (() => {
           { k: body.score, v: pct + "%" },
           { k: body.pass, v: (Number(o.pass) || 60) + "%" }
         ];
-        if (subjKey) list.push({ k: body.subject, v: txt(SUBJECT_LABEL[subjKey] || "") });
+        const subjLabel = txt(o.subjectLabel) || txt(SUBJECT_LABEL[subjKey] || "");
+        if (subjKey || subjLabel) list.push({ k: body.subject, v: subjLabel });
         if (o.grade && o.grade !== "all") list.push({ k: body.grade, v: OEG.gradeLabel(o.grade) });
         return list.filter(function (x) { return x.v; });
       })()
