@@ -365,6 +365,15 @@
       {
         "key": "reasoning",
         "icon": "🧩"
+      },
+      {
+        "key": "cet",
+        "icon": "🧠",
+        "label": {
+          "gu": "cet",
+          "hi": "cet",
+          "en": "cet"
+        }
       }
     ]
   },
