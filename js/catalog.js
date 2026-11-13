@@ -87,3 +87,13 @@ OEG.toast = (msg) => {
 };
 
 OEG.esc = (s) => String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+
+/* Admin Panel એક્સેસ તપાસ — ફક્ત admin.emails લિસ્ટમાંના લોગઈન ઈમેઈલ જ ખોલી શકે.
+   "*" લિસ્ટમાં હોય તો સૌ કોઈને પરવાનગી (ટેસ્ટ મોડ). */
+OEG.canAdmin = () => {
+  const a = OEG.state.config && OEG.state.config.admin;
+  const list = ((a && a.emails) || []).map(e => String(e).trim().toLowerCase()).filter(Boolean);
+  if (list.includes("*")) return true;
+  const email = OEG.state.user && OEG.state.user.email;
+  return !!email && list.includes(String(email).trim().toLowerCase());
+};

@@ -7,5 +7,6 @@
     "publisherId": "",
     "slots": { "homeTop": "", "homeMid": "", "sidebar": "", "contentBottom": "" }
   },
+  "admin": { "emails": [] },
   "social": { "youtube": "", "facebook": "", "telegram": "", "whatsapp": "" }
 }
