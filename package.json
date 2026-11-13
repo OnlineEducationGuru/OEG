@@ -1,17 +1,27 @@
 {
   "name": "oeg",
   "version": "1.0.0",
-  "description": "",
+  "description": "Online Education Guru — બાલવાટિકાથી ધોરણ ૮ સુધીનું મટિરિયલ, વિડિયો અને ક્વિઝ (GitHub Pages + Blogger)",
   "main": "index.js",
   "scripts": {
     "build": "node scripts/build.mjs",
+    "seo": "node scripts/seo.mjs",
+    "quiz": "python3 scripts/mkquiz.py",
     "start": "node scripts/build.mjs && python3 -m http.server 8080 --bind 0.0.0.0"
   },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/OnlineEducationGuru/OEG.git"
   },
-  "keywords": [],
+  "keywords": [
+    "gcert",
+    "textbooks",
+    "gujarati",
+    "quiz",
+    "education",
+    "blogger",
+    "adsense"
+  ],
   "author": "",
   "license": "ISC",
   "bugs": {

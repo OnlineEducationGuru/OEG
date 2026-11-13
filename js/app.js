@@ -2,24 +2,16 @@
    OEG App — Router + Page Renderers + Shell
    ============================================================ */
 (() => {
-  const NAV = [
-    { route: "home", icon: "🏠", key: "nav.home" },
-    { route: "textbooks", icon: "📚", key: "nav.textbooks" },
-    { route: "workbooks", icon: "📝", key: "nav.workbooks" },
-    { route: "games", icon: "🎮", key: "nav.games" },
-    { route: "office", icon: "🗂️", key: "nav.office" },
-    { route: "teachers", icon: "👩‍🏫", key: "nav.teachers" },
-    { route: "students", icon: "🧑‍🎓", key: "nav.students" },
-    { route: "videos", icon: "▶️", key: "nav.videos" },
-    { route: "blog", icon: "📰", key: "nav.blog" },
-    { route: "links", icon: "🔗", key: "nav.links" },
-    { route: "admin", icon: "🛠️", key: "nav.admin" }
-  ];
-  const GRADES = ["balvatika", "1", "2", "3", "4", "5", "6", "7", "8"];
-  const GRADE_ICONS = { balvatika: "🧸", 1: "1️⃣", 2: "2️⃣", 3: "3️⃣", 4: "4️⃣", 5: "5️⃣", 6: "6️⃣", 7: "7️⃣", 8: "8️⃣" };
-  const TYPE_ICONS = { textbook: "📚", workbook: "📝", game: "🎮", office: "🗂️", teacher: "👩‍🏫", student: "🧑‍🎓", video: "▶️", post: "📰", link: "🔗" };
-  const TYPE_ROUTE = { textbook: "textbooks", workbook: "workbooks", game: "games", office: "office", teacher: "teachers", student: "students", video: "videos", post: "blog", link: "links" };
-  const SUBJECTS = ["all", "gujarati", "hindi", "english", "maths", "science", "social", "office", "planning", "exam", "news", "official", "blog"];
+  /* ---------- 🧭 Nav & taxonomy (Admin માંથી શ્રેણી/ધોરણ ઉમેર-કાઢ થાય છે) ---------- */
+  const HOME_NAV = { route: "home", icon: "🏠", key: "nav.home" };
+  const ADMIN_NAV = { route: "admin", icon: "🛠️", key: "nav.admin" };
+  const NAV = () => [HOME_NAV].concat(
+    OEG.tax().types.filter(x => x.route).map(x => ({ route: x.route, icon: x.icon || "📄", key: "type." + x.key, label: OEG.typeLabel(x.key) })),
+    [ADMIN_NAV]);
+  const GRADES = () => OEG.tax().grades.filter(g => g.key !== "all").map(g => g.key);
+  const REAL_GRADES = () => GRADES().filter(k => k === "balvatika" || /^\d+$/.test(k));
+  const SUBJECTS = () => OEG.tax().subjects.map(s => s.key);
+  const NAV_TOP = ["home", "textbooks", "workbooks", "quiz", "videos", "blog"];
 
   const $app = () => document.getElementById("app");
   const t = OEG.t;
@@ -34,14 +26,14 @@
   }
 
   /* ---------- Shell ---------- */
-  const visibleNav = () => NAV; /* Admin બટન હંમેશ દેખાય — ક્લિક પર માલિક-લોગિન માંગશે */
-  const NAV_TOP = ["home", "textbooks", "workbooks", "games", "videos", "blog"];
+  const visibleNav = NAV; /* Admin બટન હંમેશ દેખાય — ક્લિક પર માલિક-લોગિન માંગશે */
   const navTopCount = () => window.innerWidth >= 1400 ? 6 : 4;
+
   function renderNav() {
     const cur = currentRoute();
     const v = visibleNav();
     const topRoutes = NAV_TOP.slice(0, navTopCount());
-    const link = (n) => `<a class="nav-link ${cur === n.route ? "active" : ""}" href="#/${n.route === "home" ? "" : n.route}">${t(n.key)}</a>`;
+    const link = (n) => `<a class="nav-link ${cur === n.route ? "active" : ""}" href="#/${n.route === "home" ? "" : n.route}">${OEG.esc(n.label || t(n.key))}</a>`;
     const top = v.filter(n => topRoutes.includes(n.route));
     const more = v.filter(n => !topRoutes.includes(n.route));
     document.getElementById("navDesktop").innerHTML = top.map(link).join("") + (more.length ? `
@@ -56,16 +48,25 @@
   window.addEventListener("resize", () => { clearTimeout(navResizeT); navResizeT = setTimeout(renderNav, 180); });
   function renderSidebar() {
     document.getElementById("sideNav").innerHTML = visibleNav().map(n =>
-      `<a class="side-link ${currentRoute() === n.route ? "active" : ""}" href="#/${n.route === "home" ? "" : n.route}"><span class="ic">${n.icon}</span>${t(n.key)}</a>`).join("");
-    document.getElementById("sideGrades").innerHTML = GRADES.map(g =>
-      `<a class="side-link" href="#/textbooks?grade=${g}"><span class="ic">${GRADE_ICONS[g]}</span>${OEG.gradeLabel(g)}</a>`).join("");
+      `<a class="side-link ${currentRoute() === n.route ? "active" : ""}" href="#/${n.route === "home" ? "" : n.route}"><span class="ic">${n.icon}</span>${OEG.esc(n.label || t(n.key))}</a>`).join("");
+    /* ધોરણ — હવે પેજ પર બધાં પ્રકારનું મટિરિયલ દેખાય (ફક્ત પાઠ્યપુસ્તક નહીં) */
+    document.getElementById("sideGrades").innerHTML = REAL_GRADES().map(g =>
+      `<a class="side-link ${gradeInUrl() === g ? "active" : ""}" href="#/grade/${g}"><span class="ic">${OEG.gradeIcon(g)}</span>${OEG.esc(OEG.gradeLabel(g))}<small>${countOfGrade(g)}</small></a>`).join("");
     document.getElementById("sideShare").innerHTML = shareButtons();
+    bindShare(document.getElementById("sideShare"));
   }
+  const gradeInUrl = () => { const m = (location.hash || "").match(/#\/grade\/([\w-]+)/); return m ? m[1] : ""; };
+  const countOfGrade = (g) => {
+    const n = OEG.state.catalog.filter(i => i.grade === g).length;
+    return n ? `<small>${n}</small>` : "";
+  };
+
   function renderFooter() {
-    document.getElementById("footerLinks").innerHTML = NAV.slice(0, 8).map(n =>
-      `<a href="#/${n.route === "home" ? "" : n.route}">${t(n.key)}</a>`).join("");
-    document.getElementById("footerSocial").innerHTML = `<span class="fs-title">${t("follow.title")}</span>` + followButtons();
+    document.getElementById("footerLinks").innerHTML = NAV().slice(0, 9).map(n =>
+      `<a href="#/${n.route === "home" ? "" : n.route}">${OEG.esc(n.label || t(n.key))}</a>`).join("");
+    document.getElementById("footerSocial").innerHTML = `<span class="fs-title">${t("follow.title")}</span>` + followButtons("fb-foot");
   }
+
   function followIcon(k) {
     const i = {
       instagram: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2.6" y="2.6" width="18.8" height="18.8" rx="5.4"/><circle cx="12" cy="12" r="4.4"/><circle cx="17.4" cy="6.6" r="1.3" fill="currentColor" stroke="none"/></svg>',
@@ -78,16 +79,22 @@
   }
   function followButtons(extra) {
     const s = OEG.state.config.social || {};
+    const c = OEG.state.config;
     const defs = [
-      { k: "instagram", url: s.instagram, handle: "@onlineeducationguru" },
-      { k: "youtube", url: s.youtube, handle: "@EducationGuruOnline" },
-      { k: "facebook", url: s.facebook, handle: "online.education.gurus" },
-      { k: "telegram", url: s.telegram, handle: "" },
-      { k: "whatsapp", url: s.whatsapp, handle: "" }
-    ].filter(d => d.url);
-    return `<span class="follow-row ${extra || ""}">` + defs.map(d =>
-      `<a class="follow-btn fb-${d.k}" href="${OEG.esc(d.url)}" target="_blank" rel="noopener" aria-label="${d.k}">${followIcon(d.k)}<span>${t("follow.btn")}${d.handle ? `<small>${OEG.esc(d.handle)}</small>` : ""}</span></a>`).join("") + "</span>";
+      { k: "instagram", url: s.instagram, handle: "@onlineeducationguru", name: "Instagram" },
+      { k: "youtube", url: s.youtube, handle: "@EducationGuruOnline", name: "YouTube" },
+      { k: "facebook", url: s.facebook, handle: "online.education.gurus", name: "Facebook" },
+      { k: "telegram", url: s.telegram, handle: "", name: "Telegram" },
+      { k: "whatsapp", url: s.whatsapp, handle: "", name: "WhatsApp" }
+    ];
+    const has = defs.filter(d => d.url);
+    const list = has.length ? has : defs.slice(0, 3).map(d => Object.assign({}, d, { url: "https://www.google.com/search?q=" + encodeURIComponent("Online Education Guru " + d.name) }));
+    const mail = c.contactEmail;
+    return `<span class="follow-row ${extra || ""}">` + list.map(d =>
+      `<a class="follow-btn soc-btn fb-${d.k}" href="${OEG.esc(d.url)}" target="_blank" rel="noopener" title="${d.name}" aria-label="${d.name}">${followIcon(d.k)}<span class="soc-name">${d.name}</span>${d.handle ? `<small>${OEG.esc(d.handle)}</small>` : ""}</a>`).join("") +
+      (mail ? `<a class="follow-btn soc-btn fb-mail" href="mailto:${OEG.esc(mail)}" title="Email" aria-label="Email">✉️<span class="soc-name">Email</span></a>` : "") + "</span>";
   }
+
   function renderAuthArea() {
     const u = OEG.state.user;
     document.getElementById("authArea").innerHTML = u
@@ -107,7 +114,7 @@
     return `<svg viewBox="0 0 24 24" fill="currentColor"><path d="${paths[k] || ""}"/></svg>`;
   }
   function shareButtons() {
-    const url = encodeURIComponent(location.href), title = encodeURIComponent(document.title);
+    const url = encodeURIComponent(OEG.shareUrl()), title = encodeURIComponent(document.title);
     return `<span class="share-label">${t("share.title")}:</span>
       <a class="share-btn" target="_blank" rel="noopener" href="https://wa.me/?text=${title}%20${url}">${socialSvg("whatsapp")}${t("share.whatsapp")}</a>
       <a class="share-btn" target="_blank" rel="noopener" href="https://www.facebook.com/sharer/sharer.php?u=${url}">${socialSvg("facebook")}${t("share.facebook")}</a>
@@ -115,99 +122,183 @@
       <a class="share-btn" target="_blank" rel="noopener" href="https://t.me/share/url?url=${url}&text=${title}">${socialSvg("telegram")}${t("share.telegram")}</a>
       <button class="share-btn" id="copyLinkBtn">🔗 ${t("btn.copyLink")}</button>`;
   }
-  function bindShare(root) {
-    const b = root.querySelector("#copyLinkBtn") || document.getElementById("copyLinkBtn");
-    if (b) b.onclick = async () => { try { await navigator.clipboard.writeText(location.href); OEG.toast(t("btn.copied")); } catch (e) {} };
+  async function copyCurrentLink() {
+    const link = OEG.shareUrl();
+    try { await navigator.clipboard.writeText(link); OEG.toast(t("btn.copied")); return; }
+    catch (e) {}
+    try {
+      const ta = document.createElement("textarea");
+      ta.value = link; ta.setAttribute("readonly", "");
+      ta.style.position = "fixed"; ta.style.left = "-9999px"; ta.style.opacity = "0";
+      document.body.appendChild(ta); ta.select();
+      document.execCommand("copy");
+      OEG.toast(t("btn.copied"));
+      ta.remove();
+    } catch (e2) { window.prompt("Copy:", link); }
   }
+  function bindShare(root) {
+    (root || document).querySelectorAll("#copyLinkBtn,.copy-link-btn").forEach(b => { b.onclick = copyCurrentLink; });
+  }
+  /* શેર/કેનોનિકલ હંમેશા અત્યારના host પ્રમાણે (Blogger ⇒ blogspot, GitHub ⇒ github.io) */
 
-  /* ---------- AdSense (policy-safe placement) ---------- */
-  function adSlot(slotKey, extraClass = "") {
-    const ads = OEG.state.config.adsense || {};
-    const pub = ads.publisherId, slot = ads.slots && ads.slots[slotKey];
-    if (pub && slot) {
-      return `<div class="ad-slot ${extraClass}"><span class="ad-label">${t("ad.label")}</span>
-        <ins class="adsbygoogle" style="display:block" data-ad-client="${OEG.esc(pub)}" data-ad-slot="${OEG.esc(slot)}" data-ad-format="auto" data-full-width-responsive="true"></ins>
-        <script>(adsbygoogle = window.adsbygoogle || []).push({});<\/script></div>`;
-    }
-    return `<div class="ad-slot ${extraClass}"><span class="ad-label">${t("ad.label")}</span><div class="ad-box">📢 ${t("ad.placeholder")}</div></div>`;
+  /* ---------- 📢 AdSense — દરેક પેજ પર (publisher + slot ભરો એટલે live) ---------- */
+  function adSlot(slotKey, extraClass) {
+    if (!slotKey) return "";
+    return OEG.ads.render(slotKey, extraClass || "");
   }
 
   /* ---------- Components ---------- */
   function card(item) {
     const kind = OEG.fileKind(item);
-    const icon = item.image ? "" : (TYPE_ICONS[item.type] || "📄");
-    const img = item.image ? `<div class="card-img"><img src="${OEG.esc(item.image)}" alt="" loading="lazy"></div>` : `<div class="card-img">${icon}</div>`;
-    const action = item.fileUrl
-      ? `<a class="btn btn-brand btn-sm" href="#/view/${item.id}">${item.type === "video" && OEG.youtubeId(item.fileUrl) ? t("btn.play") : t("btn.view")}</a>`
-      : `<a class="btn btn-outline btn-sm" href="#/view/${item.id}">${t("btn.readMore")}</a>`;
-    return `<article class="card reveal">${img}<div class="card-body">
-      <span class="badge">${OEG.typeLabel(item.type)} • ${OEG.gradeLabel(item.grade)}</span>
+    const icon = OEG.typeIcon(item.type);
+    const thumb = OEG.thumbnail(item);
+    const img = thumb
+      ? `<div class="card-img${kind === "video" || OEG.youtubeId(item.fileUrl) ? " has-play" : ""}"><img src="${OEG.esc(thumb)}" alt="" loading="lazy" draggable="false">${kind === "video" || OEG.youtubeId(item.fileUrl) ? '<span class="play-badge">▶</span>' : ""}</div>`
+      : `<div class="card-img">${icon}</div>`;
+    const isVid = !!OEG.youtubeId(item.fileUrl);
+    const action = `<a class="btn ${item.fileUrl ? "btn-brand" : "btn-outline"} btn-sm" href="#/view/${item.id}">${isVid ? "▶ " + t("btn.play") : item.fileUrl ? t("btn.view") : t("btn.readMore")}</a>`;
+    return `<article class="card reveal glow">${img}<div class="card-body">
+      <span class="badge">${OEG.typeIcon(item.type)} ${OEG.esc(OEG.typeLabel(item.type))} • ${OEG.esc(OEG.gradeLabel(item.grade))}</span>
       <h3>${OEG.esc(OEG.title(item))}</h3><p>${OEG.esc(OEG.desc(item))}</p>
-      <div class="card-meta"><span>📅 ${OEG.esc(item.date || "")}</span><span>🏷️ ${OEG.subjectLabel(item.subject)}</span>${kind !== "link" ? `<span>📄 ${kind.toUpperCase()}</span>` : ""}</div>
-      <div class="card-actions">${action}</div></div></article>`;
+      <div class="card-meta"><span>📅 ${OEG.esc(item.date || "")}</span>${item.subject ? `<span>🏷️ ${OEG.esc(OEG.subjectLabel(item.subject))}</span>` : ""}${kind !== "link" ? `<span>📄 ${kind.toUpperCase()}</span>` : ""}</div>
+      <div class="card-actions">${action}${item.fileUrl ? "" : ""}</div></div></article>`;
   }
 
-  function filtersHtml(grade, subject) {
+  function filtersHtml(typeKey, route, grade, subject, topic) {
+    const ty = OEG.tax().types.filter(x => x.key === typeKey).length ? null : null;
+    const cats = OEG.tax().types.filter(x => x.route);
     return `<div class="filters">
       <label>${t("filter.grade")}</label>
-      <select id="fGrade"><option value="all">${t("filter.all")}</option>${GRADES.map(g => `<option value="${g}" ${g === grade ? "selected" : ""}>${OEG.gradeLabel(g)}</option>`).join("")}</select>
+      <select id="fGrade"><option value="all">${t("filter.all")}</option>${GRADES().map(g => `<option value="${g}" ${g === grade ? "selected" : ""}>${OEG.esc(OEG.gradeLabel(g))}</option>`).join("")}</select>
       <label>${t("filter.subject")}</label>
-      <select id="fSubject"><option value="all">${t("filter.all")}</option>${SUBJECTS.map(s => `<option value="${s}" ${s === subject ? "selected" : ""}>${OEG.subjectLabel(s)}</option>`).join("")}</select>
+      <select id="fSubject"><option value="all">${t("filter.all")}</option>${SUBJECTS().map(s => `<option value="${s}" ${s === subject ? "selected" : ""}>${OEG.esc(OEG.subjectLabel(s))}</option>`).join("")}</select>
+      <label>${t("admin.catTab")}</label>
+      <select id="fCat">${cats.map(c => `<option value="${c.route}" ${c.key === typeKey ? "selected" : ""}>${OEG.typeIcon(c.key)} ${OEG.esc(OEG.typeLabel(c.key))}</option>`).join("")}</select>
     </div>`;
   }
 
-  function listingPage(type, pageKey, query) {
-    const grade = query.grade || "all", subject = query.subject || "all";
-    let items = OEG.byType(type);
-    if (grade !== "all") items = items.filter(i => i.grade === grade || i.grade === "all");
-    if (subject !== "all") items = items.filter(i => i.subject === subject);
-    const body = items.length
-      ? `<div class="grid">${items.map(card).join("")}</div>`
-      : `<div class="panel" style="text-align:center;padding:50px 20px"><div style="font-size:3rem">📭</div><h3>${t("empty.title")}</h3><p style="color:var(--muted)">${t("empty.sub")}</p></div>`;
-    return `<div class="page-head"><div class="breadcrumb"><a href="#/">${t("nav.home")}</a> / ${t(pageKey)}</div><h1>${t(pageKey)}</h1></div>
-      ${filtersHtml(grade, subject)}<div id="listWrap">${body}</div>${adSlot("contentBottom")}`;
+  function gridWithAd(items, startAt, adKey) {
+    if (!items.length) return "";
+    if (items.length < 7 || !adKey) return `<div class="grid">${items.map(card).join("")}</div>`;
+    const a = items.slice(0, startAt), b = items.slice(startAt);
+    return `<div class="grid">${a.map(card).join("")}</div>${adSlot(adKey, "ad-mid")}<div class="grid">${b.map(card).join("")}</div>`;
   }
 
-  function bindFilters(type, pageKey) {
+  function listingPage(typeKey, route, query) {
+    const grade = query.grade || "all", subject = query.subject || "all";
+    let items = OEG.byType(typeKey);
+    if (grade !== "all") items = items.filter(i => i.grade === grade || i.grade === "all");
+    if (subject !== "all") items = items.filter(i => i.subject === subject);
+    const label = OEG.typeLabel(typeKey);
+    const body = items.length
+      ? gridWithAd(items, 6, "listMid")
+      : `<div class="panel" style="text-align:center;padding:50px 20px"><div style="font-size:3rem">📭</div><h3>${t("empty.title")}</h3><p style="color:var(--muted)">${t("empty.sub")}</p></div>`;
+    return `<div class="page-head"><div class="breadcrumb"><a href="#/">${t("nav.home")}</a> / ${OEG.esc(label)}</div>
+      <h1>${OEG.typeIcon(typeKey)} ${OEG.esc(label)}</h1>
+      <p class="sub">${items.length} ${t("grade.items")}</p></div>
+      ${filtersHtml(typeKey, route, grade, subject)}
+      ${adSlot("listTop")}
+      <div id="listWrap">${body}</div>${adSlot("contentBottom")}`;
+  }
+
+  function bindFilters(typeKey, route) {
+    const g = document.getElementById("fGrade"), s = document.getElementById("fSubject"), c = document.getElementById("fCat");
+    if (!g) return;
     const apply = () => {
-      const g = document.getElementById("fGrade").value, s = document.getElementById("fSubject").value;
-      location.hash = `#/${pageKey}?grade=${g}&subject=${s}`;
+      const q = [];
+      if (g.value !== "all") q.push("grade=" + g.value);
+      if (s.value !== "all") q.push("subject=" + s.value);
+      location.hash = `#/${c && c.value !== route ? c.value : route}` + (q.length ? "?" + q.join("&") : "");
     };
-    document.getElementById("fGrade").onchange = apply;
-    document.getElementById("fSubject").onchange = apply;
+    g.onchange = apply; s.onchange = apply; if (c) c.onchange = apply;
+  }
+
+  /* ---------- 🎓 ધોરણ પેજ — બધાં પ્રકારનું મટિરિયલ + ૭ વિષયો ---------- */
+  function gradePage(grade, query) {
+    const g = grade && grade !== "all" ? grade : (query.grade || "all");
+    if (g === "all") {
+      return `<div class="page-head"><h1>🎓 ${t("sec.grades")}</h1><p>${t("sec.gradesSub")}</p></div>
+        <div class="grid-grades">${REAL_GRADES().map(k => gradeCard(k)).join("")}</div>${adSlot("contentBottom")}`;
+    }
+    const subject = query.subject || "all", cat = query.cat || "all";
+    const subs = OEG.tax().gradeSubjects;
+    let items = OEG.state.catalog.filter(i => i.grade === g || i.grade === "all");
+    if (subject !== "all") items = items.filter(i => i.subject === subject);
+    if (cat !== "all") items = items.filter(i => i.type === cat);
+    const types = OEG.tax().types.filter(x => items.length || true);
+    const counts = {};
+    OEG.state.catalog.filter(i => i.grade === g || i.grade === "all").forEach(i => { counts[i.type] = (counts[i.type] || 0) + 1; });
+    const body = items.length ? gridWithAd(items, 6, "listMid")
+      : `<div class="panel" style="text-align:center;padding:46px 20px"><div style="font-size:2.6rem">📭</div><h3>${t("grade.noItems")}</h3></div>`;
+    return `<div class="page-head">
+      <div class="breadcrumb"><a href="#/">${t("nav.home")}</a> / <a href="#/grade">${t("sec.grades")}</a> / ${OEG.esc(OEG.gradeLabel(g))}</div>
+      <h1>${OEG.gradeIcon(g)} ${OEG.esc(OEG.gradeLabel(g))}</h1>
+      <p class="sub">${t("grade.materialsSub")}</p>
+    </div>
+    <div class="grade-tabs" id="gTypes">
+      <a class="g-tab ${cat === "all" ? "on" : ""}" href="#/grade/${g}${subject !== "all" ? "?subject=" + subject : ""}">${t("grade.all")} <small>${OEG.state.catalog.filter(i => i.grade === g || i.grade === "all").length}</small></a>
+      ${OEG.tax().types.filter(x => x.route).map(x => `<a class="g-tab ${cat === x.key ? "on" : ""}" href="#/grade/${g}?cat=${x.key}${subject !== "all" ? "&subject=" + subject : ""}">${x.icon || "📄"} ${OEG.esc(OEG.typeLabel(x.key))} <small>${counts[x.key] || 0}</small></a>`).join("")}
+    </div>
+    <div class="section-head"><div><h2>📚 ${t("grade.subjects")} <small style="font-weight:700;color:var(--muted)">(${subs.length})</small></h2><p>${t("grade.subjectsSub")} — ${OEG.esc(OEG.gradeLabel(g))}</p></div>
+      <a href="#/quiz?grade=${g}">🧠 ${t("grade.quizNow")} →</a></div>
+    <div class="subject-row" id="gSubs">
+      ${subs.map(s => `<a class="sub-chip ${subject === s.key ? "on" : ""}" href="#/grade/${g}?subject=${s.key}${cat !== "all" ? "&cat=" + cat : ""}">${OEG.esc(OEG.subjectLabel(s.key))}<small>${OEG.state.catalog.filter(i => (i.grade === g || i.grade === "all") && i.subject === s.key).length}</small></a>`).join("")}
+    </div>
+    ${adSlot("gradeTop")}
+    <div id="listWrap">${body}</div>
+    ${adSlot("contentBottom")}`;
+  }
+  function gradeCard(k) {
+    const n = OEG.state.catalog.filter(i => i.grade === k).length;
+    return `<a class="grade-card reveal glow" href="#/grade/${k}"><div class="g-ic">${OEG.gradeIcon(k)}</div><b>${OEG.esc(OEG.gradeLabel(k))}</b><span class="g-meta">${n} ${t("grade.items")} · ${OEG.tax().gradeSubjects.length} ${t("grade.subjects")}</span></a>`;
+  }
+
+  /* ---------- 🧠 ક્વિઝ ---------- */
+  function quizPage(query) {
+    return `<div class="page-head"><div class="breadcrumb"><a href="#/">${t("nav.home")}</a> / ${t("page.quiz")}</div>
+      <h1>🧠 ${OEG.esc(t("page.quiz"))}</h1><p class="sub">${t("quiz.sub")}</p></div>
+      ${adSlot("quizTop")}
+      <div id="quizMount" class="quiz-mount">${OEG.esc(t("quiz.start"))}…</div>
+      ${adSlot("quizResult")}
+      ${adSlot("contentBottom")}`;
   }
 
   /* ---------- Pages ---------- */
   function homePage() {
     const posts = OEG.byType("post").slice(0, 3);
-    const vids = OEG.byType("video").slice(0, 3);
+    const vids = OEG.byType("video").slice(0, 6);
     const popular = OEG.state.catalog.filter(i => ["textbook", "workbook"].includes(i.type)).slice(0, 4);
     const total = OEG.state.catalog.length;
+    const quizN = OEG.state.catalog.filter(i => i.type === "quiz").length;
     return `
     <section class="hero">
       <h1>${t("hero.title")}</h1><p>${t("hero.sub")}</p>
-      <div class="hero-cta"><a class="btn btn-primary" href="#/textbooks">${t("hero.cta1")}</a><a class="btn btn-ghost" href="#/games">${t("hero.cta2")}</a></div>
+      <div class="hero-cta"><a class="btn btn-primary" href="#/textbooks">${t("hero.cta1")}</a><a class="btn btn-ghost" href="#/quiz">🧠 ${t("nav.quiz")}</a></div>
       <div class="hero-stats">
         <div><b>${total}+</b><span>${t("nav.textbooks")}</span></div>
-        <div><b>9</b><span>${t("sec.grades")}</span></div>
-        <div><b>3</b><span>${t("nav.games")}</span></div>
+        <div><b>${REAL_GRADES().length}</b><span>${t("sec.grades")}</span></div>
+        <div><b>${OEG.tax().types.length}</b><span>${t("admin.catTab")}</span></div>
         <div><b>3</b><span>${t("lang.name")}</span></div>
       </div>
       <div class="follow-strip"><span class="fs-title">👉 ${t("follow.title")}</span>${followButtons("fb-sm")}</div>
     </section>
     ${adSlot("homeTop")}
-    <section class="section"><div class="section-head"><div><h2>${t("sec.grades")}</h2><p>${t("sec.gradesSub")}</p></div></div>
-      <div class="grid-grades">${GRADES.map(g => `<a class="grade-card reveal" href="#/textbooks?grade=${g}"><div class="g-ic">${GRADE_ICONS[g]}</div><b>${OEG.gradeLabel(g)}</b><span>${t("nav.textbooks")}</span></a>`).join("")}</div>
+    <section class="section"><div class="section-head"><div><h2>${t("sec.grades")}</h2><p>${t("grade.materialsSub")}</p></div><a href="#/grade">${t("grade.all")} →</a></div>
+      <div class="grid-grades">${REAL_GRADES().map(gradeCard).join("")}</div>
     </section>
     <section class="section"><div class="section-head"><div><h2>${t("sec.features")}</h2></div></div>
       <div class="grid grid-feat">
-        ${NAV.slice(1, 7).map(n => `<a class="card feature-card reveal" href="#/${n.route}"><span class="feat-ic">${n.icon}</span><h3>${t(n.key)}</h3><span class="feat-go">${t("btn.open")} →</span></a>`).join("")}
+        ${NAV().slice(1, 7).map(n => `<a class="card feature-card reveal glow" href="#/${n.route}"><span class="feat-ic">${n.icon}</span><h3>${OEG.esc(n.label || t(n.key))}</h3><span class="feat-go">${t("btn.open")} →</span></a>`).join("")}
       </div>
     </section>
     ${adSlot("homeMid")}
+    <section class="section"><div class="section-head"><div><h2>🧠 ${t("page.quiz")}</h2><p>${t("quiz.sub")}</p></div><a href="#/quiz">${t("quiz.start")} →</a></div>
+      <div class="chip-row sm">${OEG.tax().quizCats.map(c => `<a class="qz-chip" href="#/quiz?cat=${OEG.esc(c.key)}"><span>${c.icon || "🧠"}</span><b>${OEG.esc(OEG.taxLabel(c, "subject"))}</b></a>`).join("")}</div>
+    </section>
     <section class="section"><div class="section-head"><div><h2>${t("sec.latest")}</h2></div><a href="#/blog">${t("btn.readMore")} →</a></div>
       <div class="grid">${posts.map(card).join("") || `<p style="color:var(--muted)">${t("empty.title")}</p>`}</div>
     </section>
+    ${OEG.ads.render("inFeed", "ad-infeed")}
     <section class="section"><div class="section-head"><div><h2>${t("sec.videos")}</h2></div><a href="#/videos">${t("btn.readMore")} →</a></div>
       <div class="video-grid">${vids.map(videoCard).join("") || `<p style="color:var(--muted)">${t("empty.title")}</p>`}</div>
     </section>
@@ -217,17 +308,43 @@
     ${adSlot("contentBottom")}`;
   }
 
+  /* ▶ વિડિયો — પોસ્ટર, ક્લિક કરતાં અહીં જ ચાલે (ડાઉનલોડ/બહાર જવું નહીં) */
   function videoCard(item) {
     const id = OEG.youtubeId(item.fileUrl);
     if (!id) return "";
-    return `<article class="video-card reveal"><div class="ratio">
-      <iframe src="https://www.youtube-nocookie.com/embed/${id}" title="${OEG.esc(OEG.title(item))}" loading="lazy" allowfullscreen allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"></iframe></div>
-      <div class="vc-body"><h3>${OEG.esc(OEG.title(item))}</h3><p>${OEG.esc(OEG.desc(item))}</p></div></article>`;
+    const poster = OEG.yt ? OEG.yt.thumb(id, "hqdefault") : "https://i.ytimg.com/vi/" + id + "/hqdefault.jpg";
+    const big = OEG.yt ? OEG.yt.thumb(id, "maxresdefault") : poster;
+    return `<article class="video-card reveal glow" data-yt="${id}"><div class="ratio yt-poster" data-ytbox="${id}">
+      <img src="${OEG.esc(big)}" onerror="this.onerror=null;this.src='${OEG.esc(poster)}'" alt="" loading="lazy" draggable="false">
+      <button type="button" class="yt-play" data-play="${id}" aria-label="▶"><span>▶</span></button>
+      <span class="yt-note">${t("yt.playHere")}</span></div>
+      <div class="vc-body"><h3>${OEG.esc(OEG.title(item))}</h3><p>${OEG.esc(OEG.desc(item))}</p>
+      <div class="card-actions"><a class="btn btn-brand btn-sm" href="#/view/${item.id}">▶ ${t("btn.view")}</a></div></div></article>`;
+  }
+  function playInline(box, id, autoplay) {
+    if (!box || !id) return;
+    const src = (OEG.yt ? OEG.yt.embed(id) : "https://www.youtube-nocookie.com/embed/" + id + "?rel=0") + (autoplay ? "&autoplay=1" : "");
+    box.innerHTML = `<iframe src="${src}" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen title="YouTube"></iframe>`;
+    box.classList.add("yt-live");
+  }
+  function bindVideoPlayers(root) {
+    (root || document).querySelectorAll("[data-play]").forEach(b => {
+      b.onclick = (e) => {
+        e.preventDefault(); e.stopPropagation();
+        const id = b.dataset.play;
+        playInline(b.closest("[data-ytbox]") || b.parentElement, id, true);
+      };
+    });
   }
 
-  function videosPage() {
-    const vids = OEG.byType("video");
-    return `<div class="page-head"><div class="breadcrumb"><a href="#/">${t("nav.home")}</a> / ${t("page.videos")}</div><h1>▶️ ${t("page.videos")}</h1></div>
+  function videosPage(query) {
+    const grade = (query && query.grade) || "all";
+    let vids = OEG.byType("video");
+    if (grade !== "all") vids = vids.filter(i => i.grade === grade || i.grade === "all");
+    return `<div class="page-head"><div class="breadcrumb"><a href="#/">${t("nav.home")}</a> / ${t("page.videos")}</div><h1>▶️ ${t("page.videos")}</h1>
+      <p class="sub">${vids.length} ${t("grade.items")} · ${t("yt.byUrlNote")}</p></div>
+      <div class="filters"><label>${t("filter.grade")}</label><select id="fGrade"><option value="all">${t("filter.all")}</option>${GRADES().map(g => `<option value="${g}" ${g === grade ? "selected" : ""}>${OEG.esc(OEG.gradeLabel(g))}</option>`).join("")}</select></div>
+      ${adSlot("videoTop")}
       ${vids.length ? `<div class="video-grid">${vids.map(videoCard).join("")}</div>` : `<div class="panel" style="text-align:center;padding:50px"><h3>${t("empty.title")}</h3><p style="color:var(--muted)">${t("empty.sub")}</p></div>`}
       ${adSlot("contentBottom")}`;
   }
@@ -236,50 +353,68 @@
     const uploaded = OEG.byType("game");
     return `<div class="page-head"><div class="breadcrumb"><a href="#/">${t("nav.home")}</a> / ${t("page.games")}</div><h1>🎮 ${t("page.games")}</h1>
       <p>${t("game.builtIn")} + ${t("game.uploaded")}</p></div>
+      ${adSlot("gameTop")}
       <div class="grid" style="margin-bottom:26px">
-        <div class="card" style="padding:24px"><div style="font-size:2rem">🧠</div><h3>${t("game.quiz")}</h3><div class="card-actions"><button class="btn btn-brand btn-sm" data-game="quiz">${t("game.playNow")}</button></div></div>
-        <div class="card" style="padding:24px"><div style="font-size:2rem">🃏</div><h3>${t("game.memory")}</h3><div class="card-actions"><button class="btn btn-brand btn-sm" data-game="memory">${t("game.playNow")}</button></div></div>
-        <div class="card" style="padding:24px"><div style="font-size:2rem">🔢</div><h3>${t("game.math")}</h3><div class="card-actions"><button class="btn btn-brand btn-sm" data-game="math">${t("game.playNow")}</button></div></div>
+        <div class="card glow" style="padding:24px"><div style="font-size:2rem">🧠</div><h3>${t("quiz.title")}</h3><p style="color:var(--muted);font-size:.9rem">${OEG.esc(t("quiz.sub"))}</p><div class="card-actions"><a class="btn btn-brand btn-sm" href="#/quiz">${t("quiz.start")}</a></div></div>
+        <div class="card glow" style="padding:24px"><div style="font-size:2rem">🃏</div><h3>${t("game.memory")}</h3><div class="card-actions"><button class="btn btn-brand btn-sm" data-game="memory">${t("game.playNow")}</button></div></div>
+        <div class="card glow" style="padding:24px"><div style="font-size:2rem">🔢</div><h3>${t("game.math")}</h3><div class="card-actions"><button class="btn btn-brand btn-sm" data-game="math">${t("game.playNow")}</button></div></div>
       </div>
       <div id="gameMount"></div>
       ${uploaded.length ? `<div class="section-head" style="margin-top:34px"><h2>${t("game.uploaded")}</h2></div><div class="grid">${uploaded.map(card).join("")}</div>` : ""}
       ${adSlot("contentBottom")}`;
   }
 
-  function viewPage(id) {
-    const item = OEG.byId(id);
-    if (!item) return `<div class="panel" style="text-align:center;padding:50px"><h3>${t("empty.title")}</h3><a class="btn btn-brand" href="#/">${t("btn.back")}</a></div>`;
+  function viewerFor(item) {
     const kind = OEG.fileKind(item);
     const yt = OEG.youtubeId(item.fileUrl);
-    let viewer = "";
     if (yt) {
-      viewer = `<div class="viewer"><div class="viewer-head"><b>▶️ ${OEG.esc(OEG.title(item))}</b></div>
-        <div class="ratio" style="position:relative;padding-top:56.25%"><iframe style="position:absolute;inset:0;width:100%;height:100%;border:none" src="https://www.youtube-nocookie.com/embed/${yt}" allowfullscreen allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"></iframe></div></div>`;
-    } else if (kind === "pdf" && item.fileUrl) {
-      viewer = `<div class="viewer"><div class="viewer-head"><b>📄 ${t("viewer.pdf")}</b><span class="lock-tag">🔒</span></div>
+      const id = yt;
+      return `<div class="viewer"><div class="viewer-head"><b>▶️ ${OEG.esc(OEG.title(item))}</b><span class="lock-tag">${t("yt.playHere")}</span></div>
+        <div class="ratio yt-poster" data-ytbox="${id}" style="position:relative;padding-top:56.25%">
+          <img src="${OEG.esc(OEG.yt ? OEG.yt.thumb(id, "maxresdefault") : "https://i.ytimg.com/vi/" + id + "/maxresdefault.jpg")}" onerror="this.onerror=null;this.src='https://i.ytimg.com/vi/${id}/hqdefault.jpg'" alt="" draggable="false">
+          <button type="button" class="yt-play" data-play="${id}" aria-label="▶"><span>▶</span></button>
+        </div></div>`;
+    }
+    if (kind === "pdf" && item.fileUrl) {
+      return `<div class="viewer"><div class="viewer-head"><b>📄 ${t("viewer.pdf")}</b><span class="lock-tag">🔒</span></div>
         <iframe src="${OEG.esc(item.fileUrl)}" title="${OEG.esc(OEG.title(item))}"></iframe></div>`;
-    } else if (kind === "html" && item.fileUrl) {
-      viewer = `<div class="viewer"><div class="viewer-head"><b>🌐 ${t("viewer.html")}</b><span class="lock-tag">🔒</span></div>
+    }
+    if (kind === "html" && item.fileUrl) {
+      return `<div class="viewer"><div class="viewer-head"><b>🌐 ${t("viewer.html")}</b><span class="lock-tag">🔒</span></div>
         <iframe src="${OEG.esc(item.fileUrl)}" title="${OEG.esc(OEG.title(item))}" sandbox="allow-scripts allow-same-origin allow-popups allow-forms"></iframe></div>`;
-    } else if (kind === "image" && item.fileUrl) {
-      viewer = `<div class="viewer"><div class="viewer-head"><b>🖼️ ${t("viewer.image")}</b><span class="lock-tag">🔒</span></div><img class="view-img" src="${OEG.esc(item.fileUrl)}" alt="" draggable="false"></div>`;
-    } else if (kind === "doc" && item.fileUrl) {
+    }
+    if (kind === "image" && item.fileUrl) {
+      return `<div class="viewer"><div class="viewer-head"><b>🖼️ ${t("viewer.image")}</b><span class="lock-tag">🔒</span></div><img class="view-img" src="${OEG.esc(item.fileUrl)}" alt="" draggable="false"></div>`;
+    }
+    if (kind === "doc" && item.fileUrl) {
       const emb = `https://view.officeapps.live.com/op/embed.aspx?src=${encodeURIComponent(item.fileUrl)}`;
-      viewer = `<div class="viewer"><div class="viewer-head"><b>${t("viewer.doc")}</b><span class="lock-tag">🔒</span></div>
+      return `<div class="viewer"><div class="viewer-head"><b>${t("viewer.doc")}</b><span class="lock-tag">🔒</span></div>
         <iframe src="${emb}" title="${OEG.esc(OEG.title(item))}" allowfullscreen></iframe></div>`;
-    } else if (kind === "link" && item.fileUrl) {
-      viewer = `<div class="viewer"><div class="viewer-head"><b>🔗 ${OEG.esc(OEG.title(item))}</b>
+    }
+    if (kind === "link" && item.fileUrl) {
+      return `<div class="viewer"><div class="viewer-head"><b>🔗 ${OEG.esc(OEG.title(item))}</b>
         <span class="lock-tag" style="margin-left:auto">${t("viewer.linkNote")}</span>
         <a class="btn btn-outline btn-sm" target="_blank" rel="noopener" href="${OEG.esc(item.fileUrl)}">↗</a></div>
         <iframe src="${OEG.esc(item.fileUrl)}" title="${OEG.esc(OEG.title(item))}" referrerpolicy="no-referrer-when-downgrade"></iframe></div>`;
     }
-    return `<div class="page-head"><div class="breadcrumb"><a href="#/">${t("nav.home")}</a> / <a href="#/${TYPE_ROUTE[item.type] || ""}">${OEG.typeLabel(item.type)}</a></div>
+    return "";
+  }
+
+  function viewPage(id) {
+    const item = OEG.byId(id);
+    if (!item) return `<div class="panel" style="text-align:center;padding:50px"><h3>${t("empty.title")}</h3><a class="btn btn-brand" href="#/">${t("btn.back")}</a></div>`;
+    const related = OEG.state.catalog.filter(i => i.id !== item.id && (i.grade === item.grade || i.subject === item.subject)).slice(0, 4);
+    return `<div class="page-head"><div class="breadcrumb"><a href="#/">${t("nav.home")}</a> / <a href="#/${OEG.typeRoute(item.type)}">${OEG.esc(OEG.typeLabel(item.type))}</a>${item.grade && item.grade !== "all" ? ` / <a href="#/grade/${item.grade}">${OEG.esc(OEG.gradeLabel(item.grade))}</a>` : ""}</div>
       <h1>${OEG.esc(OEG.title(item))}</h1>
-      <div class="card-meta" style="margin-top:8px"><span class="badge">${OEG.gradeLabel(item.grade)}</span><span>📅 ${OEG.esc(item.date || "")}</span><span>🏷️ ${OEG.subjectLabel(item.subject)}</span></div></div>
-      ${item.image ? `<div class="post-hero"><img src="${OEG.esc(item.image)}" alt=""></div>` : ""}
-      ${viewer}
-      ${OEG.langField(item.body) ? `<div class="post-body" style="margin-top:22px">${OEG.esc(OEG.langField(item.body))}</div>` : ""}
+      <div class="card-meta" style="margin-top:8px"><span class="badge">${OEG.esc(OEG.gradeLabel(item.grade))}</span><span>📅 ${OEG.esc(item.date || "")}</span>${item.subject ? `<span>🏷️ ${OEG.esc(OEG.subjectLabel(item.subject))}</span>` : ""}</div></div>
+      ${adSlot("viewTop")}
+      ${item.image ? `<div class="post-hero"><img src="${OEG.esc(item.image)}" alt="" draggable="false"></div>` : ""}
+      ${viewerFor(item)}
+      ${OEG.langField(item.body) ? `<div class="post-body" data-allow-select style="margin-top:22px">${OEG.esc(OEG.langField(item.body))}</div>` : ""}
+      ${adSlot("viewMid")}
       <div class="share-row">${shareButtons()}</div>
+      ${related.length ? `<section class="section"><div class="section-head"><h2>${t("sec.popular")}</h2></div><div class="grid">${related.map(card).join("")}</div></section>` : ""}
+      <div class="follow-strip"><span class="fs-title">👉 ${t("follow.title")}</span>${followButtons("fb-sm")}</div>
       ${adSlot("contentBottom")}`;
   }
 
@@ -365,15 +500,9 @@
     closeSidebar();
     let html = "", after = null;
 
+    const ty = OEG.typeOfRoute(route);
     switch (route) {
       case "home": html = homePage(); break;
-      case "textbooks": html = listingPage("textbook", "page.textbooks", query); after = () => bindFilters("textbook", "textbooks"); break;
-      case "workbooks": html = listingPage("workbook", "page.workbooks", query); after = () => bindFilters("workbook", "workbooks"); break;
-      case "office": html = listingPage("office", "page.office", query); after = () => bindFilters("office", "office"); break;
-      case "teachers": html = listingPage("teacher", "page.teachers", query); after = () => bindFilters("teacher", "teachers"); break;
-      case "students": html = listingPage("student", "page.students", query); after = () => bindFilters("student", "students"); break;
-      case "links": html = listingPage("link", "page.links", query); break;
-      case "blog": html = listingPage("post", "page.blog", query); break;
       case "games": html = gamesPage(); after = () => {
         app.querySelectorAll("[data-game]").forEach(b => b.onclick = () => {
           const m = { quiz: OEG.games.mountQuiz, memory: OEG.games.mountMemory, math: OEG.games.mountMath }[b.dataset.game];
@@ -381,7 +510,15 @@
           document.getElementById("gameMount").scrollIntoView({ behavior: "smooth" });
         });
       }; break;
-      case "videos": html = videosPage(); break;
+      case "quiz": html = quizPage(query); after = () => {
+        OEG.quiz.mount(document.getElementById("quizMount"), { grade: query.grade, cat: query.cat });
+      }; break;
+      case "grade": html = gradePage(seg[1], query); break;
+      case "videos": html = videosPage(query); after = () => {
+        const g = document.getElementById("fGrade");
+        if (g) g.onchange = () => { location.hash = g.value === "all" ? "#/videos" : "#/videos?grade=" + g.value; };
+        bindVideoPlayers(app);
+      }; break;
       case "view": html = viewPage(seg[1]); break;
       case "post": html = postPage(seg[1]); break;
       case "login": html = authPage("login"); after = () => bindAuth("login"); break;
@@ -391,14 +528,65 @@
         else { await OEG.auth.recallSecret(); html = `<div id="adminMount"></div>`; after = () => OEG.admin.render(document.getElementById("adminMount")); }
         break;
       case "search": html = searchPage(query.q || ""); break;
-      default: html = homePage();
+      default:
+        if (ty) {
+          if (ty.key === "video") { html = videosPage(query); after = () => { bindVideoPlayers(app); }; }
+          else { html = listingPage(ty.key, route, query); after = () => { bindFilters(ty.key, route); bindVideoPlayers(app); }; }
+        } else html = homePage();
     }
     app.innerHTML = html;
     if (after) after();
-    bindShare(app);
+    if (route !== "admin" && route !== "login" && route !== "register") {
+      bindShare(document);
+      bindVideoPlayers(app);
+      OEG.ads.flush(app);
+      applySeo(route, query, seg, app);
+    }
     const io = new IntersectionObserver(es => es.forEach(e => e.isIntersecting && e.target.classList.add("in")), { threshold: .08 });
     app.querySelectorAll(".reveal").forEach(el => io.observe(el));
     renderNav();
+    renderSidebar();
+  }
+
+  /* ---------- 🔎 SEO meta (title/desc/canonical/OG/JSON-LD) ---------- */
+  function applySeo(route, query, seg, app) {
+    if (!OEG.seo) return;
+    const info = { key: null, pageTitle: null, title: null, desc: null, items: null, item: null, image: "", crumb: null, type: "website", fileUrl: "" };
+    const home = { name: OEG.t("nav.home"), url: OEG.shareBase() };
+    if (route === "home") { info.key = "hero.title"; }
+    else if (route === "view" || route === "post") {
+      const it = OEG.byId(seg[1]);
+      if (it) {
+        info.item = it;
+        info.pageTitle = OEG.langField(it.title);
+        info.desc = OEG.langField(it.desc) || OEG.langField(it.body);
+        info.image = OEG.thumbnail(it);
+        info.fileUrl = it.fileUrl || "";
+        info.type = it.type === "video" ? "video.other" : it.type === "post" ? "article" : "website";
+        info.crumb = [home, { name: OEG.typeLabel(it.type), url: OEG.shareUrl("#/" + OEG.typeRoute(it.type)) }, { name: OEG.langField(it.title), url: OEG.shareUrl() }];
+      }
+    } else if (route === "grade") {
+      const g = seg[1];
+      info.pageTitle = OEG.gradeLabel(g);
+      info.title = OEG.gradeLabel(g) + " — " + OEG.t("grade.materials") + " | " + OEG.siteName();
+      info.desc = OEG.t("grade.materialsSub");
+      info.items = OEG.state.catalog.filter(i => i.grade === g || i.grade === "all");
+      info.crumb = [home, { name: OEG.t("sec.grades"), url: OEG.shareUrl("#/grade") }, { name: OEG.gradeLabel(g), url: OEG.shareUrl() }];
+    } else if (route === "quiz") {
+      info.pageTitle = OEG.t("page.quiz"); info.desc = OEG.t("quiz.sub"); info.type = "website";
+      info.crumb = [home, { name: OEG.t("page.quiz"), url: OEG.shareUrl() }];
+    } else {
+      const ty = OEG.typeOfRoute(route);
+      if (ty) {
+        info.pageTitle = OEG.typeLabel(ty.key);
+        info.desc = OEG.t("grade.materialsSub");
+        info.items = OEG.byType(ty.key);
+        info.crumb = [home, { name: OEG.typeLabel(ty.key), url: OEG.shareUrl() }];
+      } else if (route === "search") { info.title = OEG.t("search.results") + " — " + OEG.siteName(); }
+    }
+    const descEl = app && app.querySelector(".page-head .sub");
+    if (!info.desc && descEl) info.desc = descEl.textContent.slice(0, 200);
+    try { OEG.seo.apply(route, info); } catch (e) {}
   }
 
   /* બ્રાઉઝર autofill/password-manager રોકે: readonly → focus પર ખુલે */
@@ -500,7 +688,9 @@
   /* ---------- Boot ---------- */
   (async () => {
     await OEG.loadConfig();
-    await OEG.loadCatalog();
+    if (OEG.seo) OEG.seo.init();          // ?lang=… + pre-render meta
+    if (OEG.ads) OEG.ads.head();          // AdSense script (publisher ભર્યું હોય તો)
+    await Promise.all([OEG.loadCatalog(), OEG.quiz ? OEG.quiz.load() : Promise.resolve()]);
     OEG.auth.load();
     applyTheme();
     applyI18n();
