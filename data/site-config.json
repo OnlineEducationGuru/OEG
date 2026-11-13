@@ -1,0 +1,11 @@
+{
+  "siteName": "Online Education Guru",
+  "siteUrl": "https://onlineeducationguru.github.io/OEG/",
+  "github": { "owner": "OnlineEducationGuru", "repo": "OEG", "branch": "main" },
+  "firebase": { "apiKey": "", "authDomain": "" },
+  "adsense": {
+    "publisherId": "",
+    "slots": { "homeTop": "", "homeMid": "", "sidebar": "", "contentBottom": "" }
+  },
+  "social": { "youtube": "", "facebook": "", "telegram": "", "whatsapp": "" }
+}

@@ -1,0 +1,34 @@
+{
+  "name": "oeg",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "build": "node scripts/build.mjs",
+    "start": "node scripts/build.mjs && python3 -m http.server 8080 --bind 0.0.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/OnlineEducationGuru/OEG.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/OnlineEducationGuru/OEG/issues"
+  },
+  "homepage": "https://github.com/OnlineEducationGuru/OEG#readme",
+  "devDependencies": {
+    "@playwright/test": "^1.65.0",
+    "@sparticuz/chromium": "^153.0.0",
+    "esbuild": "^0.28.2",
+    "jsdom": "^31.0.0"
+  },
+  "dependencies": {
+    "@fontsource-variable/inter": "^5.3.0",
+    "@fontsource-variable/noto-sans-devanagari": "^5.3.0",
+    "@fontsource-variable/noto-sans-gujarati": "^5.3.0",
+    "@fontsource/baloo-bhai-2": "^5.3.0",
+    "firebase": "^13.3.0"
+  }
+}
