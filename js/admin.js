@@ -58,7 +58,7 @@ OEG.admin = (() => {
   const TABS = [
     { k: "connect", ic: "🔗" }, { k: "site", ic: "⚙️" }, { k: "material", ic: "✍️" },
     { k: "upload", ic: "📤" }, { k: "youtube", ic: "🎬" }, { k: "items", ic: "🗂️" },
-    { k: "tax", ic: "🏷️" }, { k: "quiz", ic: "🧠" }, { k: "cert", ic: "🏅" },
+    { k: "tax", ic: "🏷️" }, { k: "nav", ic: "🧭" }, { k: "quiz", ic: "🧠" }, { k: "cert", ic: "🏅" },
     { k: "ads", ic: "💰" }, { k: "seo", ic: "🔎" }, { k: "users", ic: "👥" },
     { k: "files", ic: "📁" }, { k: "account", ic: "🛡️" }
   ];
@@ -278,6 +278,32 @@ OEG.admin = (() => {
         <p class="adm-sec-note">${OEG.t("admin.subNote")}<br>🌳 ${OEG.t("admin.taxTreeNote")}</p>
         <div id="taxSubs" class="sub-mgr"></div>
         <div id="taxMsg" style="margin-top:12px"></div>
+      </section>
+
+      <!-- 🧭 Menu manager -->
+      <section class="panel adm-sec" data-sec="nav">
+        <h3>🧭 ${OEG.t("admin.navTitle")} <button class="btn btn-outline btn-sm" id="navRefresh" style="margin-left:auto">${OEG.t("admin.refresh")}</button></h3>
+        <p class="adm-sec-note">${OEG.t("admin.navNote")}</p>
+        <div class="sub-mgr">
+          <div class="sub-cat">
+            <div class="sub-cat-head">
+              <b id="navMode"></b>
+              <button type="button" class="btn btn-outline btn-sm" id="navCopy">⬇️ ${OEG.t("admin.navCopy")}</button>
+              <button type="button" class="btn btn-danger btn-sm" id="navReset">↩️ ${OEG.t("admin.navReset")}</button>
+            </div>
+            <div class="nav-rows" id="navList"></div>
+            <div class="sub-add">
+              <input id="navTIcon" placeholder="🏠 / 🎓" maxlength="4">
+              <input id="navTLabel" placeholder="${OEG.t("admin.navLabel")}" maxlength="30">
+              <input id="navTLink" list="navLinks" value="#/" maxlength="160" placeholder="#/videos · https://…">
+              <button type="button" class="btn btn-brand btn-sm" id="navTAdd">➕ ${OEG.t("admin.navAddTop")}</button>
+            </div>
+          </div>
+        </div>
+        <div id="navEd"></div>
+        <datalist id="navLinks"></datalist>
+        <div class="help-box" style="margin-top:12px">💡 ${OEG.t("admin.navHelp")}</div>
+        <div id="navMsg" style="margin-top:12px"></div>
       </section>
 
       <!-- 🧠 Quiz manager -->
@@ -588,7 +614,17 @@ OEG.admin = (() => {
       const cfg2 = JSON.parse(cur.content);
       await mutate(cfg2);
       await OEG.gh.saveSiteConfig(cfg2, message);
-      await OEG.loadConfig();
+      /* જે કૉપિ લખી એ જ memory માં — Pages ની જૂની ફાઈલ ફેરફાર ધોઈ ન શકે */
+      OEG.applyConfig(cfg2);
+      OEG.markConfigWritten(cfg2);
+      try {
+        const r = await fetch("data/site-config.json", { cache: "no-store" });
+        if (r.ok) {
+          let j = null;
+          try { j = JSON.parse(await r.text()); } catch (e) { j = null; }
+          if (j && OEG.cfgSame(j, OEG.state.config)) OEG.configPending = null;   /* Pages પર આવી ગઈ */
+        }
+      } catch (e) {}
       return cfg2;
     }
     const adIds = { homeTop: "adHomeTop", homeMid: "adHomeMid", sidebar: "adSidebar", contentBottom: "adBottom" };
@@ -1559,6 +1595,227 @@ OEG.admin = (() => {
       <div class="tax-row"><span>${x.icon || "•"}</span><b>${OEG.esc(OEG.taxLabel(x, kind === "grades" ? "grade" : kind === "qz" ? "subject" : "type"))}</b><code>${OEG.esc(x.key)}</code>
       ${x.route ? `<small>/${OEG.esc(x.route)}</small>` : ""}
       ${removable && x.key !== "post" && x.key !== "all" ? `<button class="btn btn-danger btn-sm" data-tax="${kind}:${OEG.esc(x.key)}">🗑</button>` : ""}</div>`).join("");
+    /* ================= 🧭 મેનુ સંચાલન (ટોચનું મેનુ ▸ ઉપ-મેનુ ▸ સબ-સબ મેનુ) =================
+       ડેટા: data/site-config.json → ui.nav = [{ key, icon, label{gu,hi,en}, href, subs:[…] }]
+       ખાલી હોય તો સાઇટ ઑટો-મેનુ (taxonomy પ્રમાણે) ચલાવે; પહેલી એડપીઝ ઑટો યાદી કૉપી કરી દે. */
+    const navLab = (o) => {
+      const v = (o && o.label) || (typeof o === "string" ? o : "") || (o && o.key) || "";
+      return typeof v === "string" ? v : (OEG.langField(v) || v.gu || v.hi || v.en || "");
+    };
+    const navClone = (list, depth) => (Array.isArray(list) ? list : []).map((x) => {
+      const o = typeof x === "string" ? { label: x } : (x || {});
+      const n = { key: String(o.key || navLab(o)).replace(/[^\w\-]/g, "").slice(0, 20) || ("m" + Date.now().toString(36).slice(-4)) };
+      if (o.icon) n.icon = String(o.icon).slice(0, 6);
+      const src = (o.label && typeof o.label === "object") ? o.label : {};
+      const l = String(navLab(o) || "").trim();
+      n.label = { gu: src.gu || l || n.key, hi: src.hi || "", en: src.en || "" };
+      n.href = String(o.href || "#/").slice(0, 160);
+      const kids = (depth || 1) < 3 ? navClone(o.kids || o.subs, (depth || 1) + 1) : [];
+      if (kids.length) n.subs = kids;
+      return n;
+    }).filter(Boolean);
+    const navTreeNow = () => {
+      const v = ((OEG.state.config || {}).ui || {}).nav;
+      return (Array.isArray(v) && v.length) ? v : navClone(OEG.navAuto ? OEG.navAuto() : [], 1);
+    };
+    /* navSibs = પંક્તિની અંદરની સૂચિ (એટલે કે તે નોડનો સમૂહ) · navKids = તે નોડના બાળકો */
+    const navSibs = (tree, path) => {
+      const p = String(path || "").split(".").filter(x => x !== "").map(Number);
+      let list = tree;
+      for (let k = 0; k + 1 < p.length; k++) { const n = list && list[p[k]]; if (!n) return null; list = Array.isArray(n.subs) ? n.subs : (n.subs = []); }
+      return Array.isArray(list) ? list : null;
+    };
+    const navKids = (tree, path) => {
+      const p = String(path || "").split(".").filter(x => x !== "").map(Number);
+      let list = tree;
+      for (const i of p) { const n = list && list[i]; if (!n) return null; list = Array.isArray(n.subs) ? n.subs : (n.subs = []); }
+      return Array.isArray(list) ? list : null;
+    };
+    const LINK_GROUPS = () => {
+      const tx = OEG.tax();
+      const pages = [[OEG.t("nav.home"), "#/"]];
+      tx.types.filter(x => x.route).forEach(x => pages.push([(x.icon || "📄") + " " + OEG.typeLabel(x.key), "#/" + x.route]));
+      [["🎓 " + OEG.t("sec.grades"), "#/grade"], ["🧠 " + OEG.t("page.quiz"), "#/quiz"]].forEach(p => pages.push(p));
+      const grades = tx.grades.filter(g => g.key !== "all").map(g => [OEG.gradeLabel(g.key), "#/grade/" + g.key]);
+      const quiz = [];
+      try {
+        (OEG.quiz.cats() || []).forEach(c => {
+          quiz.push([(c.icon || "🧠") + " " + OEG.taxLabel(c, "subject"), "#/quiz?cat=" + c.key]);
+          if (c.mode === "grade") (OEG.quiz.subsOf("grade") || []).forEach(x => quiz.push([OEG.quiz.subLabel("grade", x.key), "#/quiz?cat=grade&subject=" + x.key]));
+          else if (c.mode === "sub") (c.subs || []).forEach(x => quiz.push([(x.icon || "🏷️") + " " + OEG.taxLabel(x, "subject"), "#/quiz?cat=" + c.key + "&sub=" + x.key]));
+        });
+      } catch (e) {}
+      const other = [["🔑 " + OEG.t("nav.login"), "#/login"], ["📝 " + OEG.t("nav.register"), "#/register"], ["🛠️ " + OEG.t("nav.admin"), "#/admin"]].filter(x => x[1]);
+      return [[OEG.t("admin.navPages"), pages], [OEG.t("admin.navByGrade"), grades], [OEG.t("admin.navQuiz"), quiz], [OEG.t("admin.navOther"), other]]
+        .filter(g => g[1].length);
+    };
+    /* પેજની લિંક: ડ્રૉપડાઉન જેવી સૂચનો + કોઈ પણ સરનામું લખી શકાય (datalist) */
+    const linkOpts = () => LINK_GROUPS().map(([g, items]) => items.map(([lab, href]) =>
+      `<option value="${OEG.esc(href)}">${OEG.esc(g + " · " + lab)}</option>`).join("")).join("");
+    const linkInput = (id, val) => `<input id="${id}" list="navLinks" value="${OEG.esc(val || "#/")}" maxlength="160" placeholder="#/videos · https://…">`;
+    let navEd = null;   /* { path: "0.1" | "", mode: "add"|"edit", parent: "0" } */
+    function renderNavMgr() {
+      const box = $("navList");
+      if (!box) return;
+      const tree = navTreeNow();
+      const custom = !!(((OEG.state.config || {}).ui || {}).nav || []).length;
+      const mode = $("navMode");
+      if (mode) mode.innerHTML = custom ? "🧭 " + OEG.t("admin.navCustom2") : "♻️ " + OEG.t("admin.navAutoMode");
+      const dl = $("navLinks");
+      if (dl && !dl.options.length) dl.innerHTML = linkOpts();
+      box.innerHTML = tree.length ? tree.map((n, i) => navRow(n, String(i), 1)).join("") : `<span class="sub-none">${OEG.t("admin.navNone")}</span>`;
+      bindNav(box);
+      renderNavEd();
+    }
+    function navRow(n, path, depth) {
+      const kids = Array.isArray(n.subs) ? n.subs : [];
+      const href = String(n.href || "#/");
+      const d = Number(depth) || 1;
+      return `<div class="nav-row d${d}" data-navrow="${OEG.esc(path)}">
+        <span class="nr-ic">${n.icon ? OEG.esc(String(n.icon)) : (d === 1 ? "🧭" : "📄")}</span>
+        <b>${OEG.esc(navLab(n) || n.key || "")}</b><code>${OEG.esc(href)}</code>
+        ${kids.length ? `<span class="badge">▾ ${kids.length}</span>` : ""}
+        <span class="nr-btns">
+          <button type="button" class="btn btn-outline btn-sm" data-navup="${OEG.esc(path)}" title="↑">↑</button>
+          <button type="button" class="btn btn-outline btn-sm" data-navdown="${OEG.esc(path)}" title="↓">↓</button>
+          <button type="button" class="btn btn-outline btn-sm" data-navedit="${OEG.esc(path)}" title="${OEG.t("admin.edit")}">✏️</button>
+          ${d < 3 ? `<button type="button" class="btn btn-outline btn-sm" data-navadd="${OEG.esc(path)}">➕ ${OEG.t(d === 1 ? "admin.navAddSub" : "admin.navAddSub2")}</button>` : ""}
+          <button type="button" class="btn btn-danger btn-sm" data-navdel="${OEG.esc(path)}" title="${OEG.t("admin.delete")}">🗑</button>
+        </span>
+        ${kids.length ? `<div class="nr-kids">${kids.map((k, i) => navRow(k, path + "." + i, d + 1)).join("")}</div>` : ""}
+      </div>`;
+    }
+    function renderNavEd() {
+      const box = $("navEd");
+      if (!box) return;
+      if (!navEd) { box.innerHTML = ""; return; }
+      const tree = navTreeNow();
+      const sibs = navEd.path ? navSibs(tree, navEd.path) : null;
+      const at = Number(String(navEd.path || "").split(".").pop());
+      const node = navEd.mode === "edit" && Array.isArray(sibs) ? sibs[at] : null;
+      const cur = node || {};
+      const lab = (cur && cur.label && typeof cur.label === "object") ? cur.label : { gu: (cur && navLab(cur)) || "", hi: "", en: "" };
+      const href = String((cur && cur.href) || "#/");
+      box.innerHTML = `<div class="nav-ed">
+        <h4>${navEd.mode === "edit" ? "✏️ " + OEG.t("admin.navEdit") : "➕ " + OEG.t(navEd.parent ? "admin.navAddSub" : "admin.navAddTop")}${navEd.parent ? ` · <code>${OEG.esc(navEd.parent)}</code>` : ""}</h4>
+        <div class="form-row">
+          <div class="field"><label>${OEG.t("admin.newKey")}</label><input id="neKey" value="${OEG.esc((cur && cur.key) || "")}" maxlength="20" placeholder="notes"></div>
+          <div class="field"><label>${OEG.t("admin.newIcon")}</label><input id="neIcon" value="${OEG.esc((cur && cur.icon) || "")}" maxlength="4" placeholder="🗒️"></div>
+        </div>
+        <div class="form-row">
+          <div class="field"><label>${OEG.t("admin.navLabel")} · ગુ</label><input id="neGu" value="${OEG.esc(lab.gu || "")}" maxlength="30"></div>
+          <div class="field"><label>हि</label><input id="neHi" value="${OEG.esc(lab.hi || "")}" maxlength="30"></div>
+          <div class="field"><label>En</label><input id="neEn" value="${OEG.esc(lab.en || "")}" maxlength="30"></div>
+        </div>
+        <div class="form-row">
+          <div class="field"><label>${OEG.t("admin.navLink")}</label>${linkInput("neLink", href)}</div>
+          <div class="field"><label>&nbsp;</label><p class="adm-sec-note" style="margin:0">💡 ${OEG.t("admin.navLinkNote")}</p></div>
+        </div>
+        <div class="nav-ed-btns">
+          <button type="button" class="btn btn-brand btn-sm" id="neSave">💾 ${OEG.t("btn.save")}</button>
+          <button type="button" class="btn btn-outline btn-sm" id="neCancel">${OEG.t("btn.cancel")}</button>
+          ${navEd.mode === "edit" ? `<button type="button" class="btn btn-danger btn-sm" id="neDel">🗑 ${OEG.t("admin.delete")}</button>` : ""}
+        </div>
+      </div>`;
+      if ($("neCancel")) $("neCancel").onclick = () => { navEd = null; renderNavEd(); };
+      if ($("neSave")) $("neSave").onclick = saveNavEd;
+      if ($("neDel")) $("neDel").onclick = () => navRemove(navEd.path);
+    }
+    async function saveNavEd() {
+      const gu = ($("neGu").value || "").trim();
+      const hi = ($("neHi").value || "").trim();
+      const en = ($("neEn").value || "").trim();
+      if (!gu && !hi && !en) { say($("navMsg"), "error", "❌ " + OEG.esc(OEG.t("admin.navNeedLabel"))); return; }
+      const custom = String(($("neLink") || {}).value || "").trim();
+      if (!custom) { say($("navMsg"), "error", "❌ " + OEG.esc(OEG.t("admin.navNeedLink"))); return; }
+      const key = slugKey(($("neKey").value || "").trim() || custom || gu);
+      const icon = ($("neIcon").value || "").trim();
+      const node = { key: key, icon: icon, label: { gu: gu || hi || en, hi: hi || gu || en, en: en || gu || hi }, href: custom.slice(0, 160) };
+      const parent = navEd && navEd.parent;
+      const path = navEd && navEd.path;
+      const mode = navEd && navEd.mode;
+      try {
+        await patchConfig((cfg2) => {
+          cfg2.ui = Object.assign({}, cfg2.ui || {});
+          const tree = (Array.isArray(cfg2.ui.nav) && cfg2.ui.nav.length) ? cfg2.ui.nav : navClone(OEG.navAuto ? OEG.navAuto() : [], 1);
+          if (mode === "edit") {
+            const sibs = navSibs(tree, path);
+            const i = Number(String(path).split(".").pop());
+            const old = sibs && sibs[i];
+            if (old && Array.isArray(old.subs)) node.subs = old.subs;
+            if (sibs) sibs[i] = node;
+          } else if (parent || parent === 0) {
+            const kids = navKids(tree, parent);
+            if (kids) kids.push(node);
+          } else tree.push(node);
+          cfg2.ui.nav = tree;
+          return cfg2;
+        }, "nav: update menu");
+        navEd = null;
+        dirty(); renderAll();
+        if (OEG.applyNav) OEG.applyNav();
+        say($("navMsg"), "ok", "✅ " + OEG.esc(OEG.t("admin.navSaved")));
+      } catch (e) { say($("navMsg"), "error", "❌ " + OEG.esc(e && e.message ? e.message : String(e))); }
+    }
+    const slugKey = (v) => (String(v || "").replace(/^#\//, "").replace(/[^\w]+/g, "-").replace(/^-+|-+$/g, "").toLowerCase().slice(0, 20) || "m" + Date.now().toString(36).slice(-4));
+    async function navWrite(mut, okMsg) {
+      try {
+        await patchConfig((cfg2) => {
+          cfg2.ui = Object.assign({}, cfg2.ui || {});
+          const tree = (Array.isArray(cfg2.ui.nav) && cfg2.ui.nav.length) ? cfg2.ui.nav : navClone(OEG.navAuto ? OEG.navAuto() : [], 1);
+          cfg2.ui.nav = mut(tree) || tree;
+          return cfg2;
+        }, "nav: update menu");
+        dirty(); renderAll();
+        if (OEG.applyNav) OEG.applyNav();
+        say($("navMsg"), "ok", "✅ " + OEG.esc(okMsg));
+      } catch (e) { say($("navMsg"), "error", "❌ " + OEG.esc(e && e.message ? e.message : String(e))); }
+    }
+    function navRemove(path) {
+      const tree = navTreeNow();
+      const sibs = navSibs(tree, path);
+      const i = Number(String(path).split(".").pop());
+      const node = sibs && sibs[i];
+      const nKids = node && Array.isArray(node.subs) ? node.subs.length : 0;
+      if (!confirm(OEG.t("admin.delConfirm") + " — " + navLab(node || {}) + (nKids ? ` · ▾ ${nKids}` : ""))) return;
+      navWrite((t2) => {
+        const s2 = navSibs(t2, path); const k = Number(String(path).split(".").pop());
+        if (s2) s2.splice(k, 1);
+        return t2;
+      }, OEG.t("admin.navDeleted") + " · " + navLab(node || {}));
+      if (navEd) { navEd = null; renderNavEd(); }
+    }
+    function bindNav(box) {
+      const at = (attr, fn) => Array.prototype.forEach.call(box.querySelectorAll("[" + attr + "]"), (b) => { b.onclick = () => fn(b); });
+      at("data-navdel", (b) => navRemove(b.dataset.navdel));
+      at("data-navedit", (b) => { navEd = { mode: "edit", path: b.dataset.navedit, parent: "" }; renderNavEd(); $("navEd").scrollIntoView({ behavior: "smooth", block: "center" }); });
+      at("data-navadd", (b) => { navEd = { mode: "add", path: "", parent: b.dataset.navadd }; renderNavEd(); $("navEd").scrollIntoView({ behavior: "smooth", block: "center" }); });
+      const move = (path, dir) => navWrite((t2) => {
+        const sibs = navSibs(t2, path); const i = Number(String(path).split(".").pop());
+        const j = i + dir;
+        if (sibs && j >= 0 && j < sibs.length) { const x = sibs[i]; sibs[i] = sibs[j]; sibs[j] = x; }
+        return t2;
+      }, OEG.t("admin.navSaved"));
+      at("data-navup", (b) => move(b.dataset.navup, -1));
+      at("data-navdown", (b) => move(b.dataset.navdown, 1));
+    }
+    $("navRefresh").onclick = () => { navEd = null; renderNavMgr(); };
+    $("navCopy").onclick = () => navWrite((t2) => navClone(OEG.navAuto ? OEG.navAuto() : [], 1), OEG.t("admin.navCopied"));
+    $("navReset").onclick = () => {
+      if (!confirm(OEG.t("admin.navResetAsk"))) return;
+      patchConfig((cfg2) => { cfg2.ui = Object.assign({}, cfg2.ui || {}); delete cfg2.ui.nav; return cfg2; }, "nav: back to auto menu")
+        .then(() => { navEd = null; dirty(); renderAll(); if (OEG.applyNav) OEG.applyNav(); say($("navMsg"), "ok", "✅ " + OEG.esc(OEG.t("admin.navAutoMode"))); })
+        .catch((e) => say($("navMsg"), "error", "❌ " + OEG.esc(e && e.message ? e.message : String(e))));
+    };
+    $("navTAdd").onclick = async () => {
+      const gu = ($("navTLabel").value || "").trim();
+      const href = String(($("navTLink") || {}).value || "").trim();
+      if (!gu) { say($("navMsg"), "error", "❌ " + OEG.esc(OEG.t("admin.navNeedLabel"))); return; }
+      if (!href) { say($("navMsg"), "error", "❌ " + OEG.esc(OEG.t("admin.navNeedLink"))); return; }
+      await navWrite((t2) => { t2.push({ key: slugKey(href || gu), icon: ($("navTIcon").value || "").trim(), label: { gu: gu, hi: gu, en: gu }, href: href.slice(0, 160) }); return t2; }, OEG.t("admin.navSaved") + " · " + gu);
+      $("navTLabel").value = ""; $("navTIcon").value = "";
+    };
+
     function renderTax(r) {
       const box = (r || root).querySelector("#taxTypes");
       if (!box) return;
@@ -1594,7 +1851,7 @@ OEG.admin = (() => {
       keep("upGrade", gradeOpts("all"));
       keep("pSubject", subjOpts("all"));
     }
-    renderTax(root); renderSubs();
+    renderTax(root); renderSubs(); renderNavMgr();
     const taxTypeKey0 = $("taxTypeKey");
     if (taxTypeKey0) taxTypeKey0.value = "";
 
@@ -1741,7 +1998,7 @@ OEG.admin = (() => {
     };
 
     function renderAll() {
-      renderTax(root); renderQuiz(root); renderFlags(root); renderItems(root); renderCertPra(); renderVis(); renderSubs(); renderViews(); syncCat();
+      renderTax(root); renderQuiz(root); renderFlags(root); renderItems(root); renderCertPra(); renderVis(); renderSubs(); renderViews(); renderNavMgr(); syncCat();
       const keep = (id, html) => {
         const el = $(id);
         if (!el) return;

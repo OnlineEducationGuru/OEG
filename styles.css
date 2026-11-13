@@ -618,9 +618,6 @@ body.allow-select img, body.allow-select video { -webkit-user-drag: auto; }
 .qz-cat-card .qz-ic{font-size:1.9rem;line-height:1}
 .qz-cat-card h3{font-size:1.02rem;margin-top:2px}
 .qz-cat-card p{font-size:.84rem;color:var(--muted);margin-top:2px}
-.qz-cat-card .qz-mini{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
-.qz-cat-card .qz-mini span{display:inline-flex;align-items:center;gap:5px;font-size:.74rem;font-weight:700;color:var(--muted);background:var(--surface-2);border:1px solid var(--border);border-radius:999px;padding:3px 9px}
-.qz-cat-card .qz-mini b{color:var(--brand);font-size:.74rem}
 .qz-cat-card .qz-go{margin-top:auto;padding-top:12px;font-size:.86rem;font-weight:800;color:var(--brand)}
 /* 👁 Most Viewed કાર્ડનો બેજ */
 .card-meta span{white-space:nowrap}
@@ -637,6 +634,23 @@ body.allow-select img, body.allow-select video { -webkit-user-drag: auto; }
 .yt-bar{display:flex;flex-wrap:wrap;align-items:center;gap:12px;padding:12px 2px 0;font-size:.86rem;color:var(--muted)}
 .yt-bar b{color:var(--text);font-size:.98rem}
 .video-card .vc-meta{display:flex;flex-wrap:wrap;gap:10px;margin-top:8px;font-size:.78rem;color:var(--muted);font-weight:700}
+
+/* 🧭 Admin — મેનુ સંચાલન (ટોચનું મેનુ ▸ ઉપ-મેનુ ▸ સબ-સબ) */
+.nav-rows{display:grid;gap:8px;margin-top:10px}
+.nav-row{border:1px solid var(--border);border-radius:12px;background:var(--surface);padding:8px 10px;display:flex;flex-wrap:wrap;align-items:center;gap:8px}
+.nav-row.d1{border-width:1.5px;border-left:4px solid var(--brand)}
+.nav-row.d2{border-style:dashed;background:var(--surface-2)}
+.nav-row.d3{border-style:dotted;background:var(--surface-2);padding:6px 9px}
+.nav-row b{font-size:.92rem}
+.nav-row code{font-size:.72rem;color:var(--muted);background:var(--surface-2);border-radius:6px;padding:1px 6px}
+.nav-row.d2 code,.nav-row.d3 code{background:var(--surface)}
+.nr-ic{font-size:1.02rem}
+.nr-btns{display:flex;flex-wrap:wrap;gap:5px;margin-left:auto}
+.nr-kids{flex:1 1 100%;display:grid;gap:6px;margin:4px 0 2px 14px;padding-left:12px;border-left:2px solid var(--border)}
+.nav-ed{margin-top:12px;border:1px solid var(--brand);border-radius:14px;background:color-mix(in srgb,var(--brand) 7%,var(--surface));padding:12px 14px}
+.nav-ed h4{font-size:.92rem;margin-bottom:8px}
+.nav-ed-btns{display:flex;flex-wrap:wrap;gap:8px;margin-top:4px}
+.side-note{font-size:.74rem;color:var(--muted);margin:10px 8px 0;font-weight:700}
 
 /* 🧩 Admin — સબ-કેટેગરી મેનેજર */
 .sub-mgr{display:grid;gap:12px}

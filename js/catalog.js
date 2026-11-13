@@ -195,24 +195,53 @@ OEG.fileKind = (item) => {
   return "link";
 };
 
+/* કૉન્ફિગ memory માં બેસાડો — Admin લખે એ જ કૉપિ તરત ચાલે (Pages ની જૂની ફાઈલ નહીં) */
+OEG.applyConfig = (j) => {
+  if (!j || typeof j !== "object") return OEG.state.config;
+  OEG.state.config = Object.assign({}, window.OEG_CONFIG, j);
+  OEG.state.config.adsense = Object.assign({}, (window.OEG_CONFIG.adsense || {}), j.adsense || {});
+  OEG.state.config.firebase = Object.assign({}, (window.OEG_CONFIG.firebase || {}), j.firebase || {});
+  OEG.state.config.github = Object.assign({}, (window.OEG_CONFIG.github || {}), j.github || {});
+  OEG.state.config.admin = Object.assign({}, (window.OEG_CONFIG.admin || {}), j.admin || {});
+  OEG.state.gh.owner = OEG.state.config.github.owner || "";
+  OEG.state.gh.repo = OEG.state.config.github.repo || "";
+  OEG.state.gh.branch = OEG.state.config.github.branch || "main";
+  return OEG.state.config;
+};
 OEG.loadConfig = async () => {
   try {
     const r = await fetch("data/site-config.json", { cache: "no-store" });
     if (r.ok) {
-      const j = await r.json();
-      OEG.state.config = Object.assign({}, window.OEG_CONFIG, j);
-      OEG.state.config.adsense = Object.assign({}, (window.OEG_CONFIG.adsense || {}), j.adsense || {});
-      OEG.state.config.firebase = Object.assign({}, (window.OEG_CONFIG.firebase || {}), j.firebase || {});
-      OEG.state.config.github = Object.assign({}, (window.OEG_CONFIG.github || {}), j.github || {});
-      OEG.state.config.admin = Object.assign({}, (window.OEG_CONFIG.admin || {}), j.admin || {});
+      const txt = await r.text();
+      let j = null, bad = false;
+      try { j = JSON.parse(txt); } catch (e) { bad = true; }
+      if (bad) {
+        OEG.state.configError = true; /* invalid JSON — config.js ના defaults વાપરાશે */
+        console.warn("OEG: data/site-config.json parse થયું નહીં — JSON માં કોઈક વાક્ય ફિક્સ કરો (દા.ત. ઈમેઈલને \" કોટ મૂકો).");
+      } else if (!OEG.cfgFresh(j)) {
+        /* Admin એ લખ્યું એ હજૂ Pages પર આવ્યું નથી — memory ની કૉપિ જ રાખો */
+      } else {
+        OEG.state.configError = false;
+        OEG.applyConfig(j);
+      }
     }
-  } catch (e) {
-    OEG.state.configError = true; /* invalid JSON — config.js ના defaults વાપરાશે */
-    console.warn("OEG: data/site-config.json parse થયું નહીં — JSON માં કોઈક વાક્ય ફિક્સ કરો (દા.ત. ઈમેઈલને \" કોટ મૂકો).");
-  }
+  } catch (e) { }
   OEG.state.gh.owner = OEG.state.config.github.owner || "";
   OEG.state.gh.repo = OEG.state.config.github.repo || "";
   OEG.state.gh.branch = OEG.state.config.github.branch || "main";
+};
+/* Admin ની તાજેતરની લખેલી કૉપિ — જ્યાં સુધી એ જ ફાઈલ deploy ન થાય ત્યાં સુધી જૂની કૉપિ એ ધોઈ ન શકે */
+OEG.cfgSame = (a2, b2) => { try { return JSON.stringify(a2) === JSON.stringify(b2); } catch (e) { return false; } };
+OEG.markConfigWritten = (cfg2) => {
+  let snap = null;
+  try { snap = JSON.parse(JSON.stringify(cfg2)); } catch (e) { snap = null; }
+  OEG.configPending = { json: snap, at: Date.now() };
+};
+OEG.cfgFresh = (j) => {
+  const p = OEG.configPending;
+  if (!p) return true;
+  if (OEG.cfgSame(p.json, j)) { OEG.configPending = null; return true; }
+  return Date.now() - (p.at || 0) > 600000;   /* 10 મિનિટ પછી Pages ની કૉપિ સ્વીકારો */
 };
 
 /* double-encoded (mojibake) UTF-8 સુધારે — જૂની corrupted data સામે સુરક્ષા */
