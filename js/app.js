@@ -404,17 +404,21 @@
     const setup = !adm.email || !adm.passHash;
     return `<div class="form-card" style="margin-top:34px">
       <h2>🛡️ ${t("admin.loginTitle")}</h2>
-      <p class="sub">${setup ? t("admin.setupNote") : t("admin.loginSub")}</p>
+      ${setup ? "" : `<p class="sub">${t("admin.loginSub")}</p>`}
       <div id="admMsg"></div>
       <form id="admForm">
         <div class="field"><label>${t("auth.email")}</label><input name="email" type="email" required autocomplete="username" ${setup ? "" : `value="${OEG.esc(adm.email)}"`}></div>
         <div class="field"><label>${t("auth.password")}</label><input name="password" type="password" required minlength="6" autocomplete="current-password"></div>
-        ${setup ? `<div class="field"><label>${t("admin.token")}</label><input name="token" type="password" placeholder="github_pat_..." autocomplete="off"></div>` : ""}
+        ${setup ? `<div class="field"><label>${t("admin.token")}</label><input name="token" type="password" autocomplete="off">
+          <button type="button" class="linklike" id="admHelpBtn">${t("admin.howTo")}</button>
+          <div class="help-box" id="admHelp" style="display:none">${t("admin.howBody")}</div></div>` : ""}
         <button class="btn btn-brand" style="width:100%;justify-content:center" type="submit">🔓 ${t("admin.enterBtn")}</button>
       </form>
     </div>`;
   }
   function bindAdminLogin() {
+    const hb = document.getElementById("admHelpBtn");
+    if (hb) hb.onclick = (e) => { e.preventDefault(); const bx = document.getElementById("admHelp"); bx.style.display = bx.style.display === "none" ? "block" : "none"; };
     const form = document.getElementById("admForm");
     if (!form) return;
     form.onsubmit = async (e) => {

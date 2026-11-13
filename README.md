@@ -55,9 +55,16 @@
 > ⚠️ JSON ફાઈલોમાં edit કરતી વખતે દરેક value `" કોટ "` માં હોવી જોઈએ — ભૂલ થાય તો site પર warning દેખાશે.
 
 1. સાઈટ ખોલો → menu → **Admin Panel** (અથવા `#/admin`).
-2. **પ્રથમ વખત (setup):** email + તમારો નવો પાસવર્ડ + **એકવાર** GitHub **Fine-grained PAT** ભરો → **દાખલ થાઓ**.
-   - PAT: GitHub → Settings → Developer settings → Personal access tokens → Fine-grained → Repository access: ફક્ત OEG → **Contents: Read and write**
-   - આટલું કરતાં `data/admin.json` રિપોમાં સેવ થશે — હમજીતર Admin ખુલ્લું.
+2. **પ્રથમ વખત (setup):** email + તમારો નવો પાસવર્ડ + **એકવાર સિક્રેટ કોડ** ભરો → **દાખલ થાઓ**.
+   - 🔑 **સિક્રેટ કોડ = GitHub Fine-grained PAT** (site કોઈને બતાવતું નથી — login card પર "❓ સિક્રેટ કોડ ક્યાંથી મેળવવો?" ક્લિક કરીને પણ સમજ મળશે):
+     1. ખોલો: **https://github.com/settings/personal-access-tokens** → GitHub માં sign-in
+     2. **Generate new token** → **Fine-grained token**
+     3. Token name: `OEG` · Expiration: **90 days**
+     4. **Repository access** → *Only select repositories* → `OnlineEducationGuru/OEG`
+     5. **Permissions → Contents → Read and write** (બીજું કંઈ નહીં)
+     6. **Generate token** → દેખાતો કોડ copy કરો → site પર ભરો. એક જ વાર જોઈએ.
+   - ⚠️ આ કોડ તમારી GitHub ચાવી છે — કોઈને બતાવશો નહીં; browser બંધ = ભૂલાઈ જશે.
+   - આટલું કરતાં `data/admin.json` રિપોમાં સેવ થશે — તરત Admin ખુલ્લું.
 3. **બીજી વારથી:** ફક્ત email + પાસવર્ડ. ભૂલ કરો તો login page પર જ error દેખાશે.
 4. પછી Panel માં: 🔗 **GitHub Connect** (ટોકન ફરી ભરો — tab memory માં જ રહે, ક્યાંય સેવ નહીં) → 📤 ફાઈલ અપલોડ, ✍️ પોસ્ટ, 💰 AdSense, 👥 વપરાશકર્તાઓ, 📁 ફાઈલ મેનેજર.
 5. પાસવર્ડ બદલવા: Panel → **🛡️ એક્સેસ કંટ્રોલ** → નવો પાસવર્ડ → Save.
