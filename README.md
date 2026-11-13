@@ -50,28 +50,27 @@
 
 ## 🛠️ Admin Panel વાપરવું
 
-> 🔒 **એક્સેસ:** Admin Panel **ફક્ત એક જ email+પાસવર્ડથી** ખુલે છે, જે `data/admin.json` માં સુરક્ષિત **SHA-256 hash** સ્વરૂપે સેવ છે.
-> Admin નું કોઈ રજિસ્ટ્રેશન નથી — login પણ નહીં. અન્ય કોઈ પણ રીતે panel ખૂલશે નહીં.
-> ⚠️ JSON ફાઈલોમાં edit કરતી વખતે દરેક value `" કોટ "` માં હોવી જોઈએ — ભૂલ થાય તો site પર warning દેખાશે.
+> 🔒 **એક્સેસ:** Admin Panel **ફક્ત એક જ email+પાસવર્ડથી** ખુલે છે, જે `data/admin.json` માં **email = base64** + **પાસવર્ડ = SHA-256 hash** સ્વરૂપે સુરક્ષિત સેવ છે (કોઈ પણ ભાષક ફાઈલ વાંચે તો email/પાસવર્ડ સીધા દેખાતા નથી).
 
-1. સાઈટ ખોલો → menu → **Admin Panel** (અથવા `#/admin`).
+1. **Admin ખોલવું:** ટબ મેનુ → **વધુ ▾ → Admin Panel** (અથવા URL માં `#/admin`).
 2. **પ્રથમ વખત (setup):** email + તમારો નવો પાસવર્ડ + **એકવાર સિક્રેટ કોડ** ભરો → **દાખલ થાઓ**.
-   - 🔑 **સિક્રેટ કોડ = GitHub Fine-grained PAT** (site કોઈને બતાવતું નથી — login card પર "❓ સિક્રેટ કોડ ક્યાંથી મેળવવો?" ક્લિક કરીને પણ સમજ મળશે):
-     1. ખોલો: **https://github.com/settings/personal-access-tokens** → GitHub માં sign-in
-     2. **Generate new token** → **Fine-grained token**
-     3. Token name: `OEG` · Expiration: **90 days**
-     4. **Repository access** → *Only select repositories* → `OnlineEducationGuru/OEG`
-     5. **Permissions → Contents → Read and write** (બીજું કંઈ નહીં)
-     6. **Generate token** → દેખાતો કોડ copy કરો → site પર ભરો. એક જ વાર જોઈએ.
-   - ⚠️ આ કોડ તમારી GitHub ચાવી છે — કોઈને બતાવશો નહીં; browser બંધ = ભૂલાઈ જશે.
-   - આટલું કરતાં `data/admin.json` રિપોમાં સેવ થશે — તરત Admin ખુલ્લું.
-3. **બીજી વારથી:** ફક્ત email + પાસવર્ડ. ભૂલ કરો તો login page પર જ error દેખાશે.
-   - `data/admin.json` માં તમે પાસવર્ડ **સીધો (plain) પણ લખી શકો** કે **hash** — બંને ચાલે. પાસવર્ડ ભૂલી જાઓ તો login card પર "🔑 સિક્રેટ કોડથી સેટઅપ / પાસવર્ડ બદલવો છે?" ક્લિક કરી નવો પાસવર્ડ સેટ કરી શકો (એકવાર સિક્રેટ કોડ સાથે).
-   - ⚠️ Plain પાસવર્ડ public repo માં દેખાય — પહેલી login પછી panel માંથી બદલી નાખો (તરત hash થઈ જશે).
-4. પછી Panel માં: 🔗 **GitHub Connect** (ટોકન ફરી ભરો — tab memory માં જ રહે, ક્યાંય સેવ નહીં) → 📤 ફાઈલ અપલોડ, ✍️ પોસ્ટ, 💰 AdSense, 👥 વપરાશકર્તાઓ, 📁 ફાઈલ મેનેજર.
-5. પાસવર્ડ બદલવા: Panel → **🛡️ એક્સેસ કંટ્રોલ** → નવો પાસવર્ડ → Save.
+   - 🔑 **સિક્રેટ કોડ = GitHub Fine-grained PAT** — login card પર ક્યાંય "GitHub/PAT/token" લખ્યું દેખાતું નથી; સમજ **લોગિન પછી** Panel → 🔗 Connect માં "❓ સિક્રેટ કોડ ક્યાંથી મેળવવો?" પર મળશે (README માં પણ છે).
+   - પગલાં: https://github.com/settings/personal-access-tokens → **Generate new token → Fine-grained** → name `OEG`, 90 days → **Only select repositories** = `OnlineEducationGuru/OEG` → **Contents: Read and write** → Generate → copy.
+3. **બીજી વારથી:** ફક્ત email + પાસવર્ડ. (કોઈ auto-fill નહીં — નીચે જુઓ.)
+4. **પાસવર્ડ ભૂલી જાઓ?** login card પર "🔑 સિક્રેટ કોડથી સેટઅપ / પાસવર્ડ બદલવો છે?" ક્લિક → નવો પાસવર્ડ + એકવાર સિક્રેટ કોડ → ફાઈલ આપોઆપ નવા hash થી લખાય.
+5. **પાસવર્ડ/email બદલવાના 2 રસ્તા:**
+   - **Panel → 🛡️ એક્સેસ કંટ્રોલ** → નવું email/પાસવર્ડ → Save (તરત base64+hash થઈ સેવ).
+   - **સીધું GitHub પર** `data/admin.json` edit કરો:
+     ```json
+     { "v": 2, "email": "<base64(email)>", "pass": "<sha256(password)>", "updated": "2026-11-13" }
+     ```
+     અથવા સરળતા માટે `"pass": "મારો નવો પાસવર્ડ"` (plain) લખો — site hash તરીકે ઓળખી શકે અને plain હોય તો પણ login ચાલે; પછી પહેલી login વખતે આપોઆપ hash થઈ જાય. જૂનું `"passHash"` field પણ ચાલે (back-compatible).
+6. 🔓 **Login પછી** upload/post/settings ચાલે (ફક્ત એ જ ટેબની memory માં કોડ રહે).
 
----
+### 🔒 Admin login ની વધુ સુરક્ષા
+- login card **email prefill કરતું નથી** અને **browser autofill/password-manager band** છે (`autocomplete="off"` + focus સુધી `readonly`) → public computer પર ક્લિક કરો તો પણ વિગતો આપોઆપ ન ભરાય.
+- "Fine-grained PAT", `github_pat_...` જેવા કોઈ શબ્દ/placeholder વિઝિટરને દેખાતા નથી — ફક્ત "સિક્રેટ કોડ".
+- 🛡️ **ભાષા/ટેક્સ્ટ સુરક્ષા (round-trip fix):** GitHub પરથી ફાઈલ વાંચતી વખતે UTF-8 સાવધાનીથી decode થાય (અગાઉ Gujarati text "mojibake" થઈ જતો — હવે `getFile` માં TextDecoder + જૂની corrupt data માં auto-repair).
 
 ## 🔐 વિદ્યાર્થી / શિક્ષક / આચાર્ય Register-Login (Firebase ની જરૂર નથી)
 
@@ -83,6 +82,14 @@
 - **લોગિન:** બધા માટે free (કોઈ token નહીં) — પાસવર્ડ hash+salt થઈ સેવ, plain text ક્યાંય નહીં.
 - ⚠️ `users.json` public repo માં છે — નબળા/બીજી site ના પાસવર્ડ વાપરવાનું કહો.
 - 🔥 ઈચ્છો તો Firebase પણ ચાલુ રહે છે: `site-config.json` → `firebase.apiKey` ભરો.
+
+---
+
+## 🌐 Admin Panel ✍️ — એક ભાષા લખો, બાકીની આપોઆપ
+
+- **✍️ નવી પોસ્ટ / મટીરિયલ** માં શીર્ષક (ગુજરાતી / હિન્દી / English) — **જે કોઈ એક ભાષામાં ભરો**; બાકીની બંને ભાષાઓ save વખતે આપોઆપ ભરાઈ જાય.
+- **વર્ણન** અને **વિગતવાર લખાણ** પણ એ જ રીતે: એક ભાષામાં લખો, "લખાણ કઈ ભાષામાં છે?" select કરો → ત્રણેય ભાષામાં save થાય.
+- **🌐 ભાષાંતર કરો** બટન = save પહેલાં preview (તમે બદલી પણ શકો). ભાષાંતર માટે free translation service વપરાય; નેટવર્ક ન મળે તો એ જ લખાણ બધી ભાષામાં મૂકાય (કંઈ ખાલી પડે નહીં).
 
 ---
 

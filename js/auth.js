@@ -140,15 +140,49 @@ OEG.auth = (() => {
   }
 
   /* ============ ADMIN — ફક્ત data/admin.json ના email+password થી ============ */
+  /* ---- data/admin.json (v2): email base64 માં + પાસવર્ડ sha256 hash માં ----
+     { "v": 2, "email": "<base64>", "pass": "<sha256-hex>", "updated": "YYYY-MM-DD" }
+     જાતે GitHub પર edit કરો તો પણ ચાલે: plain email, plain pass, passHash — બધું ટોલરેટ થાય. */
+  const b64enc = (v) => btoa(unescape(encodeURIComponent(String(v))));
+  const b64dec = (v) => {
+    const t = String(v == null ? "" : v).trim();
+    if (!t || t.length % 4 === 1 || /[^A-Za-z0-9+/=]/.test(t)) return t;
+    try {
+      const d = decodeURIComponent(escape(atob(t)));
+      return /^[\x20-\x7E\u00A0-\uFFFF]+$/.test(d) ? d : t;
+    } catch (e) { return t; }
+  };
+  const HEX64 = /^[0-9a-f]{64}$/;
+  function parseAdminCreds(raw) {
+    raw = raw || {};
+    let email = String(raw.email || "").trim();
+    if (email && email.indexOf("@") < 0) email = b64dec(email);
+    email = norm(email);
+    const cand = [raw.pass, raw.passHash, raw.pwdHash, raw.pwd && raw.pwd.hash].filter(v => v != null && String(v).trim() !== "")[0];
+    let val = String(cand == null ? "" : cand).trim();
+    const dec = b64dec(val);
+    if (dec && dec.indexOf("sha256:") === 0) val = dec.slice(7);
+    if (HEX64.test(val)) return { email, hash: val.toLowerCase(), plain: "", updated: raw.updated || "" };
+    return { email, hash: "", plain: val, updated: raw.updated || "" };
+  }
+  function adminRecord({ email, password }, prev) {
+    const rec = { v: 2 };
+    rec.email = b64enc(email ? norm(email) : (prev && prev.email) || "");
+    rec.pass = password ? sha256hex(String(password)) : ((prev && (prev.hash || prev.plain)) || "");
+    rec.updated = new Date().toISOString().slice(0, 10);
+    return rec;
+  }
+  const adminConfigured = (adm) => !!(adm && adm.email && (adm.hash || adm.plain));
+
   async function getAdminFile() {
     const g = cfg().github || {};
     const urls = [];
     if (g.owner && g.repo) urls.push(`https://raw.githubusercontent.com/${g.owner}/${g.repo}/${g.branch || "main"}/${ADMIN_FILE}`);
     urls.push(ADMIN_FILE + "?ts=" + Date.now());
     for (const u of urls) {
-      try { const r = await fetch(u, { cache: "no-store" }); if (r.ok) return await r.json(); } catch (e) {}
+      try { const r = await fetch(u, { cache: "no-store" }); if (r.ok) return parseAdminCreds(await r.json()); } catch (e) {}
     }
-    return { email: "", passHash: "" };
+    return parseAdminCreds(null);
   }
   const unlocked = () => { try { return sessionStorage.getItem(SS_ADMIN) === "1"; } catch (e) { return false; } };
   const lockAdmin = () => { try { sessionStorage.removeItem(SS_ADMIN); } catch (e) {} };
@@ -156,33 +190,30 @@ OEG.auth = (() => {
   async function loginAdmin({ email, password, token }) {
     const adm = await getAdminFile();
     const tokenGiven = !!(token && String(token).trim());
-    if (!adm.email || !adm.passHash || tokenGiven) {
-      /* Setup / પાસવર્ડ રીસેટ: email + પાસવર્ડ + સિક્રેટ કોડ (એકવાર) → data/admin.json માં hash સેવ */
+    if (!adminConfigured(adm) || tokenGiven) {
+      /* Setup / પાસવર્ડ રીસેટ: email + પાસવર્ડ + સિક્રેટ કોડ (એકવાર) → hash કરી સુરક્ષિત સેવ */
       if (!tokenGiven) throw new Error(OEG.t("admin.setupNeedToken"));
       if (!email || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(String(email))) throw new Error(OEG.t("admin.badCred"));
       if (String(password).length < 6) throw new Error(OEG.t("admin.badCred"));
       OEG.state.gh.token = String(token).trim();
-      await OEG.gh.putFile(ADMIN_FILE, JSON.stringify({ email: norm(email), passHash: sha256hex(String(password)), updated: new Date().toISOString().slice(0, 10) }, null, 2), "OEG: admin account setup");
+      await OEG.gh.putFile(ADMIN_FILE, JSON.stringify(adminRecord({ email, password }), null, 2), "OEG: admin account setup");
       try { sessionStorage.setItem(SS_ADMIN, "1"); } catch (e) {}
       return { setup: true };
     }
-    if (norm(email) !== norm(adm.email)) throw new Error(OEG.t("admin.badCred"));
+    if (norm(email) !== adm.email) throw new Error(OEG.t("admin.badCred"));
     const pw = String(password);
-    /* પાસવર્ડ hash કે સીધી value — બંને ચાલશે (ફાઈલ જાતે edit કરી હોય તો પણ) */
-    if (pw !== String(adm.passHash) && sha256hex(pw) !== adm.passHash) throw new Error(OEG.t("admin.badCred"));
+    const ok = adm.hash ? sha256hex(pw) === adm.hash : pw === adm.plain;
+    if (!ok) throw new Error(OEG.t("admin.badCred"));
     try { sessionStorage.setItem(SS_ADMIN, "1"); } catch (e) {}
-    /* plaintext મળ્યું અને gh કનેક્ટેડ હોય તો આપોઆપ hash માં સુધારી દો */
-    if (pw === String(adm.passHash) && OEG.gh.connected()) {
-      try { await OEG.gh.putFile(ADMIN_FILE, JSON.stringify({ email: adm.email, passHash: sha256hex(pw), updated: new Date().toISOString().slice(0, 10) }, null, 2), "OEG: secure admin password (hash)"); } catch (e) {}
+    if (!adm.hash && OEG.gh.connected()) {
+      /* plain password મળ્યું હોય તો તરત hash માં સુરક્ષિત કરી દો */
+      try { await OEG.gh.putFile(ADMIN_FILE, JSON.stringify(adminRecord({ email: adm.email, password: pw }, adm), null, 2), "OEG: secure admin password"); } catch (e) {}
     }
     return { ok: true };
   }
   async function setAdminAccount({ email, password }) {
     const adm = await getAdminFile();
-    const rec = { email: email ? norm(email) : adm.email };
-    if (password) rec.passHash = sha256hex(String(password));
-    else rec.passHash = adm.passHash;
-    rec.updated = new Date().toISOString().slice(0, 10);
+    const rec = adminRecord({ email: email || adm.email, password }, adm);
     await OEG.gh.putFile(ADMIN_FILE, JSON.stringify(rec, null, 2), "OEG: update admin account");
     return true;
   }
@@ -218,5 +249,5 @@ OEG.auth = (() => {
 
   function logout() { OEG.state.user = null; lockAdmin(); try { localStorage.removeItem(LS_USER); } catch (e) {} }
 
-  return { register, login, logout, load, isFirebase, fetchUsers, makeUserRecord, addUser, removeUser, resetPassword, sha256hex, getAdminFile, loginAdmin, setAdminAccount, unlocked, lockAdmin };
+  return { register, login, logout, load, isFirebase, fetchUsers, makeUserRecord, addUser, removeUser, resetPassword, sha256hex, getAdminFile, loginAdmin, setAdminAccount, adminRecord, parseAdminCreds, adminConfigured, unlocked, lockAdmin };
 })();
