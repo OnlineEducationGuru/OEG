@@ -117,6 +117,21 @@ OEG.typeIcon = (k) => OEG.typeOf(k).icon || "📄";
 OEG.gradeIcon = (k) => OEG.gradeOf(k).icon || "🎓";
 OEG.typeRoute = (k) => OEG.typeOf(k).route || "";
 OEG.typeOfRoute = (route) => OEG.tax().types.find(x => x.route === route) || null;
+/* 🎯 દરેક પ્રેક્ષક નું પોતા નું પાનું (hub) — route = audience.route || audience key.
+   એ જ route કોઈ type ન જ પોતા નું પાનું હોય (અને એ type નો પ્રેક્ષક અલગ હોય) તો type જીતે — જુ નાં લિંક તૂટતાં નહીં. */
+OEG.audRoute = (k) => { const a = OEG.audOf(k); return String((a && a.route) || k || "").trim(); };
+OEG.audOfRoute = (route) => {
+  if (!route) return null;
+  const au = OEG.auds().filter(a => !a.off && OEG.audRoute(a.key) === route)[0];
+  if (!au) return null;
+  const ty = OEG.tax().types.filter(x => x.route === route)[0];
+  if (ty && ty.aud && ty.aud !== "all" && ty.aud !== au.key) return null;
+  return au;
+};
+OEG.audItems = (audKey) => {
+  const list = (OEG.state.catalog || []).filter(i => i && !i.hidden);
+  return list.filter(i => { const a = OEG.audOfItem(i); return !a || a === "all" || a === audKey; });
+};
 
 OEG.t = (key) => (OEG_I18N[OEG.state.lang] && OEG_I18N[OEG.state.lang][key]) || OEG_I18N.gu[key] || key;
 OEG.title = (item) => (item.title && (item.title[OEG.state.lang] || item.title.gu || item.title.en)) || item.title || "";
