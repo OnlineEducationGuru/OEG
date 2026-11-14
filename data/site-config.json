@@ -380,5 +380,30 @@
   "quiz": {
     "passPercent": 60,
     "seconds": 45
+  },
+  "ui": {
+    "logoEmoji": "🎓",
+    "accent": "#0fffe3",
+    "defaultLang": "",
+    "defaultTheme": "",
+    "tagline": "",
+    "heroTitle": "",
+    "heroSub": "",
+    "footerAbout": "",
+    "footerNote": "",
+    "showSearch": true,
+    "antiCopy": true,
+    "sections": {
+      "textbooks": true,
+      "workbooks": true,
+      "quiz": true,
+      "games": true,
+      "office": true,
+      "teachers": true,
+      "students": true,
+      "videos": true,
+      "blog": true,
+      "links": true
+    }
   }
 }
