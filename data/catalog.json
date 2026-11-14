@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updated": "2026-11-13",
+  "updated": "2026-11-14",
   "items": [
     {
       "id": "item-1794564245864",
@@ -605,7 +605,8 @@
       "tags": [
         "Blog",
         "Teacher"
-      ]
+      ],
+      "hidden": true
     },
     {
       "id": "ln-marugujarat",
