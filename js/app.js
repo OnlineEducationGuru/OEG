@@ -11,8 +11,12 @@
   const guardOn = () => uiCfg().antiCopy !== false;
   const uiText = (k, fallback) => { const v = uiCfg()[k]; const t2 = v && typeof v === "object" ? OEG.langField(v) : (v || ""); return t2 || fallback; };
 
+  /* 🎯 જે પ્રેક્ષક ન યાંય ના type સાથે જોડાયેલું નથી (જેમં આચાર્ય) — એ નું પોતા નું પાનું મેનુમાં મૂકો */
+  const audHubs = () => OEG.auds().filter(a => a.key !== "student" && !a.off && OEG.audRoute(a.key) &&
+    !OEG.tax().types.some(x => x.route === OEG.audRoute(a.key)) && !OEG.tax().types.some(x => (x.aud || "") === a.key));
   const NAV = () => [HOME_NAV].concat(
     OEG.audAllow(OEG.tax().types.filter(x => x.route)).map(x => ({ route: x.route, icon: x.icon || "📄", key: "type." + x.key, label: OEG.typeLabel(x.key) })),
+    audHubs().map(a => ({ route: OEG.audRoute(a.key), icon: a.icon || "🎯", key: "aud." + a.key, label: OEG.audLabel(a.key) })),
     [ADMIN_NAV]).filter(n => n.route === "home" || n.route === "admin" || sectionOn(n.route));
   const GRADES = () => OEG.tax().grades.filter(g => g.key !== "all").map(g => g.key);
   const REAL_GRADES = () => GRADES().filter(k => k === "balvatika" || /^\d+$/.test(k));
@@ -136,7 +140,8 @@
     /* 🎯 શિક્ષક/આચાર્ય/ઓફિસ પાનાંની બાબતો પણ મેનુમાં (બીજું-ત્રીજું સ્તર) */
     Object.keys(byRoute).forEach((r) => {
       const n = byRoute[r], ty = OEG.tax().types.filter(x => x.route === r)[0];
-      const aud = ty ? (ty.aud || "") : "";
+      const hub = ty ? null : (OEG.audOfRoute ? OEG.audOfRoute(r) : null);
+      const aud = ty ? (ty.aud || "") : ((hub && hub.key) || "");
       const subs = aud && aud !== "all" ? OEG.audSubs(aud) : [];
       if (!subs.length) return;
       n.kids = (n.kids || []).concat(subs.map(x => {
@@ -360,6 +365,42 @@
     if (items.length < 7 || !adKey) return `<div class="grid">${items.map(card).join("")}</div>`;
     const a = items.slice(0, startAt), b = items.slice(startAt);
     return `<div class="grid">${a.map(card).join("")}</div>${adSlot(adKey, "ad-mid")}<div class="grid">${b.map(card).join("")}</div>`;
+  }
+
+  /* 🎯 પ્રેક્ષક પાનું (hub) — એ પ્રેક્ષક માટે ની બધી સામગ્રી, બધાં પ્રકાર સાથે + બાબત (level 2/3) ની ચિપ્સ */
+  function audTopicChips(au, query) {
+    const subs = OEG.audSubs(au.key) || [];
+    if (!subs.length) return "";
+    const cur = query.audSub || "", cur2 = query.audSub2 || "", r = OEG.audRoute(au.key);
+    const kids = ((subs.filter(y => y.key === cur)[0] || {}).subs) || [];
+    return `<div class="aud-row"><span class="aud-lab">🎯 ${OEG.esc(OEG.audLabel(au.key))}</span>
+      <a class="sub-chip ${!cur ? "on" : ""}" href="#/${OEG.esc(r)}">${t("filter.all")}</a>
+      ${subs.map(x => `<a class="sub-chip ${cur === x.key ? "on" : ""}" href="#/${OEG.esc(r)}?audSub=${OEG.esc(x.key)}">${x.icon || "📄"} ${OEG.esc(OEG.taxLabel(x, "subject"))}</a>`).join("")}
+      ${kids.length ? `<span class="aud-kids-row">${kids.map(y => `<a class="sub-chip sm ${cur2 === y.key ? "on" : ""}" href="#/${OEG.esc(r)}?audSub=${OEG.esc(cur)}&audSub2=${OEG.esc(y.key)}">${y.icon || "🔹"} ${OEG.esc(OEG.taxLabel(y, "subject"))}</a>`).join("")}</span>` : ""}
+    </div>`;
+  }
+  function audPage(au, query) {
+    const r = OEG.audRoute(au.key), cat = query.cat || "all";
+    let items = mine(OEG.audItems(au.key));
+    const byType = {};
+    items.forEach(i => { byType[i.type] = (byType[i.type] || 0) + 1; });
+    if (cat !== "all") items = items.filter(i => i.type === cat);
+    if (query.audSub) items = items.filter(i => !i.audSub || i.audSub === query.audSub);
+    if (query.audSub2) items = items.filter(i => !i.audSub2 || i.audSub2 === query.audSub2);
+    const tabs = `<div class="grade-tabs">
+      <a class="g-tab ${cat === "all" ? "on" : ""}" href="#/${OEG.esc(r)}">${t("grade.all")} <small>${items.length + (cat === "all" ? 0 : 0)}</small></a>
+      ${OEG.tax().types.filter(x => byType[x.key]).map(x => `<a class="g-tab ${cat === x.key ? "on" : ""}" href="#/${OEG.esc(r)}?cat=${OEG.esc(x.key)}">${x.icon || "📄"} ${OEG.esc(OEG.typeLabel(x.key))} <small>${byType[x.key]}</small></a>`).join("")}
+    </div>`;
+    const body = items.length ? gridWithAd(items, 6, "listMid")
+      : `<div class="panel" style="text-align:center;padding:50px 20px"><div style="font-size:3rem">📭</div><h3>${t("empty.title")}</h3><p style="color:var(--muted)">${OEG.esc(emptySub())}</p></div>`;
+    const sub = OEG.langField(au.sub || au.desc || au.subtitle) || t("aud.hubSub");
+    return `<div class="page-head">
+      <div class="breadcrumb"><a href="#/">${t("nav.home")}</a> / 🎯 ${OEG.esc(OEG.audLabel(au.key))}</div>
+      <h1>${au.icon || "🎯"} ${OEG.esc(OEG.audLabel(au.key))}</h1>
+      <p class="sub">${OEG.esc(sub)}</p>
+      <p class="muted" style="font-size:.9rem;margin-top:4px">${items.length} ${t("grade.items")}</p></div>
+      ${tabs}${audTopicChips(au, query)}${adSlot("listTop")}
+      <div id="listWrap">${body}</div>${adSlot("contentBottom")}`;
   }
 
   function listingPage(typeKey, route, query) {
@@ -825,11 +866,14 @@
         else { await OEG.auth.recallSecret(); html = `<div id="adminMount"></div>`; after = () => OEG.admin.render(document.getElementById("adminMount")); }
         break;
       case "search": html = searchPage(query.q || ""); break;
-      default:
-        if (ty) {
+      default: {
+        const au = OEG.audOfRoute ? OEG.audOfRoute(route) : null;
+        if (au) { html = audPage(au, query); after = () => { bindVideoPlayers(app); }; }
+        else if (ty) {
           if (ty.key === "video") { html = videosPage(query); after = () => { bindVideoPlayers(app); }; }
           else { html = listingPage(ty.key, route, query); after = () => { bindFilters(ty.key, route); bindVideoPlayers(app); }; }
         } else html = homePage();
+      }
     }
     if (route !== "admin") html += adSlot("footerTop");   /* 📢 દરેક પાનાનાં તળિયે એક વધુ જગ્યા */
     app.innerHTML = html;
