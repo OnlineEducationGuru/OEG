@@ -533,7 +533,8 @@
         "Official",
         "DIKSHA",
         "NCERT"
-      ]
+      ],
+      "hidden": true
     },
     {
       "id": "ln-gseb",
