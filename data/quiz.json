@@ -258,7 +258,7 @@
         "hi": "HTAT (9–12)",
         "en": "HTAT (9–12)"
       },
-      "mode": "none",
+      "mode": "sub",
       "subs": [
         {
           "key": "exam",
