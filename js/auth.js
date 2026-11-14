@@ -95,7 +95,7 @@ OEG.auth = (() => {
     const g = cfg().github || {};
     const urls = [];
     if (g.owner && g.repo) urls.push(`https://raw.githubusercontent.com/${g.owner}/${g.repo}/${g.branch || "main"}/${USERS_FILE}`);
-    urls.push(USERS_FILE + "?ts=" + Date.now());
+    urls.push(OEG.base(USERS_FILE) + "?ts=" + Date.now());   /* બ્લોગર (CDN મોડ) પર પણ વાંચી શકાય */
     for (const u of urls) {
       try {
         const r = await fetch(u, { cache: "no-store" });
@@ -189,7 +189,7 @@ OEG.auth = (() => {
     const g = cfg().github || {};
     const urls = [];
     if (g.owner && g.repo) urls.push(`https://raw.githubusercontent.com/${g.owner}/${g.repo}/${g.branch || "main"}/${ADMIN_FILE}`);
-    urls.push(ADMIN_FILE + "?ts=" + Date.now());
+    urls.push(OEG.base(ADMIN_FILE) + "?ts=" + Date.now());
     for (const u of urls) {
       try { const r = await fetch(u, { cache: "no-store" }); if (r.ok) return parseAdminCreds(await r.json()); } catch (e) {}
     }

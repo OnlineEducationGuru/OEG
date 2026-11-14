@@ -1,0 +1,154 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE html>
+<!--
+  ============================================================
+  Online Education Guru — BLOGGER NATIVE થીમ (iframe વગર)
+  ============================================================
+  આપોઆપ બન્યું  scripts/blogger.mjs થી  ⇒  index.html નું markup + js/** + data/** CDN પરથી.
+  અપલોડ: Blogger → Theme → Restore → Upload (પહેલાં Backup જરૂરી!).
+  પછી આખી સાઇટ બ્લોગર ના સરનામા પર જ ચાલે: હોમ, પાઠ્યપુસ્તક, સ્વાધ્યાયપોથી, ક્વિઝ,
+  વિડિયો, રમત, બ્લોગ, Admin Panel — બધું.
+  સાઇટ નું સરનામું બદલાતું નથી ⇒ browser માં ફક્ત બ્લોગર (અને custom domain) દેખાય.
+  સામગ્રી બદલવાનું: Admin Panel (કોઈપણ જગ્યાએથી) — ફાઈલો GitHub માં સેવ થાય, બ્લોગર એ જ વાપરે.
+  નોંધ: CDN કૅશ ⇒ push પછી ૫–૧૦ મિનિટ માં નવું દેખાય. કોઈ fix જોઈએ તો ref=<sha> થી બનાવો.
+  ============================================================
+-->
+<html b:css='false' b:defaultwidgetversion='2' b:layoutsVersion='3' b:responsive='true' b:templateUrl='indie.xml' b:templateVersion='1.0.0' expr:dir='data:blog.languageDirection' xmlns='http://www.w3.org/1999/xhtml' xmlns:b='http://www.google.com/2005/gml/b' xmlns:data='http://www.google.com/2005/gml/data' xmlns:expr='http://www.google.com/2005/gml/expr'>
+<head>
+<b:include data='blog' name='all-head-content'/>
+<title><data:blog.pageTitle/></title>
+<meta content='width=device-width, initial-scale=1.0' name='viewport'/>
+<meta content='#4f46e5' name='theme-color'/>
+<link crossorigin='anonymous' href='https://fonts.gstatic.com' rel='preconnect'/>
+<link crossorigin='anonymous' href='https://fonts.googleapis.com' rel='preconnect'/>
+<link href='https://i.ytimg.com' rel='preconnect'/>
+<link href='https://www.youtube-nocookie.com' rel='preconnect'/>
+<link crossorigin='anonymous' href='https://cdn.jsdelivr.net' rel='preconnect'/>
+<link href='https://pagead2.googlesyndication.com' rel='dns-prefetch'/>
+<link href='https://cdn.jsdelivr.net/gh/OnlineEducationGuru/OEG@main/favicon.svg' rel='icon' type='image/svg+xml'/>
+<link href='https://cdn.jsdelivr.net/gh/OnlineEducationGuru/OEG@main/manifest.webmanifest' rel='manifest'/>
+<link href='https://cdn.jsdelivr.net/gh/OnlineEducationGuru/OEG@main/styles.css' rel='stylesheet'/>
+<b:skin><![CDATA[
+/* Online Education Guru — BLOGGER NATIVE થીમ (iframe વગર, આખી સાઇટ બ્લોગર પર).
+   CSS/JS/Data: OnlineEducationGuru/OEG@main ની jsDelivr CDN ⇒ ફેરફાર GitHub માં કરો, બ્લોગર તરત જ નવું લાદે. */
+/* <Group description="રંગો" selector="body"> */
+/* <Variable name="keycolor" description="મુખ્ય રંગ" type="color" default="#4f46e5" value="#4f46e5"/> */
+/* </Group> */
+body{margin:0;background:#f6f7fb}
+.oeg-blog{max-width:900px;margin:26px auto 40px;padding:0 16px;font-family:'Noto Sans Gujarati',system-ui,Segoe UI,sans-serif}
+.oeg-blog h2{font-size:1.2rem;margin:0 0 12px}
+.oeg-post{background:#fff;border:1px solid #e3e6f0;border-radius:14px;padding:16px 18px;margin-bottom:12px}
+.oeg-post h3{margin:0 0 6px;font-size:1.05rem}
+.oeg-post a{color:#4f46e5;text-decoration:none}
+.oeg-post-meta{color:#5b5f7a;font-size:.8rem;margin-bottom:8px}
+.oeg-post-body{font-size:.94rem;line-height:1.6}
+]]></b:skin>
+</head>
+<body>
+<!-- ================= HEADER ================= -->
+<header class="header">
+  <div class="header-inner">
+    <button class="hamburger" id="hamburger" aria-label="Menu" aria-expanded="false">
+      <span></span><span></span><span></span>
+    </button>
+    <a class="logo" href="#/">
+      <span class="logo-mark">🎓</span>
+      <span class="logo-text">Online Education Guru<small id="logoTagline" data-i18n="hero.title">શિક્ષણનું ડિજિટલ પ્લેટફોર્મ</small></span>
+    </a>
+    <nav class="nav-desktop" id="navDesktop" aria-label="Main"></nav>
+    <div class="header-actions">
+      <div class="search-box">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
+        <input type="search" id="globalSearch" data-i18n-ph="nav.search" placeholder="શોધો..." />
+      </div>
+      <select class="lang-select" id="langSelect" aria-label="Language">
+        <option value="gu">ગુજરાતી</option>
+        <option value="hi">हिन्दी</option>
+        <option value="en">English</option>
+      </select>
+      <button class="icon-btn" id="themeToggle" aria-label="Dark mode">🌙</button>
+      <span id="authArea"></span>
+    </div>
+  </div>
+</header>
+
+<!-- ================= SIDEBAR ================= -->
+<div class="scrim" id="scrim"></div>
+<aside class="sidebar" id="sidebar" aria-label="Sidebar">
+  <h3 data-i18n="menu">મેનુ</h3>
+  <div id="sideNav"></div>
+  <h3 data-i18n="sec.grades">ધોરણ મુજબ મટીરિયલ</h3>
+  <div id="sideGrades"></div>
+  <h3 data-i18n="share.title">શેર કરો</h3>
+  <div class="share-row" id="sideShare" style="margin:0 4px"></div>
+</aside>
+
+<!-- ================= MAIN ================= -->
+<main class="main" id="app" aria-live="polite"></main>
+
+<!-- ================= FOOTER ================= -->
+<footer class="footer">
+  <div class="footer-grid">
+    <div>
+      <h4 id="footerTitle">🎓 Online Education Guru</h4>
+      <p id="footerAbout" style="color:var(--muted);font-size:.92rem" data-i18n="footer.about">બાલવાટિકાથી ધોરણ 8 સુધીના વિદ્યાર્થીઓ, શિક્ષકો અને આચાર્યો માટે મફત શૈક્ષણિક સંસાધનો.</p>
+      <div class="social-row foot-social" id="footerSocial"></div>
+    </div>
+    <div>
+      <h4 data-i18n="footer.quick">ઝડપી લિંક્સ</h4>
+      <div id="footerLinks"></div>
+    </div>
+    <div>
+      <h4 data-i18n="footer.contact">સંપર્ક</h4>
+      <a href="https://gcert.gujarat.gov.in/gcert/" target="_blank" rel="noopener">GCERT</a>
+      <a href="https://diksha.gov.in/" target="_blank" rel="noopener">DIKSHA</a>
+    </div>
+  </div>
+  <div class="footer-vis" id="footerVis"></div>
+  <div class="footer-note" id="footerNote" style="display:none"></div>
+  <div class="footer-bottom" data-i18n="footer.rights">© 2026 Online Education Guru. સર્વ હક્કો સુરક્ષિત.</div>
+</footer>
+
+<div class="toast" id="toast" role="status"></div>
+
+<script>//<![CDATA[
+window.OEG_BASE="https://cdn.jsdelivr.net/gh/OnlineEducationGuru/OEG@main/";
+//]]></script><script src="https://cdn.jsdelivr.net/gh/OnlineEducationGuru/OEG@main/js/config.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/OnlineEducationGuru/OEG@main/js/i18n.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/OnlineEducationGuru/OEG@main/js/catalog.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/OnlineEducationGuru/OEG@main/js/youtube.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/OnlineEducationGuru/OEG@main/js/ads.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/OnlineEducationGuru/OEG@main/js/meta.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/OnlineEducationGuru/OEG@main/js/auth.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/OnlineEducationGuru/OEG@main/js/games.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/OnlineEducationGuru/OEG@main/js/cert.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/OnlineEducationGuru/OEG@main/js/quiz.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/OnlineEducationGuru/OEG@main/js/github.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/OnlineEducationGuru/OEG@main/js/admin.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/OnlineEducationGuru/OEG@main/js/app.js"></script>
+<noscript>
+  <div style="max-width:900px;margin:20px auto;padding:0 16px;font-family:system-ui">
+    <h1>Online Education Guru — બાલવાટિકાથી ધોરણ ૮ સુધીનું મટિરિયલ</h1>
+    <p>GCERT પાઠ્યપુસ્તકો, સ્વાધ્યાયપોથી, શૈક્ષણિક ગેમ, વિડિયો પાઠ અને ઓનલાઇન ક્વિઝ — ગુજરાતી, હિન્દી અને English માં, સંપૂર્ણ મફત.</p>
+    <p>જરૂરી પાનાં: <a href="#/textbooks">પાઠ્યપુસ્તક</a> · <a href="#/workbooks">સ્વાધ્યાયપોથી</a> · <a href="#/quiz">ક્વિઝ</a> · <a href="#/videos">વિડિયો</a> · <a href="#/games">રમત</a> · <a href="#/blog">પોસ્ટ</a> · </p>
+    <p>ધોરણ: <a href="#/grade/balvatika">બાલવાટિકા</a> · <a href="#/grade/1">ધોરણ ૧</a> · <a href="#/grade/2">૨</a> · <a href="#/grade/3">૩</a> · <a href="#/grade/4">૪</a> · <a href="#/grade/5">૫</a> · <a href="#/grade/6">૬</a> · <a href="#/grade/7">૭</a> · <a href="#/grade/8">૮</a></p>
+  </div>
+</noscript>
+
+<b:section class='oeg-blog' id='main' maxwidgets='1' showaddelement='no'>
+  <b:widget id='Blog1' locked='true' title='બ્લોગ પોસ્ટ્સ' type='Blog' version='2'>
+    <b:includable id='main'>
+      <div class='oeg-blog'>
+        <h2>📰 તાજેતર ની પોસ્ટ્સ</h2>
+        <b:loop values='data:posts' var='post'>
+          <article class='oeg-post'>
+            <h3><a expr:href='data:post.url'><data:post.title/></a></h3>
+            <div class='oeg-post-body'><data:post.body/></div>
+          </article>
+        </b:loop>
+      </div>
+    </b:includable>
+  </b:widget>
+</b:section>
+</body>
+</html>

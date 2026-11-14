@@ -342,7 +342,7 @@ writeFileSync(join(root, "sitemap.xml"),
   urls.map((u) => `  <url><loc>${BASE}/${u.p}</loc><lastmod>${day}</lastmod><changefreq>${u.f}</changefreq><priority>${u.pri}</priority></url>`).join("\n") +
   `\n</urlset>\n`);
 writeFileSync(join(root, "robots.txt"),
-  `User-agent: *\nAllow: /\nDisallow: /#/admin\nDisallow: /*?shareBase=\n\nSitemap: ${BASE}/sitemap.xml\n`);
+  `User-agent: *\nAllow: /\nDisallow: /#/admin\nDisallow: /admin\nDisallow: /*?shareBase=\n\nSitemap: ${BASE}/sitemap.xml\n`);
 /* ---------- 🧹 જૂનાં પાનાં કાઢી નાખો (Admin માંથી કંઈ કઢાય તો SEO પાનું પણ તરત જ ખતમ) ---------- */
 const keep = new Set(written);
 let pruned = 0;
