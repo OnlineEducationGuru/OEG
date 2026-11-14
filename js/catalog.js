@@ -177,8 +177,88 @@ OEG.base = (path) => {
   let base = "";
   try { base = String(window.OEG_BASE || ""); } catch (e) { base = ""; }
   if (!base) return rel;
-  return base.replace(/\/+$/, "") + "/" + rel;
+  let out = base.replace(/\/+$/, "") + "/" + rel;
+  /* 🧊 jsDelivr @main ની કૉપિ દિવસો સુધી જૂની રહી શકે (Ctrl+Shift+R થીય નહીં હટાય — એ browser
+     નો કૅશ છે, CDN નો નહીં). એટલે CDN માર્ગે જતાં query જોડીએ:
+     · data/*.json ⇒ કલાક નો bucket ⇒ Admin નું લખાણ વધુમાં વધુ ૧ કલાક માં બ્લોગ પર પોતાથી પહોંચે
+     · બાકીની ફાઈલ (js/css/fonts) ⇒ થીમ બનાવતી વખતે નો commit-sha ટૅગ (window.OEG_V)
+     GitHub Pages (OEG_BASE ખાલી) પર કંઈ જોડાતું નથી. */
+  try {
+    if (!/[?&](v|ts)=/.test(out)) {
+      const tag = /^data\/[\w.\-]+\.json/.test(rel)
+        ? String(Math.floor(Date.now() / 36e5))
+        : String(window.OEG_V || "");
+      if (tag) out += (out.indexOf("?") >= 0 ? "&" : "?") + (/^data\//.test(rel) ? "t=" : "v=") + encodeURIComponent(tag);
+    }
+  } catch (e) { }
+  return out;
 };
+
+/* બ્લોગર ⇒ data/*.json jsDelivr (@main) થી લોડ કરે, પણ એ ની edge કૉપિ દિવસો સુધી જૂની
+   રહી શકે (query થીય નહીં તૂટે — એ ફકત browser નો કૅશ તોડે). Admin નું લખાણ બ્લોગ પર
+   પહોંચે એ માટે GitHub નું raw વાપરો: એ CORS (*) મોકલે અને ~૫ મિનિટ માં તાજું થાય. */
+OEG.rawBase = () => {
+  const r = (OEG.cdn ? OEG.cdn.repo() : null) || {};
+  return r.owner && r.repo ? "https://raw.githubusercontent.com/" + r.owner + "/" + r.repo + "/" + (r.branch || "main") + "/" : "";
+};
+/* બ્લોગર ⇒ data/*.json વાંચવા નાં URLs (ક્રમ માં). GitHub ની raw કૉપિ ~૫ મિનિટ માં તાજી થાય
+   અને એ CORS (*) મોકલે, એટલે Admin (અથવા તાજું લખેલું હોય તો) એ જ લખાણ તરત જુએ.
+   બાકી નાં વિઝિટર CDN (ઝડપી; એ જ URL કૅશ થાય) થી વાંચે ⇒ GitHub પર ભાર ન વધે. */
+OEG.dataUrls = (path) => {
+  const rel = String(path == null ? "" : path).replace(/^\.?\//, "");
+  const out = [];
+  try {
+    if (OEG.cdn && OEG.cdn.isCdn() && /^data\/[\w.\-]+\.json(\?|$)/.test(rel)) {
+      const raw = OEG.rawBase();
+      if (raw) out.push(raw + rel);        /* fresh (GitHub ની edge કૉપિ ~૫ મિનિટ) */
+    }
+  } catch (e) { }
+  out.push(OEG.base(path));
+  return out.filter((u, i, a) => u && a.indexOf(u) === i);
+};
+OEG.dataUrl = (path) => OEG.dataUrls(path)[0];
+/* દરેક URL વારે વાંચો — પહેલો સફળ એ જીતે (fail ⇒ આગળ નો URL) */
+OEG.readUrlText = async (path) => {
+  const list = OEG.dataUrls(path);
+  for (let i = 0; i < list.length; i++) {
+    try { const r = await fetch(list[i], { cache: "no-store" }); if (r.ok) return await r.text(); } catch (e) { }
+  }
+  return null;
+};
+/* બ્લોગર ⇒ admin નું લખાણ repo માં સેવ થાય પણ CDN ની કૉપિ જૂની રહે ⇒ cache-bust query નહીં ચાલે
+   (તપાસ્યું), એટલે HTML નાં head માંથી લોડ થતી js/css માટે જ purge જોઈએ (Admin → ⚙️ → 🧊 બટન).
+   data/*.json તો ઉપર પ્રમાણે raw થી વાંચાઈ જાય એટલે એ તરત તાજું દેખાય. */
+
+/* ---------- 🧊 jsDelivr CDN કૅશ (બ્લોગર થીમ @main માંથી ફાઈલ લોડ કરે) ----------
+   Admin નું લખાણ/ડેટા તરત બ્લોગ પર દેખાવું હોય તો purge કરવો પડે.
+   purge.jsdelivr.net GET ⇒ એ જ ફાઈલ ની edge કૉપિ તાજી થાય (browser નું Ctrl+Shift+R એટલું ન ચાલે). */
+OEG.cdn = (() => {
+  const FILES = ["index.html", "styles.css", "sw.js", "manifest.webmanifest", "js/config.js", "js/i18n.js", "js/catalog.js",
+    "js/youtube.js", "js/ads.js", "js/meta.js", "js/verify.js", "js/auth.js", "js/games.js", "js/cert.js", "js/quiz.js",
+    "js/github.js", "js/notify.js", "js/admin.js", "js/app.js", "data/site-config.json", "data/catalog.json",
+    "data/quiz.json", "data/views.json", "data/notice.json", "data/registrations.json", "data/users.json"];
+  const repo = () => {
+    const g = ((OEG.state || {}).config || {}).github || {};
+    return { owner: g.owner || "OnlineEducationGuru", repo: g.repo || "OEG", branch: g.branch || "main" };
+  };
+  const url = (f) => {
+    const r = repo();
+    return "https://purge.jsdelivr.net/gh/" + r.owner + "/" + r.repo + "@" + r.branch + "/" + String(f || "").replace(/^\.?\//, "");
+  };
+  const isCdn = () => { try { return /^https?:\/\/cdn\.jsdelivr\.net\//.test(String(window.OEG_BASE || "")); } catch (e) { return false; } };
+  async function purge(list) {
+    const fs2 = (list && list.length ? list : FILES).filter(Boolean);
+    let done = 0;
+    await Promise.all(fs2.map((f) => fetch(url(f), { mode: "no-cors", cache: "no-store" })
+      .then(() => { done++; }).catch(() => { })));
+    return { n: fs2.length, ok: done };
+  }
+  /* Admin ની દરેક લખાણ (repo માં PUT) પછી એ જ ફાઈલ ની કૉપિ તાજી કરીએ ⇒ બ્લોગ પર ૨ મિનિટ માં દેખાઈ જાય */
+  function afterWrite(path) {
+    try { purge([path]); } catch (e) { }
+  }
+  return { FILES, url, purge, isCdn, repo, afterWrite };
+})();
 OEG.remote = () => { try { return !!window.OEG_BASE; } catch (e) { return false; } };
 /* 🖼 થંબનેલ/ઇમેજ પ્રિલોડ — પ્લે દબાવવા પહેલાં જ પોસ્ટર ગરમ રહે */
 OEG.preload = (url, as) => {
@@ -212,12 +292,17 @@ OEG.thumbnail = (item) => (item && (item.image || OEG.thumbFrom(item.fileUrl))) 
 /* ---------- 🗄️ JSON data ફાઈલ લખવા/વાંચવા (admin) ---------- */
 OEG.data = {
   async readJson(path, fallback) {
-    try { const r = await fetch(OEG.base(path), { cache: "no-store" }); if (r.ok) return await r.json(); } catch (e) {}
+    try {
+      const txt = await OEG.readUrlText(path);
+      if (txt != null) return JSON.parse(txt);
+    } catch (e) { }
     return fallback;
   },
   async writeJson(path, obj, msg) {
     if (!OEG.gh || !OEG.gh.connected()) throw new Error(OEG.t("admin.notConnected"));
-    return OEG.gh.putFile(path, JSON.stringify(obj, null, 2) + "\n", msg);
+    const r = await OEG.gh.putFile(path, JSON.stringify(obj, null, 2) + "\n", msg);
+    try { if (OEG.cdn) OEG.cdn.afterWrite(path); } catch (e) { }   /* 🧊 બ્લોગર ⇒ CDN કૉપિ તાજી કરો */
+    return r;
   }
 };
 
@@ -349,9 +434,8 @@ OEG.applyConfig = (j) => {
 };
 OEG.loadConfig = async () => {
   try {
-    const r = await fetch(OEG.base("data/site-config.json"), { cache: "no-store" });
-    if (r.ok) {
-      const txt = await r.text();
+    const txt = await OEG.readUrlText("data/site-config.json");
+    if (txt != null) {
       let j = null, bad = false;
       try { j = JSON.parse(txt); } catch (e) { bad = true; }
       if (bad) {
@@ -400,9 +484,9 @@ const fixLang = (v) => {
 
 OEG.loadCatalog = async () => {
   try {
-    const r = await fetch(OEG.base("data/catalog.json"), { cache: "no-store" });
-    if (r.ok) {
-      const j = await r.json();
+    const txtC = await OEG.readUrlText("data/catalog.json");
+    if (txtC != null) {
+      const j = JSON.parse(txtC);
       const all = (Array.isArray(j.items) ? j.items : []).map((it) => {
         const o = Object.assign({}, it);
         ["title", "desc", "body"].forEach((k) => { if (o[k] !== undefined) o[k] = fixLang(o[k]); });

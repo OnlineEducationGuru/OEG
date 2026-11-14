@@ -23,8 +23,8 @@
 <link rel="preconnect" href="https://i.ytimg.com"/>
 <link rel="preconnect" href="https://www.youtube-nocookie.com"/>
 <link rel="dns-prefetch" href="https://pagead2.googlesyndication.com"/>
-<link rel="icon" type="image/svg+xml" href="https://cdn.jsdelivr.net/gh/OnlineEducationGuru/OEG@main/favicon.svg"/>
-<link rel="manifest" href="https://cdn.jsdelivr.net/gh/OnlineEducationGuru/OEG@main/manifest.webmanifest"/>
+<link rel="icon" type="image/svg+xml" href="https://cdn.jsdelivr.net/gh/OnlineEducationGuru/OEG@main/favicon.svg?v=202611141247"/>
+<link rel="manifest" href="https://cdn.jsdelivr.net/gh/OnlineEducationGuru/OEG@main/manifest.webmanifest?v=202611141247"/>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/OnlineEducationGuru/OEG@main/assets/fonts/noto-sans-gujarati/index.css"/>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/OnlineEducationGuru/OEG@main/assets/fonts/noto-sans-devanagari/index.css"/>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/OnlineEducationGuru/OEG@main/assets/fonts/inter/index.css"/>
@@ -33,7 +33,7 @@
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/OnlineEducationGuru/OEG@main/assets/fonts/baloo-bhai-2/gujarati-600.css"/>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/OnlineEducationGuru/OEG@main/assets/fonts/baloo-bhai-2/gujarati-700.css"/>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/OnlineEducationGuru/OEG@main/assets/fonts/baloo-bhai-2/gujarati-800.css"/>
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/OnlineEducationGuru/OEG@main/styles.css"/>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/OnlineEducationGuru/OEG@main/styles.css?v=202611141247"/>
 <link rel="preconnect" href="https://fonts.googleapis.com" crossorigin="anonymous"/>
 <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin="anonymous"/>
 <b:skin><![CDATA[
@@ -135,22 +135,22 @@ body{margin:0!important;background:var(--bg,#f6f7fb);color:var(--text,#171a2b);t
 <div class="toast" id="toast" role="status"></div>
 
 <script>//<![CDATA[
-window.OEG_BASE="https://cdn.jsdelivr.net/gh/OnlineEducationGuru/OEG@main/";
-//]]></script><script src="https://cdn.jsdelivr.net/gh/OnlineEducationGuru/OEG@main/js/config.js"></script>
-<script src="https://cdn.jsdelivr.net/gh/OnlineEducationGuru/OEG@main/js/i18n.js"></script>
-<script src="https://cdn.jsdelivr.net/gh/OnlineEducationGuru/OEG@main/js/catalog.js"></script>
-<script src="https://cdn.jsdelivr.net/gh/OnlineEducationGuru/OEG@main/js/youtube.js"></script>
-<script src="https://cdn.jsdelivr.net/gh/OnlineEducationGuru/OEG@main/js/ads.js"></script>
-<script src="https://cdn.jsdelivr.net/gh/OnlineEducationGuru/OEG@main/js/meta.js"></script>
-<script src="https://cdn.jsdelivr.net/gh/OnlineEducationGuru/OEG@main/js/verify.js"></script>
-<script src="https://cdn.jsdelivr.net/gh/OnlineEducationGuru/OEG@main/js/auth.js"></script>
-<script src="https://cdn.jsdelivr.net/gh/OnlineEducationGuru/OEG@main/js/games.js"></script>
-<script src="https://cdn.jsdelivr.net/gh/OnlineEducationGuru/OEG@main/js/cert.js"></script>
-<script src="https://cdn.jsdelivr.net/gh/OnlineEducationGuru/OEG@main/js/quiz.js"></script>
-<script src="https://cdn.jsdelivr.net/gh/OnlineEducationGuru/OEG@main/js/github.js"></script>
-<script src="https://cdn.jsdelivr.net/gh/OnlineEducationGuru/OEG@main/js/notify.js"></script>
-<script src="https://cdn.jsdelivr.net/gh/OnlineEducationGuru/OEG@main/js/admin.js"></script>
-<script src="https://cdn.jsdelivr.net/gh/OnlineEducationGuru/OEG@main/js/app.js"></script>
+window.OEG_BASE="https://cdn.jsdelivr.net/gh/OnlineEducationGuru/OEG@main/";window.OEG_V="202611141247";
+//]]></script><script src="https://cdn.jsdelivr.net/gh/OnlineEducationGuru/OEG@main/js/config.js?v=202611141247"></script>
+<script src="https://cdn.jsdelivr.net/gh/OnlineEducationGuru/OEG@main/js/i18n.js?v=202611141247"></script>
+<script src="https://cdn.jsdelivr.net/gh/OnlineEducationGuru/OEG@main/js/catalog.js?v=202611141247"></script>
+<script src="https://cdn.jsdelivr.net/gh/OnlineEducationGuru/OEG@main/js/youtube.js?v=202611141247"></script>
+<script src="https://cdn.jsdelivr.net/gh/OnlineEducationGuru/OEG@main/js/ads.js?v=202611141247"></script>
+<script src="https://cdn.jsdelivr.net/gh/OnlineEducationGuru/OEG@main/js/meta.js?v=202611141247"></script>
+<script src="https://cdn.jsdelivr.net/gh/OnlineEducationGuru/OEG@main/js/verify.js?v=202611141247"></script>
+<script src="https://cdn.jsdelivr.net/gh/OnlineEducationGuru/OEG@main/js/auth.js?v=202611141247"></script>
+<script src="https://cdn.jsdelivr.net/gh/OnlineEducationGuru/OEG@main/js/games.js?v=202611141247"></script>
+<script src="https://cdn.jsdelivr.net/gh/OnlineEducationGuru/OEG@main/js/cert.js?v=202611141247"></script>
+<script src="https://cdn.jsdelivr.net/gh/OnlineEducationGuru/OEG@main/js/quiz.js?v=202611141247"></script>
+<script src="https://cdn.jsdelivr.net/gh/OnlineEducationGuru/OEG@main/js/github.js?v=202611141247"></script>
+<script src="https://cdn.jsdelivr.net/gh/OnlineEducationGuru/OEG@main/js/notify.js?v=202611141247"></script>
+<script src="https://cdn.jsdelivr.net/gh/OnlineEducationGuru/OEG@main/js/admin.js?v=202611141247"></script>
+<script src="https://cdn.jsdelivr.net/gh/OnlineEducationGuru/OEG@main/js/app.js?v=202611141247"></script>
 <noscript>
   <div style="max-width:900px;margin:20px auto;padding:0 16px;font-family:system-ui">
     <h1>Online Education Guru — બાલવાટિકાથી ધોરણ ૮ સુધીનું મટિરિયલ</h1>

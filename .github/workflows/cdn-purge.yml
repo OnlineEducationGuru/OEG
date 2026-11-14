@@ -1,0 +1,32 @@
+name: 🧊 jsDelivr કૉપિ તાજી (CDN purge)
+
+# બ્લોગર થીમ ફાઈલો https://cdn.jsdelivr.net/gh/<repo>@main/ થી લાદે, અને jsDelivr એ
+# કૉપિ લાંબા સમય સુધી રાખે છે (query/??v= થીય ન તૂટે — તપાસ્યું) ⇒ repo માં push કરો
+# છતાં બ્લોગ પર જૂનું દેખાય. એટલે દર push પછી એક વાર purge કરાઈ જાય.
+on:
+  push:
+    branches: [main]
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+
+concurrency:
+  group: cdn-purge
+  cancel-in-progress: true
+
+jobs:
+  purge:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: પૂછો ⇒ jsDelivr ની કૉપિ તાજી
+        run: node scripts/purge-cdn.mjs
+      - name: થોડું રાહ જોઈ બીજી વાર (edge પોપ પ્રમાણે ફેલાતું હોય)
+        run: |
+          sleep 20
+          node scripts/purge-cdn.mjs js/i18n.js js/catalog.js js/app.js js/auth.js js/notify.js js/admin.js styles.css data/site-config.json data/catalog.json
