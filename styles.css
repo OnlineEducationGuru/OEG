@@ -742,5 +742,23 @@ body.allow-select img, body.allow-select video { -webkit-user-drag: auto; }
 @media (max-width:720px){.csc .form-row{gap:8px}.tax-mv{margin-left:0}.aud-row{gap:6px}}
 
 /* 👁 વિઝિટર આંકડો (footer) + હોમનાं stat ટાઇલ */
-.footer-vis{text-align:center;font-size:.9rem;color:var(--muted);margin:2px auto 10px;padding:7px 14px;border:1px solid var(--line);border-radius:999px;max-width:max-content;background:var(--card)}
+.footer-vis{text-align:center;font-size:.9rem;color:var(--muted);margin:2px auto 10px;padding:7px 14px;border:1px solid var(--border);border-radius:999px;max-width:max-content;background:var(--surface)}
 .footer-vis b{color:var(--brand);font-variant-numeric:tabular-nums;letter-spacing:.2px}
+
+/* 📜 પ્લેલિસ્ટ / ચૅનલ કાર્ડ + 🔁 આગલો વિડિયો (સિરીઝ સતત ચાલે) */
+.video-card.is-series .yt-poster{background:linear-gradient(135deg,#241246,#3b2472 58%,#5b2c8f)}
+.yt-series-ph{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;color:#fff;font-size:.8rem;font-weight:700;letter-spacing:.3px;text-align:center;padding:0 12px}
+.yt-series-ph b{font-size:2.4rem;line-height:1}
+.nx-vid{display:flex;align-items:center;gap:12px;margin-top:12px;padding:11px 13px;border:1px solid var(--border);border-radius:14px;background:var(--surface)}
+.nx-lab{font-size:.76rem;font-weight:800;color:var(--muted);letter-spacing:.3px;white-space:nowrap}
+.nx-vid a{display:flex;align-items:center;gap:12px;text-decoration:none;color:var(--text);min-width:0;flex:1}
+.nx-vid img,.nx-ph{width:112px;height:63px;object-fit:cover;border-radius:9px;flex:0 0 auto;background:var(--surface-2)}
+.nx-ph{display:grid;place-items:center;font-size:1.5rem}
+.nx-vid b{font-size:.94rem;line-height:1.35;font-weight:700}
+.nx-vid small{margin-left:auto;color:var(--brand);font-weight:800;font-size:.78rem;white-space:nowrap}
+.nx-auto{margin-left:auto;font-size:.8rem;color:var(--muted);display:inline-flex;align-items:center;gap:6px;cursor:pointer;user-select:none}
+@media(max-width:640px){.nx-vid img,.nx-ph{width:92px;height:52px}.nx-vid{flex-wrap:wrap}.nx-auto{width:100%;margin-left:0}}
+
+/* ⚡ પોસ્ટર તરત લોડ થાય (પ્લે નો સમય ઘટે) — .yt-poster નું img હવે eager+fhd */
+.video-card .yt-poster img{transition:transform .35s ease}
+.video-card:hover .yt-poster img{transform:scale(1.045)}

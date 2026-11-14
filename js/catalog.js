@@ -169,13 +169,50 @@ OEG.pageUrl = () => {
 OEG.siteName = () => (OEG.state.config && OEG.state.config.siteName) || "Online Education Guru";
 OEG.siteUrl = () => OEG.shareBase();   /* તમે જે host પર છો (Blogger ⇒ blogspot, Pages ⇒ github.io) */
 OEG.siteHost = () => { try { return new URL(OEG.shareBase()).host; } catch (e) { return location.host || "onlineeducationguru.github.io"; } };
+/* ---------- 🌐 Base path — Blogger (અથવા બીજા કોઈ host) પરથી ચાલતી સાઇટ માટે ----------
+   પાનાં માં <script>window.OEG_BASE = "https://cdn.jsdelivr.net/gh/<owner>/<repo>@main/";</script> ભરો
+   (blogger/OEG-Blogger-Native.xml એ જ ભરે છે). GitHub Pages પર ખાલી ⇒ relative (જૂનું) વર્તન. */
+OEG.base = (path) => {
+  const rel = String(path == null ? "" : path).replace(/^\.?\//, "");
+  let base = "";
+  try { base = String(window.OEG_BASE || ""); } catch (e) { base = ""; }
+  if (!base) return rel;
+  return base.replace(/\/+$/, "") + "/" + rel;
+};
+OEG.remote = () => { try { return !!window.OEG_BASE; } catch (e) { return false; } };
+/* 🖼 થંબનેલ/ઇમેજ પ્રિલોડ — પ્લે દબાવવા પહેલાં જ પોસ્ટર ગરમ રહે */
+OEG.preload = (url, as) => {
+  const u = String(url || "");
+  if (!u || /^data:/.test(u)) return;
+  OEG.state = OEG.state || {};
+  const seen = OEG.state.__pre || (OEG.state.__pre = {});
+  if (seen[u]) return;
+  seen[u] = 1;
+  try {
+    const l = document.createElement("link");
+    l.rel = "preload"; l.setAttribute("as", as || "image"); l.href = u; l.setAttribute("fetchpriority", "high");
+    document.head.appendChild(l);
+  } catch (e) {}
+};
+/* ▶ video / playlist / channel — ત્રણેય YouTube લિંક અહીં જ એમ્બેડ થાય */
+OEG.ytRef = (url) => {
+  const s = String(url || "").trim();
+  if (!s) return null;
+  const ch = (s.match(/\/channel\/(UC[A-Za-z0-9_-]{22})/) || [])[1] || "";
+  const list = (s.match(/[?&]list=([A-Za-z0-9_-]{10,})/) || [])[1] || "";
+  if (ch) return { kind: "series", id: "UU" + ch.slice(2), list: "UU" + ch.slice(2), thumb: "" };
+  const vid = OEG.youtubeId(s);
+  if (vid) return { kind: "video", id: vid, list, thumb: "https://i.ytimg.com/vi/" + vid + "/hqdefault.jpg" };   /* list ⇒ એ જ સિરીઝ માં ચાલે */
+  if (list) return { kind: "series", id: list, list: list, thumb: "" };
+  return null;
+};
 OEG.thumbFrom = (url) => { const id = OEG.youtubeId(url); return id ? "https://i.ytimg.com/vi/" + id + "/hqdefault.jpg" : ""; };
 OEG.thumbnail = (item) => (item && (item.image || OEG.thumbFrom(item.fileUrl))) || "";
 
 /* ---------- 🗄️ JSON data ફાઈલ લખવા/વાંચવા (admin) ---------- */
 OEG.data = {
   async readJson(path, fallback) {
-    try { const r = await fetch(path, { cache: "no-store" }); if (r.ok) return await r.json(); } catch (e) {}
+    try { const r = await fetch(OEG.base(path), { cache: "no-store" }); if (r.ok) return await r.json(); } catch (e) {}
     return fallback;
   },
   async writeJson(path, obj, msg) {
@@ -306,7 +343,7 @@ OEG.applyConfig = (j) => {
 };
 OEG.loadConfig = async () => {
   try {
-    const r = await fetch("data/site-config.json", { cache: "no-store" });
+    const r = await fetch(OEG.base("data/site-config.json"), { cache: "no-store" });
     if (r.ok) {
       const txt = await r.text();
       let j = null, bad = false;
@@ -357,7 +394,7 @@ const fixLang = (v) => {
 
 OEG.loadCatalog = async () => {
   try {
-    const r = await fetch("data/catalog.json", { cache: "no-store" });
+    const r = await fetch(OEG.base("data/catalog.json"), { cache: "no-store" });
     if (r.ok) {
       const j = await r.json();
       const all = (Array.isArray(j.items) ? j.items : []).map((it) => {

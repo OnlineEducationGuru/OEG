@@ -734,7 +734,7 @@ OEG.admin = (() => {
       OEG.applyConfig(cfg2);
       OEG.markConfigWritten(cfg2);
       try {
-        const r = await fetch("data/site-config.json", { cache: "no-store" });
+        const r = await fetch(OEG.base("data/site-config.json"), { cache: "no-store" });
         if (r.ok) {
           let j = null;
           try { j = JSON.parse(await r.text()); } catch (e) { j = null; }

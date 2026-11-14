@@ -34,7 +34,7 @@ OEG.quiz = (() => {
   }
   async function load() {
     try {
-      const r = await fetch("data/quiz.json", { cache: "no-store" });
+      const r = await fetch(OEG.base("data/quiz.json"), { cache: "no-store" });
       if (r.ok) {
         const txt = await r.text();
         if (writtenText) {

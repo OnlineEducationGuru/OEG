@@ -1,8 +1,7 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE html>
-<html b:version='2' b:css='false' b:defaultwidgetversion='2' b:layoutsVersion='3' b:responsive='true' b:templateUrl='indie.xml' b:templateVersion='1.0.0' expr:dir='data:blog.languageDirection' expr:lang='data:blog.language' xmlns='http://www.w3.org/1999/xhtml' xmlns:b='http://www.google.com/2005/gml/b' xmlns:data='http://www.google.com/2005/gml/data' xmlns:expr='http://www.google.com/2005/gml/expr'>
+<html b:css='false' b:defaultwidgetversion='2' b:layoutsVersion='3' b:responsive='true' b:templateUrl='indie.xml' b:templateVersion='1.0.0' expr:dir='data:blog.languageDirection' xmlns='http://www.w3.org/1999/xhtml' xmlns:b='http://www.google.com/2005/gml/b' xmlns:data='http://www.google.com/2005/gml/data' xmlns:expr='http://www.google.com/2005/gml/expr'>
 <head>
-<meta charset='UTF-8'/>
 <meta content='width=device-width, initial-scale=1.0' name='viewport'/>
 <title><data:blog.pageTitle/></title>
 <b:include data='blog' name='all-head-content'/>
@@ -37,11 +36,7 @@ body{font-family:'Noto Sans Gujarati','Noto Sans Devanagari',system-ui,sans-seri
 <body>
 <b:section class='oeg-header' id='oeg-header' showaddelement='no'>
 <b:widget id='Header1' locked='true' title='Online Education Guru' type='Header' version='2'>
-<b:widget-settings>
-<b:widget-setting name='displayImage'>false</b:widget-setting>
-<b:widget-setting name='displayName'>true</b:widget-setting>
-</b:widget-settings>
-<b:includable id='main' var='top'>
+<b:includable id='main'>
 <div class='oeg-topbar'>
 <span class='logo'>🎓 <data:title/></span>
 <nav>
@@ -53,7 +48,6 @@ body{font-family:'Noto Sans Gujarati','Noto Sans Devanagari',system-ui,sans-seri
 <a href='https://onlineeducationguru.github.io/OEG/#/games'>શૈક્ષણિક રમત</a>
 <a href='https://onlineeducationguru.github.io/OEG/#/office'>Office Documents</a>
 <a href='https://onlineeducationguru.github.io/OEG/g/all.html'>ધોરણ મુજબ</a>
-<a href='https://onlineeducationguru.github.io/OEG/#/admin'>Admin Panel</a>
 </nav>
 </div>
 </b:includable>
@@ -62,9 +56,8 @@ body{font-family:'Noto Sans Gujarati','Noto Sans Devanagari',system-ui,sans-seri
 
 <!-- GitHub Pages સાઈટ — Blogger માં live embed -->
 <div class='oeg-frame-wrap'>
-<iframe class='oeg-frame' expr:src='&quot;https://onlineeducationguru.github.io/OEG/?shareBase=&quot; + urlencode(data:blog.homepageUrl)' title='Online Education Guru — બાલવાટિકાથી ધોરણ ૮ સુધીનું મટિરિયલ, વિડિયો અને ક્વિઝ' loading='eager' allow='fullscreen; encrypted-media' referrerpolicy='unsafe-url'></iframe>
+<iframe class='oeg-frame' src='https://onlineeducationguru.github.io/OEG/' title='Online Education Guru — બાલવાટિકાથી ધોરણ ૮ સુધીનું મટિરિયલ, વિડિયો અને ક્વિઝ' loading='eager' allow='fullscreen; encrypted-media' referrerpolicy='unsafe-url'></iframe>
 </div>
-<!-- shareBase ⇒ સાઇટ અંદર શેર/કેનોનિકલ લિંક તમારા blogspot સરનામા પ્રમાણે જ બને («જ્યાંથી શેર કરે ત્યાંનું» નિયમ). -->
 <p class='oeg-note'>ઉપરની સાઈટ GitHub Pages પરથી live આવે છે — PDF, HTML, Image અને DOC ફાઈલો અહીં જ દેખાશે (કંઈ ડાઉનલોડ થશે નહીં). જો iframe ન દેખાય તો <a href='https://onlineeducationguru.github.io/OEG/' target='_blank' rel='noopener'>અહીં ક્લિક કરો</a>.</p>
 
 <!-- 🔎 SEO માટે crawlable લિંકો (ધોરણ + શ્રેણી + ક્વિઝ) -->
@@ -94,10 +87,7 @@ body{font-family:'Noto Sans Gujarati','Noto Sans Devanagari',system-ui,sans-seri
 <a href='https://onlineeducationguru.github.io/OEG/q/all.html'>બધી કેટેગરી</a>
 </div>
 
-<!-- 💰 AdSense (Blogger પેજ પરની જાહેરાત) — Settings → Ads ચાલુ કરો, અથવા નીચેનો block વાપરો.
-<ins class='adsbygoogle' style='display:block' data-ad-client='ca-pub-XXXXXXXXXXXXXXXX' data-ad-slot='1111111111' data-ad-format='auto' data-full-width-responsive='true'></ins>
-<script>(adsbygoogle = window.adsbygoogle || []).push({});</script>
--->
+<p class='oeg-note'>💰 AdSense જોઈતું હોય તો Blogger → Settings → Monetization → AdSense ચાલુ કરો (કોડ અહીં નાખવો પડતો નથી).</p>
 
 <!-- Blogger ની પોતાની પોસ્ટ્સ (SEO માટે) -->
 <b:section class='oeg-main' id='oeg-main' showaddelement='yes'>
@@ -108,7 +98,7 @@ body{font-family:'Noto Sans Gujarati','Noto Sans Devanagari',system-ui,sans-seri
 <b:loop values='data:posts' var='post'>
 <article class='oeg-post'>
 <h3><a expr:href='data:post.url'><data:post.title/></a></h3>
-<div class='meta'><data:post.timestamp/></div>
+<div class='meta'>📅 <data:post.date/></div>
 <div><data:post.body/></div>
 </article>
 </b:loop>

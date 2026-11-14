@@ -48,11 +48,36 @@
 
 ## 🅱️ Blogger માં લગાવવું (XML Theme)
 
+> ✅ **iframe વાપરવો પડતો નથી.** `blogger/OEG-Blogger-Native.xml` લગાવો એટલે આખી સાઈટ
+> (હોમ · પાઠ્યપુસ્તક · સ્વાધ્યાયપોથી · વિડિયો · ક્વિઝ · રમત · બ્લોગ · Admin) **બ્લોગર ના પાનાં પર જ** ચાલે —
+> browser ના address bar માં ફક્ત તમારું `…blogspot.com` (અને custom domain) સરનામું દેખાય, બીજું ક્યાંય નહીં.
+
+**એક વખત લગાવવું:**
 1. Blogger Dashboard → **Theme** → **Customize ▼** → **Backup** (હાલની થીમ સાચવો — જરૂરી!).
-2. **Theme → Customize ▼ → Restore → Upload** → `blogger/OEG-Blogger-Theme.xml` પસંદ કરો.
-3. થઈ ગયું! Blogger પેજ પર GitHub Pages સાઈટ **iframe માં live** દેખાશે —
-   GitHub પરની **HTML, PDF, Image, DOC** ફાઈલો Blogger પેજમાં જ દેખાશે.
-4. Blogger ની પોતાની પોસ્ટ્સ પણ નીચે દેખાશે (SEO માટે).
+2. **Theme → Customize ▼ → Restore → Upload** → `blogger/OEG-Blogger-Native.xml` પસંદ કરો.
+3. **Setting → Permissions → Bloggers → +Add authors** માં તમારું email રાખો (એ જ email થી Admin login થશે).
+4. જુઓ → બ્લોગર પર આખી સાઈટ ચાલે. CSS/JS/JSON ફાઈલો jsDelivr CDN પરથી આવે છે
+   (`https://cdn.jsdelivr.net/gh/OnlineEducationGuru/OEG@main/`), એટલે **નવો XML ફરી upload કરવાની જરૂર નથી** —
+   GitHub માં push કરો (અથવા Admin Panel માં save કરો) ⇒ બ્લોગર ની સાઈટ પણ થોડી મિનિટ માં નવી દેખાશે.
+
+**થીમ નવો બનાવવો** (જયારે `index.html` નું markup બદલાય, જેમ કે નવું મેનુ પાનું):
+```bash
+node scripts/blogger.mjs          # → blogger/OEG-Blogger-Native.xml (auto: index.html + js/** → CDN)
+node scripts/blogger.mjs --ref <sha>    # કોઈ fix pin કરવો હોય તો (CDN કૅશ ન બદલાય)
+node scripts/blogger.mjs --pages-links # SEO પાનાં (g/ p/ q/) GitHub Pages પર જ મોકલવા હોય તો
+```
+> 📌 ડિફૉલ્ટ માં ધોરણ/ક્વિઝ ની લિંક બ્લોગર નાં route જ વાપરે (`#/grade/5`, `#/quiz`) એટલે વાંચનાર બ્લોગર પર રહે.
+
+**પુરાણો iframe થીમ** (`blogger/OEG-Blogger-Theme.xml`) — એ પણ હવે upload થઈ જાય (જૂનાં ૪ દોષ સુધાર્યા છે),
+પણ SEO/UX દૃષ્ટિએ native થીમ જ સારો: iframe માં GitHub Pages ની સાઈટ નીચે બંધાયેલી રહે છે
+અને browser ના address bar માં `github.io` સરનામું પણ દેખાય છે.
+
+**મર્યાદા (જાણીને રાખો):**
+- ✍️ Admin Panel બ્લોગર પર પણ **ચાલે** (login + edit + save) — ફાઈલો GitHub માં જ સેવ થાય, બ્લોગર એ જ ડેટા વાપરે. એટલે બ્લોગર પર કંઈ upload કરવું પડતું નથી.
+- 🖼 **▶ વિડિયો પ્લેલિસ્ટ / ચૅનલ લિંક** પણ કામ કરે: `youtube.com/playlist?list=…`, `watch?v=…&list=…` કે `…/channel/UC…` ਨાં લિંક ਨાંખો ⇒ એ જ સિરીઝ સાઈટ પર ચાલે, અને "🔁 આગલો વિડિયો" કાર્ડ + વિડિયો પૂરો થાય એટલે આગલો આપોઆપ ચાલે.
+- ⚡ પોસ્ટર CDN પરથી તરત પ્રિલોડ થાય (વિડિયો પાનાં પર `fetchpriority=high` + maxres thumb).
+- 🧊 CDN કૅશ ⇒ push પછી **૫–૧૦ મિનિટ** માં નવું દેખાય (જલદી જોઈતું હોય તો `Ctrl+Shift+R`).
+- 🔒 **Admin લિંક મેનુ માં દેખાતી નથી** જયારે સુધી panel unlock ન હોય (નીચે જુઓ).
 
 ---
 
@@ -60,7 +85,8 @@
 
 > 🔒 **એક્સેસ:** Admin Panel **ફક્ત એક જ email+પાસવર્ડથી** ખુલે છે, જે `data/admin.json` માં **email = base64** + **પાસવર્ડ = SHA-256 hash** સ્વરૂપે સુરક્ષિત સેવ છે (કોઈ પણ ભાષક ફાઈલ વાંચે તો email/પાસવર્ડ સીધા દેખાતા નથી).
 
-1. **Admin ખોલવું:** ટબ મેનુ → **વધુ ▾ → Admin Panel** (અથવા URL માં `#/admin`).
+1. **Admin ખોલવું:** 🛠️ **Admin Panel લિંક મેનુ માં છુપાયેલી છે** — એ ફક્ત unlock થયા પછિ જ દેખાય.
+   પહેલી વાર URL માં `#/admin` લખો (અથવા બ્લોગર/પેજ પર `…/#/admin`) → login → પછી મેનુ માં લિંક આપોઆપ આવે.
 2. **પ્રથમ વખત (setup):** email + તમારો નવો પાસવર્ડ + **એકવાર સિક્રેટ કોડ** ભરો → **દાખલ થાઓ**.
    - 🔑 **સિક્રેટ કોડ = GitHub Fine-grained PAT** — login card પર ક્યાંય "GitHub/PAT/token" લખ્યું દેખાતું નથી; સમજ **લોગિન પછી** Panel → 🔗 Connect માં "❓ સિક્રેટ કોડ ક્યાંથી મેળવવો?" પર મળશે (README માં પણ છે).
    - પગલાં: https://github.com/settings/personal-access-tokens → **Generate new token → Fine-grained** → name `OEG`, 90 days → **Only select repositories** = `OnlineEducationGuru/OEG` → **Contents: Read and write** → Generate → copy.
