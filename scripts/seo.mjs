@@ -341,8 +341,11 @@ writeFileSync(join(root, "sitemap.xml"),
   `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n` +
   urls.map((u) => `  <url><loc>${BASE}/${u.p}</loc><lastmod>${day}</lastmod><changefreq>${u.f}</changefreq><priority>${u.pri}</priority></url>`).join("\n") +
   `\n</urlset>\n`);
+/* ખાનગી ડેટા (ખાતાં / રજિસ્ટ્રેશન / નોટિસ યાદી) search માં ન જાય */
 writeFileSync(join(root, "robots.txt"),
-  `User-agent: *\nAllow: /\nDisallow: /#/admin\nDisallow: /admin\nDisallow: /*?shareBase=\n\nSitemap: ${BASE}/sitemap.xml\n`);
+  `User-agent: *\nAllow: /\nDisallow: /#/admin\nDisallow: /admin\nDisallow: /*?shareBase=` +
+  `\nDisallow: /data/users.json\nDisallow: /data/registrations.json\nDisallow: /data/notice.json` +
+  `\nDisallow: /sw.js\n\nSitemap: ${BASE}/sitemap.xml\n`);
 /* ---------- 🧹 જૂનાં પાનાં કાઢી નાખો (Admin માંથી કંઈ કઢાય તો SEO પાનું પણ તરત જ ખતમ) ---------- */
 const keep = new Set(written);
 let pruned = 0;

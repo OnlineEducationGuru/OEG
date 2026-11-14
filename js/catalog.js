@@ -262,16 +262,22 @@ OEG.views = (() => {
     try { sessionStorage.setItem("oeg.viewed." + id, String(Date.now())); } catch (e) {}
   }
   function count(id) { return (read()[id] || 0) + ((base && base.items && base.items[id]) || 0); }
-  /* 👁 કુલ વિઝિટર — Admin → સાઇટ સેટિંગ્સ ની શરૂ આત નં સખ્યા (અત્યારે ૧૦ લાખ) + સાચા વિઝિટર.
-     એક ઉપકરણે એક દિવસે એક વાર ગણાય; Admin "વ્યુ સેવ" કરે ત્યારે data/views.json માં total ભરાય. */
+  /* 👁 Total Viewers — દર વખતે પાનું બદલો / રીફ્રેસ કરો ⇒ +૧ (એક દિવસે એક વાર નહીં).
+     Admin → સાઇટ સેટિંગ્સ ની શરૂ આત નં સખ્યા (viewersBase) + repo નો total + આ ઉપકરણ ની ગણતરી. */
   const SITE = "__site";
   const dayKey = () => "day." + new Date().toISOString().slice(0, 10);
-  function visit() {
+  let lastSeen = "", lastAt = 0;
+  function visit(route) {
+    const now = Date.now();
+    if (route && route === lastSeen && now - lastAt < 1500) return false;   /* એ જ પાનું તાત્કાલિક બાર વાર ⇒ એક જ ગણાય */
+    lastSeen = route || ""; lastAt = now;
     const m = read(), d = dayKey();
-    if (m[d]) return false;
-    m[d] = 1; m[SITE] = (m[SITE] || 0) + 1; write();
+    m[d] = (Number(m[d]) || 0) + 1;
+    m[SITE] = (m[SITE] || 0) + 1;
+    write();
     return true;
   }
+  function todayVisits() { return Number(read()[dayKey()] || 0); }
   function baseNum() {
     const ui = (OEG.state.config && OEG.state.config.ui) || {};
     const n = Number(ui.viewersBase);
@@ -309,7 +315,7 @@ OEG.views = (() => {
     return b;
   }
   function reload() { base = null; map = null; return load(); }
-  return { hit, count, ranked, load, reload, commit, read, seed, visit, total, fmt, baseNum, LS, FILE };
+  return { hit, count, ranked, load, reload, commit, read, seed, visit, total, todayVisits, fmt, baseNum, LS, FILE };
 })();
 
 OEG.fileExt = (url) => {

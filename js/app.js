@@ -74,11 +74,60 @@
     if (tagEl) tagEl.textContent = tag || t("hero.title");
     const sw = document.querySelector(".search-box");
     if (sw) sw.style.display = uiCfg().showSearch === false ? "none" : "";
-    const lg = document.querySelector(".logo-mark");
-    if (lg && uiCfg().logoEmoji) lg.textContent = uiCfg().logoEmoji;
+    paintLogo();
+    syncHeaderH();
     document.body.classList.toggle("allow-select", !guardOn());
-    [renderNav, renderSidebar, renderFooter, renderAuthArea].forEach((f) => { try { f(); } catch (e) {} });
+    [renderNav, renderSidebar, renderFooter, renderAuthArea, paintNews, paintBell].forEach((f) => { try { f(); } catch (e) {} });
   }
+  /* 🖼 લોગો — Admin માંથી ચઢાવેલી છબિ હોય તો એ, નહીં તો ઈમોજિ (હેડર + ફૂટર + બ્લોગર બધે) */
+  function paintLogo() {
+    const url = String(uiCfg().logoUrl || "").trim();
+    const src = url ? (/^https?:/i.test(url) ? url : OEG.base(url)) : "";
+    document.querySelectorAll(".logo-mark").forEach((lg) => {
+      if (!lg) return;
+      if (src) {
+        lg.classList.add("has-img");
+        if (!/class="logo-img"/.test(lg.innerHTML)) lg.innerHTML = `<img class="logo-img" src="${OEG.esc(src)}" alt="" draggable="false">`;
+        else { const im = lg.querySelector("img"); if (im && im.getAttribute("src") !== src) im.setAttribute("src", src); }
+      } else {
+        lg.classList.remove("has-img");
+        lg.textContent = uiCfg().logoEmoji || "🎓";
+      }
+    });
+    const ft = document.getElementById("footerTitle");
+    if (ft) {
+      const nm = uiText("siteTitle", "") || OEG.siteName();
+      ft.innerHTML = src
+        ? `<img class="logo-img" src="${OEG.esc(src)}" alt="" draggable="false" style="height:24px;vertical-align:-5px;margin-right:6px">${OEG.esc(nm)}`
+        : `${OEG.esc(uiCfg().logoEmoji || "🎓")} ${OEG.esc(nm)}`;
+    }
+    const ic = document.querySelector('link[rel="icon"], link[rel="shortcut icon"]');
+    if (ic && src) ic.href = src;
+  }
+  /* 📐 હેડર ની ઊંચાઈ માપી --header-h માં મૂકો ⇒ મેનુ ગમે તેટલી લીટી લે તોય sticky સાઇડબાર/ટૉબ્સ ઢાંકાતાં નહીં */
+  function syncHeaderH() {
+    const hd = document.querySelector(".header");
+    if (!hd) return;
+    const h = Math.round(hd.offsetHeight || 0);
+    if (h > 30) document.documentElement.style.setProperty("--header-h", h + "px");
+  }
+  /* 👥 હોમ પેજ નાં સભ્ય આંકડા (repo + ઉપકરણ ની નોંધ પ્રમાણે) */
+  function paintCounts() {
+    const box = document.getElementById("homeCounts");
+    if (!box || !OEG.counts) return;
+    const c = OEG.counts.get();
+    box.querySelectorAll("[data-cnt]").forEach((b) => {
+      const val = OEG.views.fmt(Number(c[b.dataset.cnt] || 0));
+      const el = b.querySelector("b");
+      if (el && el.textContent !== val) el.textContent = val;
+    });
+    const tv = document.getElementById("homeViewers");
+    if (tv) tv.querySelector("b").textContent = "👁 " + OEG.views.fmt(OEG.views.total());
+  }
+  /* 📰 બ્રેકિંગ ન્યૂઝ + 🔔 સૂચના નો બટન (js/notify.js) — ફાઈલ ન મળે તો ચૂપચાપ ચૂટી જાય */
+  function paintNews() { try { if (OEG.news) OEG.news.render(); } catch (e) {} }
+  function paintBell() { try { if (OEG.notify) OEG.notify.renderBell(); } catch (e) {} }
+  function paintChip() { try { if (OEG.notify) OEG.notify.renderChip(); } catch (e) {} }
 
   /* ---------- Shell ---------- */
   const visibleNav = NAV; /* Admin બટન હંમેશ દેખાય — ક્લિક પર માલિક-લોગિન માંગશે */
@@ -268,11 +317,54 @@
     if (document.querySelector("#sideNav,#navDesktop")) { renderNav(); renderSidebar(); }   /* પછિ render() એ પણ ભરી દેશે */
   }
 
+  let navTreeNow = [];
   function renderNav() {
     const tree = navTree();
     const el = document.getElementById("navDesktop");
     if (!el) return;
+    navTreeNow = tree;
     el.innerHTML = tree.map(navTopItem).join("");
+    bindNav(el);
+    try { fitNav(); } catch (e) {}
+  }
+  /* 📐 ગમે તેટલી ટેબ — જેટલી લાઈન માં ફિટ થાય એટલી ઉપર, બાકીની "વધુ ▾" માં.
+     માપ શક્ય ન હોય (છુપાયેલું હેડર / ફોન નું મેનુ) તો બધી જ ટેબ રહે છે — કંઈ કપાતું નથી. */
+  function fitNav() {
+    const el = document.getElementById("navDesktop");
+    if (!el || !navTreeNow.length) return;
+    el.innerHTML = navTreeNow.map(navTopItem).join("");
+    bindNav(el);
+    const avail = el.clientWidth || 0;
+    if (!avail) { syncHeaderH(); return; }
+    const kids = Array.prototype.slice.call(el.children);
+    if (kids.length < 2) { syncHeaderH(); return; }
+    if (el.scrollWidth <= avail + 1) { syncHeaderH(); return; }
+    const gap = parseFloat(getComputedStyle(el).columnGap || "0") || 4;
+    const probe = document.createElement("div");
+    probe.className = "nav-link nav-more-btn";
+    probe.textContent = "વધુ ▾";
+    probe.style.position = "absolute"; probe.style.visibility = "hidden";
+    el.appendChild(probe);
+    const moreW = probe.offsetWidth || 74;
+    probe.remove();
+    let used = 0, cut = kids.length;
+    for (let i = 0; i < kids.length; i++) {
+      const w = kids[i].offsetWidth || 0;
+      const need = w + (i ? gap : 0) + (i === kids.length - 1 ? 0 : gap + moreW);
+      if (used + need > avail) { cut = i; break; }
+      used += w + gap;
+    }
+    if (cut < 1) cut = 1;
+    if (cut >= kids.length) { syncHeaderH(); return; }
+    el.innerHTML = navTreeNow.slice(0, cut).map(navTopItem).join("") +
+      `<div class="nav-grp nav-more" data-more="1">
+        <button type="button" class="nav-link nav-gbtn nav-more-btn" aria-haspopup="true">વધુ ▾</button>
+        <div class="nav-drop nav-drop-lg">${navTreeNow.slice(cut).map(navTopItem).join("")}</div>
+      </div>`;
+    bindNav(el);
+    syncHeaderH();
+  }
+  function bindNav(el) {
     el.querySelectorAll(".nav-gbtn").forEach(btn => {
       btn.onclick = (e) => { e.stopPropagation(); const g = btn.closest(".nav-grp"); const open = g.classList.contains("open"); el.querySelectorAll(".nav-grp.open").forEach(x => x.classList.remove("open")); if (!open) g.classList.add("open"); };
     });
@@ -281,7 +373,8 @@
     });
   }
   let navResizeT;
-  window.addEventListener("resize", () => { clearTimeout(navResizeT); navResizeT = setTimeout(renderNav, 180); });
+  window.addEventListener("resize", () => { clearTimeout(navResizeT); navResizeT = setTimeout(() => { try { fitNav(); } catch (e) { syncHeaderH(); } }, 160); });
+  window.addEventListener("load", () => { setTimeout(() => { try { fitNav(); } catch (e) {} }, 260); });
   const sideItem = (n, depth) => {
     const kids = navKids(n);
     const on = navRouteOf(n.href) === currentRoute();
@@ -318,7 +411,8 @@
   function paintVisitors() {
     const fv = document.getElementById("footerVis");
     if (!fv) return;
-    try { fv.innerHTML = `👁 <b>${OEG.views.fmt(OEG.views.total())}</b> ${OEG.esc(t("stats.visitors"))}`; } catch (e) { fv.textContent = ""; }
+    try { fv.innerHTML = `👁 <b>${OEG.views.fmt(OEG.views.total())}</b> ${OEG.esc(t("stats.totalViewers"))}`; } catch (e) { fv.textContent = ""; }
+    try { paintCounts(); } catch (e) {}
   }
   function renderFooter() {
     document.getElementById("footerLinks").innerHTML = NAV().slice(0, 9).map(n =>
@@ -333,8 +427,10 @@
     const about = document.getElementById("footerAbout");
     if (about) { const a = uiText("footerAbout", ""); if (a) about.textContent = a; }
     paintVisitors();
-    const ft = document.getElementById("footerTitle");
-    if (ft) { const n2 = uiText("siteTitle", ""); ft.textContent = n2 ? "🎓 " + n2 : "🎓 Online Education Guru"; }
+    try { paintLogo(); } catch (e) {
+      const ft = document.getElementById("footerTitle");
+      if (ft) { const n2 = uiText("siteTitle", ""); ft.textContent = (uiCfg().logoEmoji || "🎓") + " " + (n2 || "Online Education Guru"); }
+    }
   }
 
   function followIcon(k) {
@@ -614,19 +710,19 @@
     const vids = mine(OEG.byType("video")).slice(0, 6);
     const popular = mine(OEG.state.catalog.filter(i => ["textbook", "workbook"].includes(i.type))).slice(0, 4);
     const quizCats = (OEG.quiz && OEG.quiz.cats ? OEG.quiz.cats() : []);
-    const total = mine(OEG.state.catalog).length;
-    const quizN = mine(OEG.state.catalog.filter(i => i.type === "quiz")).length;
+    const cnt = (OEG.counts ? OEG.counts.get() : { student: 0, teacher: 0, principal: 0, other: 0 });
     return `
     <section class="hero">
       <h1>${OEG.esc(uiText("heroTitle", t("hero.title")))}</h1><p>${OEG.esc(uiText("heroSub", t("hero.sub")))}</p>
       <div class="hero-cta"><a class="btn btn-primary" href="#/textbooks">${t("hero.cta1")}</a><a class="btn btn-ghost" href="#/quiz">🧠 ${t("nav.quiz")}</a></div>
-      <div class="hero-stats">
-        <div><b>${total}+</b><span>${t("nav.textbooks")}</span></div>
-        <div><b>${REAL_GRADES().length}</b><span>${t("sec.grades")}</span></div>
-        <div><b>${OEG.tax().types.length}</b><span>${t("admin.catTab")}</span></div>
-        <div><b>3</b><span>${t("lang.name")}</span></div>
-        <div><b>👁 ${OEG.views.fmt(OEG.views.total())}</b><span>${t("stats.visitors")}</span></div>
+      <div class="hero-stats hero-members" id="homeCounts">
+        <div data-cnt="student"><b>${OEG.views.fmt(cnt.student)}</b><span>🎓 ${t("home.countStudents")}</span></div>
+        <div data-cnt="teacher"><b>${OEG.views.fmt(cnt.teacher)}</b><span>👩‍🏫 ${t("home.countTeachers")}</span></div>
+        <div data-cnt="principal"><b>${OEG.views.fmt(cnt.principal)}</b><span>🏛 ${t("home.countPrincipals")}</span></div>
+        <div data-cnt="other"><b>${OEG.views.fmt(cnt.other)}</b><span>🧑‍🤝‍🧑 ${t("home.countOthers")}</span></div>
+        <div id="homeViewers"><b>👁 ${OEG.views.fmt(OEG.views.total())}</b><span>${t("stats.totalViewers")}</span></div>
       </div>
+      <p class="hero-join">${OEG.esc(t("home.joinNote"))} <a class="btn btn-primary" href="#/register">${t("home.joinBtn")}</a></p>
       <div class="follow-strip"><span class="fs-title">👉 ${t("follow.title")}</span>${followButtons("fb-sm")}</div>
     </section>
     ${adSlot("homeTop")}
@@ -754,15 +850,71 @@
     });
   }
 
+  /* ▶ વિડિયો પાનું — પ્રેક્ષક (વિદ્યાર્થી ▸ ધોરણ+વિષય / શિક્ષક / આચાર્ય / ઓફિસ / અન્ય) પ્રમાણે ફિલ્ટર */
+  const VID_AUDS = () => {
+    const aud = OEG.auds().filter((a) => !a.off);
+    const want = ["student", "teacher", "principal", "office", "other"];
+    const pick = want.map((k) => aud.filter((a) => a.key === k)[0]).filter(Boolean);
+    return pick.length ? pick : aud;
+  };
+  const vidAudOf = (i) => { const a = OEG.audOfItem(i); return (!a || a === "all") ? "other" : a; };
+  /* ફિલ્ટર બદલો ⇒ hash માં જ લખાય (લિંક શેર કરી શકાય, પાછું ફરો તો પસંદગી યાદ રહે) */
+  function bindVideoFilters(query) {
+    const go = () => {
+      const gg = document.getElementById("fGrade"), ss = document.getElementById("fSubject");
+      const o = {
+        aud: (query && query.aud && query.aud !== "all") ? query.aud : "",
+        audSub: (query && query.audSub) || "",
+        grade: (gg && gg.value !== "all") ? gg.value : "",
+        subject: (ss && ss.value !== "all") ? ss.value : ""
+      };
+      const p = Object.keys(o).filter((k) => o[k]).map((k) => k + "=" + encodeURIComponent(o[k]));
+      location.hash = "#/videos" + (p.length ? "?" + p.join("&") : "");
+    };
+    ["fGrade", "fSubject"].forEach((id) => { const el = document.getElementById(id); if (el) el.onchange = go; });
+  }
   function videosPage(query) {
-    const grade = (query && query.grade) || "all";
-    let vids = mine(OEG.byType("video"));
-    if (grade !== "all") vids = vids.filter(i => i.grade === grade || i.grade === "all");
+    const q = query || {};
+    const aud = q.aud || "all";
+    const grade = q.grade || "all";
+    const subject = q.subject || "all";
+    const audSub = q.audSub || "";
+    const full = OEG.byType("video");
+    const all = mine(full);                     /* login પ્રમાણે પોતાની બાબતે જ (ફિલ્ટર ન પસંદ કર્યું હોય તો) */
+    let vids = aud === "all" ? all : full.filter((i) => vidAudOf(i) === aud);   /* પસંદગી કરો ⇒ સ્પષ્ટ તો એ જ પ્રેક્ષક નાં વિડિયો */
+    if (audSub) vids = vids.filter((i) => (i.audSub || "") === audSub);
+    if (aud === "student" || (aud === "all" && (grade !== "all" || subject !== "all"))) {
+      if (grade !== "all") vids = vids.filter((i) => !i.grade || i.grade === "all" || i.grade === grade);
+      if (subject !== "all") vids = vids.filter((i) => !i.subject || i.subject === "all" || i.subject === subject);
+    }
+    const subs = aud !== "all" ? OEG.audSubs(aud) : [];
+    const cntOf = (k) => k === "all" ? full.length : full.filter((i) => vidAudOf(i) === k).length;
+    const href = (o) => {
+      const p = [];
+      if (o.aud && o.aud !== "all") p.push("aud=" + encodeURIComponent(o.aud));
+      if (o.audSub) p.push("audSub=" + encodeURIComponent(o.audSub));
+      if (o.grade && o.grade !== "all") p.push("grade=" + encodeURIComponent(o.grade));
+      if (o.subject && o.subject !== "all") p.push("subject=" + encodeURIComponent(o.subject));
+      return "#/videos" + (p.length ? "?" + p.join("&") : "");
+    };
+    const bar = `<div class="aud-row vid-filter">
+        <span class="aud-lab">${OEG.esc(t("videos.aud"))}</span>
+        <a class="sub-chip ${aud === "all" ? "on" : ""}" href="${href({})}">${t("videos.allAud")} <small>${full.length}</small></a>${(() => { const sc = OEG.audScope(); return sc && sc !== aud ? `<span class="aud-me">✨ ${OEG.esc(OEG.audLabel(sc))} ⇒ ${t("videos.pickHint")}</span>` : ""; })()}
+        ${VID_AUDS().map((a) => `<a class="sub-chip ${aud === a.key ? "on" : ""}" href="${href({ aud: a.key })}">${a.icon || "🎯"} ${OEG.esc(OEG.taxLabel(a, "aud"))} <small>${cntOf(a.key)}</small></a>`).join("")}
+      </div>
+      ${subs.length ? `<div class="aud-row"><span class="aud-lab">${OEG.esc(OEG.audLabel(aud))} · ${t("videos.pickHint")}</span>
+        <a class="sub-chip ${!audSub ? "on" : ""}" href="${href({ aud, audSub: "" })}">${t("filter.all")}</a>
+        ${subs.map((x) => `<a class="sub-chip ${audSub === x.key ? "on" : ""}" href="${href({ aud, audSub: x.key })}">${x.icon || "📄"} ${OEG.esc(OEG.taxLabel(x, "subject"))}</a>`).join("")}</div>` : ""}
+      <div class="filters"${aud !== "student" && aud !== "all" ? ' data-vid-extra="1"' : ""}>
+        <label>${t("filter.grade")}</label><select id="fGrade"><option value="all">${t("filter.all")}</option>${GRADES().map((g) => `<option value="${g}" ${g === grade ? "selected" : ""}>${OEG.esc(OEG.gradeLabel(g))}</option>`).join("")}</select>
+        <label>${t("filter.subject")}</label><select id="fSubject"><option value="all">${t("filter.all")}</option>${(OEG.tax().gradeSubjects || OEG.tax().subjects || []).map((x) => `<option value="${x.key}" ${x.key === subject ? "selected" : ""}>${OEG.esc(OEG.subjectLabel(x.key))}</option>`).join("")}</select>
+        ${aud === "all" && grade === "all" && subject === "all" && !audSub ? "" : `<a class="btn btn-outline btn-sm" href="#/videos">✕ ${t("filter.all")}</a>`}
+      </div>`;
     return `<div class="page-head"><div class="breadcrumb"><a href="#/">${t("nav.home")}</a> / ${t("page.videos")}</div><h1>▶️ ${t("page.videos")}</h1>
-      <p class="sub">${vids.length} ${t("grade.items")} · ${t("yt.byUrlNote")}</p></div>
-      <div class="filters"><label>${t("filter.grade")}</label><select id="fGrade"><option value="all">${t("filter.all")}</option>${GRADES().map(g => `<option value="${g}" ${g === grade ? "selected" : ""}>${OEG.esc(OEG.gradeLabel(g))}</option>`).join("")}</select></div>
+      <p class="sub">${t("videos.found").replace("{x}", vids.length)}${canAdminNow() ? " · " + t("yt.byUrlNote") : ""}</p></div>
+      ${bar}
       ${adSlot("videoTop")}
-      ${vids.length ? `<div class="video-grid">${vids.map((v, i) => videoCard(v, i === 0)).join("")}</div>` : `<div class="panel" style="text-align:center;padding:50px"><h3>${t("empty.title")}</h3><p style="color:var(--muted)">${OEG.esc(emptySub())}</p></div>`}
+      ${vids.length ? `<div class="video-grid">${vids.map((v, i) => videoCard(v, i === 0)).join("")}</div>` : `<div class="panel" style="text-align:center;padding:50px"><h3>${t("empty.title")}</h3><p style="color:var(--muted)">${OEG.esc(all.length ? t("videos.noMatch") : emptySub())}</p></div>`}
       ${adSlot("contentBottom")}`;
   }
 
@@ -865,12 +1017,23 @@
 
   function authPage(mode) {
     const isReg = mode === "register";
+    /* ✅ રજિસ્ટ્રેશન નાં નિયમ (Admin → 👥 ખાતાં માંથી) */
+    const ac = (OEG.verify && OEG.verify.cfg()) || {};
+    const vreq = {
+      phone: isReg && ac.requirePhone !== false,
+      ph: isReg ? "+91 98••• •••••" : "",
+      google: isReg && !!(OEG.verify && OEG.verify.googleOn()),
+      otp: isReg && !!(OEG.verify && OEG.verify.otpReady())
+    };
     return `<div class="form-card">
       <h2>${isReg ? "📝 " + t("page.register") : "🔑 " + t("page.login")}</h2>
       <div id="authMsg"></div>
       <form id="authForm">
         ${isReg ? `<div class="field"><label>${t("auth.name")}</label><input name="name" required autocomplete="name"></div>` : ""}
-        <div class="field"><label>${t("auth.email")}</label><input name="email" type="email" required autocomplete="email"></div>
+        <div class="field"><label>${t("auth.email")}</label><input name="email" type="email" required autocomplete="email" ${isReg ? 'data-ve="email"' : ""}>
+          ${isReg ? `<p class="f-err" id="errEmail"></p><p class="f-ok" id="okEmail"></p>` : ""}</div>
+        ${isReg ? `<div class="field"><label>📱 ${t("auth.phone")}</label><input name="phone" inputmode="tel" autocomplete="tel" ${vreq.phone ? "required" : ""} placeholder="${vreq.ph}">
+          <p class="f-err" id="errPhone"></p></div>` : ""}
         <div class="field"><label>${t("auth.password")}</label><input name="password" type="password" required minlength="6" autocomplete="${isReg ? "new-password" : "current-password"}"></div>
         ${isReg ? `<div class="field"><label>${t("auth.role")}</label><select name="role">
           <option value="student">${t("auth.student")}</option><option value="teacher">${t("auth.teacher")}</option><option value="principal">${t("auth.principal")}</option><option value="other">${t("auth.other")}</option></select></div>
@@ -878,6 +1041,12 @@
           <div class="field"><label>${t("grade.pickGrade")}</label><select name="grade">${regGradeOpts()}</select></div>
           <div class="field"><label>${t("auth.subject")}</label><select name="subject">${regSubjectOpts()}</select></div>
         </div>` : ""}
+        ${isReg && vreq.google ? `<div class="v-row"><span id="gsState">⚪ ${t("v.gsiIntro")}</span>
+          <button type="button" class="btn btn-outline btn-sm" id="gsBtn">🔐 ${t("v.gsiBtn")}</button></div>` : ""}
+        ${isReg && vreq.otp ? `<div class="v-row"><span id="otState">⚪ ${t("v.otpIntro")}</span>
+          <button type="button" class="btn btn-outline btn-sm" id="otSend">${t("v.otpSend")}</button>
+          <input id="otCode" inputmode="numeric" pattern="\d*" maxlength="8" placeholder="${t("v.otpPh")}" style="width:92px;padding:5px 8px;border-radius:8px;border:1px solid var(--border)">
+          <button type="button" class="btn btn-outline btn-sm" id="otOk">${t("v.otpOk")}</button></div>` : ""}
         <button class="btn btn-brand" style="width:100%;justify-content:center" type="submit">${isReg ? t("auth.registerBtn") : t("auth.loginBtn")}</button>
       </form>
       <p style="text-align:center;margin-top:16px;font-size:.92rem"><a href="#/${isReg ? "login" : "register"}">${isReg ? t("auth.haveAccount") : t("auth.noAccount")}</a></p>
@@ -906,23 +1075,103 @@
     };
     if (roleSel) { roleSel.onchange = syncRole; syncRole(); }
     const form = document.getElementById("authForm"); if (!form) return;
+
+    /* ---------- ✅ રજિસ્ટ્રેશન: ઈમેઈલ + વૉટ્સએપ નંબર ની ચકાસણી ---------- */
+    let verifiedEmail = "", phoneOk = "";
+    const q = (n) => document.querySelector('#authForm [name="' + n + '"]');
+    const setErr = (id, text) => { const el = document.getElementById(id); if (!el) return; el.textContent = text || ""; el.classList.toggle("on", !!text); };
+    const inpEmail = q("email"), inpPhone = q("phone"), okEmail = document.getElementById("okEmail");
+    const have = !!window.OEG && !!OEG.verify;
+    function checkEmail(silent) {
+      if (!inpEmail || !have || mode !== "register") return true;
+      const r = OEG.verify.email(inpEmail.value);
+      inpEmail.classList.toggle("bad", !r.ok); inpEmail.classList.toggle("good", r.ok);
+      if (r.ok) { if (okEmail) { okEmail.textContent = "✅ " + t("v.emailOk"); okEmail.classList.add("on"); } setErr("errEmail", ""); return true; }
+      if (okEmail) okEmail.classList.remove("on");
+      if (silent) return false;
+      setErr("errEmail", "❌ " + OEG.verify.msg(r.key, r.arg || r.fix || ""));
+      return false;
+    }
+    function checkPhone(silent) {
+      if (!inpPhone || !have) return true;
+      const need = OEG.verify.cfg().requirePhone !== false;
+      const v = String(inpPhone.value || "").trim();
+      if (!v && !need) return true;
+      const r = OEG.verify.phone(v);
+      inpPhone.classList.toggle("bad", !r.ok); inpPhone.classList.toggle("good", r.ok);
+      if (r.ok) { phoneOk = r.value; setErr("errPhone", ""); return true; }
+      phoneOk = "";
+      if (silent) return false;
+      setErr("errPhone", "❌ " + OEG.verify.msg(r.key, r.arg || ""));
+      return false;
+    }
+    if (inpEmail) { inpEmail.oninput = () => checkEmail(true); inpEmail.onblur = () => checkEmail(false); }
+    if (inpPhone) {
+      inpPhone.oninput = () => { const c = inpPhone.selectionStart; inpPhone.value = inpPhone.value.replace(/[^\d+ ]/g, ""); try { inpPhone.setSelectionRange(c, c); } catch (e) {} checkPhone(true); };
+      inpPhone.onblur = () => checkPhone(false);
+    }
+    /* 🔓 Google વડે ચકાસણી ⇒ ઈમેઈલ ખરેખર ચાલુ (active) અને તમારી પાસે જ હોય એની ખાતરી */
+    const gsBtn = document.getElementById("gsBtn");
+    if (gsBtn) gsBtn.onclick = async () => {
+      const st = document.getElementById("gsState");
+      gsBtn.disabled = true;
+      if (st) st.textContent = "⏳ " + t("v.gsiWait");
+      try {
+        const r = await OEG.verify.googleCheck((inpEmail || {}).value);
+        if (r.ok) {
+          verifiedEmail = r.email;
+          if (st) st.innerHTML = "✅ <b>" + OEG.esc(r.email) + "</b> · " + OEG.esc(t("v.gsiOk"));
+          gsBtn.textContent = "✔️";
+          checkEmail(false);
+        } else { verifiedEmail = ""; if (st) st.textContent = "⚪ " + OEG.verify.msg(r.key, r.arg || ""); }
+      } catch (e) { if (st) st.textContent = "⚠️ " + OEG.esc(String((e && e.message) || e)); }
+      gsBtn.disabled = false;
+    };
+    /* 🔢 વૉટ્સએપ/SMS OTP (Admin ⇒ auth.otpEndpoint ભર્યું હોય તો જ) */
+    const otSend = document.getElementById("otSend"), otOk = document.getElementById("otOk");
+    if (otSend) otSend.onclick = async () => {
+      const st = document.getElementById("otState");
+      const r = OEG.verify.phone((inpPhone || {}).value);
+      if (!r.ok) { checkPhone(false); return; }
+      try { await OEG.verify.otpSend(r.e164); if (st) st.textContent = "📨 " + t("v.otpSent"); }
+      catch (e) { if (st) st.textContent = "⚠️ " + OEG.esc(String((e && e.message) || t("v.otpFail"))); }
+    };
+    if (otOk) otOk.onclick = async () => {
+      const st = document.getElementById("otState");
+      const r = OEG.verify.phone((inpPhone || {}).value);
+      if (!r.ok) { checkPhone(false); return; }
+      const code = ((document.getElementById("otCode") || {}).value || "").trim();
+      try {
+        const v = await OEG.verify.otpCheck(r.e164, code);
+        if (v.ok) { phoneOk = r.value; if (st) st.textContent = "✅ " + t("v.otpOk"); }
+        else if (st) st.textContent = "⛔ " + OEG.verify.msg(v.key, v.arg || "");
+      } catch (e) { if (st) st.textContent = "⚠️ " + OEG.esc(String((e && e.message) || e)); }
+    };
+
     form.onsubmit = async (e) => {
       e.preventDefault();
       const fd = new FormData(e.target);
       const msgEl = document.getElementById("authMsg");
+      const fail = (m) => { if (msgEl) msgEl.innerHTML = `<div class="alert alert-error">${OEG.esc(m)}</div>`; };
+      if (mode === "register") {
+        const e1 = checkEmail(false), p1 = checkPhone(false);
+        if (!e1 || !p1) { fail(t("v.fixBelow")); if (!e1) try { inpEmail.focus(); } catch (err) {} else try { inpPhone.focus(); } catch (err) {} return; }
+        if (OEG.verify && OEG.verify.requireGoogle() && !verifiedEmail) { fail(t("v.gsiNeed")); return; }
+      }
       try {
         const res = mode === "register"
           ? await OEG.auth.register({
             name: fd.get("name"), email: fd.get("email"), password: fd.get("password"), role: fd.get("role"),
             grade: (gRow && gRow.style.display === "none") ? "all" : fd.get("grade"),
-            subject: (gRow && gRow.style.display === "none") ? "all" : fd.get("subject")
+            subject: (gRow && gRow.style.display === "none") ? "all" : fd.get("subject"),
+            phone: fd.get("phone"), verified: verifiedEmail || ""
           })
           : await OEG.auth.login({ email: fd.get("email"), password: fd.get("password") });
         renderAuthArea();
         OEG.toast((mode === "register" ? "🎉 " + t("auth.regOk") + " — " : "👋 " + t("auth.welcome") + ", ") + (res.name || res.email));
         location.hash = "#/";
       } catch (err) {
-        msgEl.innerHTML = `<div class="alert alert-error">${OEG.esc(err.message)}</div>`;
+        fail(err.message);
       }
     };
   }
@@ -950,8 +1199,9 @@
   async function render() {
     const { seg, query } = parseHash();
     const route = seg[0] || "home";
-    /* 👁 વિઝિટ ગણો (એક ઉપકરણે એક દિવસે એક વાર) — footer + હોમ નો આંકડો એ જ મુજબ વધે */
-    try { if (OEG.views && OEG.views.visit) OEG.views.visit(); } catch (e) {}
+    /* 👁 દર પાનું બદલો / રીફ્રેસ કરો ⇒ +૧ (Total Viewers) — footer + હોમ નો આંકડો તરત વધે */
+    try { if (OEG.views && OEG.views.visit) OEG.views.visit(route); } catch (e) {}
+    try { paintVisitors(); } catch (e) {}
     /* Admin માં ઉમેર્યું/કાઢ્યું/બદલ્યું હોય તો સાઇટ પર પાછા આવતાં જ તરત નવું દેખાય */
     if (OEG.state.__dirty && route !== "admin") {
       OEG.state.__dirty = false;
@@ -986,11 +1236,7 @@
         OEG.quiz.mount(document.getElementById("quizMount"), { grade: query.grade, cat: query.cat, sub: query.sub, subject: query.subject || u.subject || "", chap: query.chap });
       }; break;
       case "grade": html = gradePage(seg[1], query); break;
-      case "videos": html = videosPage(query); after = () => {
-        const g = document.getElementById("fGrade");
-        if (g) g.onchange = () => { location.hash = g.value === "all" ? "#/videos" : "#/videos?grade=" + g.value; };
-        bindVideoPlayers(app);
-      }; break;
+      case "videos": html = videosPage(query); after = () => { bindVideoFilters(query); bindVideoPlayers(app); }; break;
       case "view": html = viewPage(seg[1]); after = () => { OEG.views.hit(seg[1]); bindVideoPlayers(app); bindAutoNext(app); preloadPoster(seg[1]); }; break;
       case "post": html = postPage(seg[1]); after = () => { OEG.views.hit(seg[1]); bindVideoPlayers(app); }; break;
       case "login": html = authPage("login"); after = () => bindAuth("login"); break;
@@ -1004,7 +1250,7 @@
         const au = OEG.audOfRoute ? OEG.audOfRoute(route) : null;
         if (au) { html = audPage(au, query); after = () => { bindVideoPlayers(app); }; }
         else if (ty) {
-          if (ty.key === "video") { html = videosPage(query); after = () => { bindVideoPlayers(app); }; }
+          if (ty.key === "video") { html = videosPage(query); after = () => { bindVideoFilters(query); bindVideoPlayers(app); }; }
           else { html = listingPage(ty.key, route, query); after = () => { bindFilters(ty.key, route); bindVideoPlayers(app); }; }
         } else html = homePage();
       }
@@ -1020,7 +1266,8 @@
     }
     const io = new IntersectionObserver(es => es.forEach(e => e.isIntersecting && e.target.classList.add("in")), { threshold: .08 });
     app.querySelectorAll(".reveal").forEach(el => io.observe(el));
-    [renderNav, renderSidebar, paintVisitors].forEach((f) => { try { f(); } catch (e) {} });
+    [renderNav, renderSidebar, paintVisitors, paintCounts, paintNews, paintBell, paintChip].forEach((f) => { try { f(); } catch (e) {} });
+    try { if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => { try { fitNav(); } catch (e) {} }); } catch (e) {}
   }
 
   /* ---------- 🔎 SEO meta (title/desc/canonical/OG/JSON-LD) ---------- */
@@ -1173,18 +1420,25 @@
   });
 
   window.addEventListener("hashchange", render);
+  window.addEventListener("popstate", () => { try { syncHeaderH(); } catch (e) {} });
   /* Admin માંથી કંઈ બદલાય/કઢાણ થાય એટલે સાઇટ તરત જ અપડેટ (reload કરવાની જરૂર નહીં) */
   OEG.refreshSite = async () => {
     try { await OEG.loadConfig(); } catch (e) {}
     try { await Promise.all([OEG.loadCatalog(), OEG.quiz ? OEG.quiz.load() : Promise.resolve()]); } catch (e) {}
     try { if (OEG.views) await OEG.views.load(); } catch (e) {}
+    try { if (OEG.counts) await OEG.counts.refresh(true); } catch (e) {}
     if (OEG.ads) { OEG.ads.head(); OEG.ads.flush(); }
     applyTheme();
     applyI18n();
     await render();
+    try { if (OEG.notify) await OEG.notify.check("silent"); } catch (e) {}
   };
   OEG.render = render;
   OEG.applyNav = () => { try { renderNav(); renderSidebar(); } catch (e) {} };
+  OEG.paintLogo = paintLogo;
+  OEG.paintCounts = paintCounts;
+  OEG.fitNav = fitNav;
+  OEG.syncHeaderH = syncHeaderH;
   OEG.navAuto = autoNavTree;
   document.addEventListener("click", () => document.querySelectorAll(".nav-grp.open, .nav-sub.open").forEach(x => x.classList.remove("open")));
 
@@ -1200,9 +1454,19 @@
     if (OEG.ads) OEG.ads.head();          // AdSense script (publisher ભર્યું હોય તો)
     await Promise.all([OEG.loadCatalog(), OEG.quiz ? OEG.quiz.load() : Promise.resolve(), OEG.views ? OEG.views.load() : Promise.resolve()]);
     OEG.auth.load();
+    try { if (OEG.auth.enforceSession) await OEG.auth.enforceSession(); } catch (e) {}   /* 🚫 બ્લોક થયેલું ખાતું ⇒ સેશન બંધ */
     applyTheme();
     applyI18n();
     render();
+    try { if (OEG.counts) await OEG.counts.refresh(); } catch (e) {}        /* 👥 સભ્ય આંકડા */
+    try { paintCounts(); } catch (e) {}
+    try {
+      if (OEG.notify) {
+        await OEG.notify.check("silent");
+        OEG.notify.start();
+        OEG.notify.maybeAsk();
+      }
+    } catch (e) {}
     if (OEG.state.configError) OEG.toast("⚠️ data/site-config.json માં JSON errors છે — તપાસો (દા.ત. \"emails\": [\"you@gmail.com\"] — કોટ સાથે)");
   })();
 })();

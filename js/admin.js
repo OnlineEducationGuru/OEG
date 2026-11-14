@@ -121,7 +121,7 @@ OEG.admin = (() => {
     { k: "connect", ic: "🔗" }, { k: "site", ic: "⚙️" }, { k: "material", ic: "✍️" },
     { k: "upload", ic: "📤" }, { k: "youtube", ic: "🎬" }, { k: "items", ic: "🗂️" },
     { k: "tax", ic: "🏷️" }, { k: "nav", ic: "🧭" }, { k: "quiz", ic: "🧠" }, { k: "cert", ic: "🏅" },
-    { k: "ads", ic: "💰" }, { k: "seo", ic: "🔎" }, { k: "users", ic: "👥" },
+    { k: "ads", ic: "💰" }, { k: "seo", ic: "🔎" }, { k: "users", ic: "👥" }, { k: "news", ic: "📣" },
     { k: "files", ic: "📁" }, { k: "account", ic: "🛡️" }
   ];
   let admTab = "";
@@ -201,6 +201,24 @@ OEG.admin = (() => {
           <div class="field"><label>👁 ${OEG.t("admin.viewersBase")}</label><input id="stVisitors" type="number" min="0" step="1000" value="${OEG.esc(String((cfg.ui || {}).viewersBase != null ? (cfg.ui || {}).viewersBase : 1000000))}">
             <p class="adm-sec-note">${OEG.t("admin.viewersBaseNote")}</p></div>
         </div>
+
+        <h4 style="margin:18px 0 6px">${OEG.t("admin.logoTitle")}</h4>
+        <p class="adm-sec-note">${OEG.t("admin.logoNote")}</p>
+        <div class="form-row">
+          <div class="field"><label>${OEG.t("admin.logoUpload")}</label>
+            <input id="stLogoFile" type="file" accept="image/png,image/jpeg,image/webp,image/svg+xml,image/gif,image/x-icon">
+            <p class="adm-sec-note" style="margin-top:6px"><button type="button" class="btn btn-brand btn-sm" id="stLogoUp">🖼 ${OEG.t("admin.logoUpload")}</button> · <span id="stLogoPrev">—</span></p></div>
+          <div class="field"><label>${OEG.t("admin.logoUrl")}</label>
+            <input id="stLogoUrl" placeholder="uploads/branding/logo.png  ·  https://…" value="${OEG.esc(((cfg.ui || {}).logoUrl) || "")}">
+            <p class="adm-sec-note" style="margin-top:6px"><button type="button" class="btn btn-outline btn-sm" id="stLogoClear">${OEG.t("admin.logoClear")}</button></p></div>
+        </div>
+
+        <h4 style="margin:18px 0 6px">🔢 ${OEG.t("admin.countsTitle")}</h4>
+        <div class="form-row">
+          ${[["stCntSt", "home.countStudents", "student"], ["stCntTe", "home.countTeachers", "teacher"], ["stCntPr", "home.countPrincipals", "principal"], ["stCntOt", "home.countOthers", "other"]].map((x) => `
+            <div class="field"><label>➕ ${OEG.t(x[1])}</label><input id="${x[0]}" type="number" min="0" step="10" value="${OEG.esc(String(((((cfg.ui || {}).counts || {})[x[2]]) != null ? (((cfg.ui || {}).counts || {})[x[2]]) : (OEG.counts ? OEG.counts.base()[x[2]] : 0))))}"></div>`).join("")}
+        </div>
+        <p class="adm-sec-note">${OEG.t("admin.countsNote")}</p>
 
         <h4 style="margin:18px 0 6px">👁️ ${OEG.t("admin.visibility")}</h4>
         <p class="adm-sec-note">${OEG.t("admin.visibilityNote")}</p>
@@ -535,12 +553,12 @@ OEG.admin = (() => {
         <div id="accMsg" style="margin-top:12px"></div>
       </section>
 
-      <!-- Users -->
+      <!-- Users + 📋 રજિસ્ટ્રેશન યાદી + 🔐 નિયમ -->
       <section class="panel adm-sec" data-sec="users">
         <h3>👥 ${OEG.t("admin.users")} <button class="btn btn-outline btn-sm" id="uRefresh" style="margin-left:auto">${OEG.t("admin.refresh")}</button></h3>
         <div class="alert alert-info">${OEG.t("admin.usersNote")}</div>
         <div class="form-row">
-          <div class="field"><label>${OEG.t("auth.name")}</label><input id="uName" placeholder="नाम / Name"></div>
+          <div class="field"><label>${OEG.t("auth.name")}</label><input id="uName" placeholder="નામ / Name"></div>
           <div class="field"><label>${OEG.t("auth.email")}</label><input id="uEmail" type="email" placeholder="user@gmail.com"></div>
         </div>
         <div class="form-row">
@@ -551,6 +569,7 @@ OEG.admin = (() => {
             <option value="admin">${OEG.t("admin.roleAdmin")}</option>
           </select></div>
           <div class="field"><label>${OEG.t("auth.password")}</label><input id="uPass" type="text" minlength="6" placeholder="••••••"></div>
+          <div class="field"><label>📱 ${OEG.t("auth.phone")}</label><input id="uPhone" inputmode="tel" placeholder="+91 98••• •••••"></div>
         </div>
         <div class="form-row" id="uGradeRow">
           <div class="field"><label>🎓 ${OEG.t("grade.pickGrade")}</label><select id="uGrade">${userGradeOpts()}</select></div>
@@ -558,8 +577,125 @@ OEG.admin = (() => {
         </div>
         <p class="adm-sec-note" id="uRoleNote">ℹ️ ${OEG.t("auth.roleNote")}</p>
         <button class="btn btn-brand" id="uAdd">➕ ${OEG.t("admin.addUser")}</button>
+        <div class="acc-tools">
+          <input class="acc-search" id="accQ" placeholder="${OEG.t("admin.searchAcc")}">
+          <button class="btn btn-outline btn-sm" id="accCsv">📋 ${OEG.t("admin.csv")}</button>
+        </div>
+        <div class="acc-sum" id="accSum"></div>
+        <div class="acc-wrap"><table class="acc-tbl" id="uTable"></table></div>
         <div id="uMsg" style="margin-top:12px"></div>
-        <div class="file-list" id="uList" style="margin-top:14px"><p style="color:var(--muted)">—</p></div>
+
+        <h3 style="margin-top:24px">${OEG.t("admin.regTitle")}</h3>
+        <p class="adm-sec-note">${OEG.t("admin.regNote")}</p>
+        <div class="acc-tools">
+          <button class="btn btn-outline btn-sm" id="regRefresh">${OEG.t("admin.regRefresh")}</button>
+          <button class="btn btn-brand btn-sm" id="regSave">${OEG.t("admin.regSave")}</button>
+          <button class="btn btn-outline btn-sm" id="regSheet">${OEG.t("admin.regSheet")}</button>
+          <button class="btn btn-outline btn-sm" id="regAll">${OEG.t("admin.regAll")}</button>
+          <input class="acc-search" id="regPass" placeholder="${OEG.t("auth.password")}" style="max-width:170px">
+        </div>
+        <div class="acc-sum" id="regSum"></div>
+        <div class="acc-wrap"><table class="acc-tbl" id="regTable"></table></div>
+        <div id="regMsg" style="margin-top:12px"></div>
+
+        <h3 style="margin-top:24px">${OEG.t("admin.ruleTitle")}</h3>
+        <div class="form-row">
+          <div class="field"><label>📧 ${OEG.t("admin.ruleDomains")}</label><input id="arDom" placeholder="gmail.com"></div>
+          <div class="field"><label>🔐 ${OEG.t("admin.ruleGid")}</label><input id="arGid" placeholder="xxxxxxxx.apps.googleusercontent.com"></div>
+        </div>
+        <div class="form-row">
+          <div class="field"><label>🔢 ${OEG.t("admin.ruleOtp")}</label><input id="arOtp" placeholder="https://script.google.com/macros/s/…/exec"></div>
+          <div class="field"><label>📤 ${OEG.t("admin.ruleHook")}</label><input id="arHook" placeholder="https://script.google.com/macros/s/…/exec"></div>
+        </div>
+        <div class="form-row">
+          <div class="field"><label>📊 ${OEG.t("admin.ruleHookList")}</label><input id="arHookList" placeholder="https://script.google.com/macros/s/…/exec"></div>
+          <div class="field" style="align-self:end"><div class="tgl-grid">
+            <label class="tgl"><input type="checkbox" id="arPhoneReq"><span class="tr"></span><span class="tl">📱 ${OEG.t("admin.rulePhone")}</span></label>
+            <label class="tgl"><input type="checkbox" id="arPattern"><span class="tr"></span><span class="tl">🚯 ${OEG.t("admin.rulePattern")}</span></label>
+            <label class="tgl"><input type="checkbox" id="arGReq"><span class="tr"></span><span class="tl">✅ ${OEG.t("admin.ruleGReq")}</span></label>
+          </div></div>
+        </div>
+        <button class="btn btn-brand" id="arSave">${OEG.t("admin.ruleSave")}</button>
+        <div id="arMsg" style="margin-top:12px"></div>
+      </section>
+
+      <!-- 📣 સમાચાર પટ્ટી + 🔔 સૂચના + 🟢 વૉટ્સએપ -->
+      <section class="panel adm-sec" data-sec="news">
+        <h3>${OEG.t("admin.newsTitle")}</h3>
+        <div class="alert alert-info">${OEG.t("admin.newsNote")}</div>
+        <div class="tgl-grid">
+          <label class="tgl"><input type="checkbox" id="nwOn"><span class="tr"></span><span class="tl">📰 ${OEG.t("admin.newsOn")}</span></label>
+          <label class="tgl"><input type="checkbox" id="nwAuto"><span class="tr"></span><span class="tl">🆕 ${OEG.t("admin.newsAuto")}</span></label>
+          <label class="tgl"><input type="checkbox" id="nwPause"><span class="tr"></span><span class="tl">⏸ ${OEG.t("admin.newsPause")}</span></label>
+        </div>
+        <div class="form-row" style="margin-top:10px">
+          ${triRow("nwLabel", "🏷️ " + OEG.t("admin.newsLabel"), ((OEG.state.config.news || {}).label) || "")}
+        </div>
+        <div class="form-row">
+          <div class="field"><label>⚡ ${OEG.t("admin.newsSpeed")}</label><input id="nwSpeed" type="number" min="12" max="120" step="2"></div>
+          <div class="field"><label>🔢 ${OEG.t("admin.newsAutoCount")}</label><input id="nwCount" type="number" min="0" max="20"></div>
+          <div class="field"><label>📅 ${OEG.t("admin.newsAutoDays")}</label><input id="nwDays" type="number" min="0" max="3650"></div>
+          <div class="field"><label>🏷️ ${OEG.t("admin.newsAutoTypes")}</label><input id="nwTypes" placeholder="post, video"></div>
+        </div>
+        <div class="field"><label>✍️ ${OEG.t("admin.newsItems")}</label><textarea id="nwItems" placeholder="${OEG.t("admin.newsItemsPh")}"></textarea></div>
+        <div class="acc-tools">
+          <button class="btn btn-brand btn-sm" id="nwSave">${OEG.t("admin.newsSave")}</button>
+          <button class="btn btn-outline btn-sm" id="nwTest">${OEG.t("admin.newsTest")}</button>
+          <button class="btn btn-outline btn-sm" id="nwReset">${OEG.t("admin.newsReset")}</button>
+        </div>
+        <div id="nwMsg" style="margin-top:10px"></div>
+
+        <h3 style="margin-top:26px">${OEG.t("admin.notiTitle")}</h3>
+        <div class="alert alert-info">${OEG.t("admin.notiNote")}</div>
+        <div class="tgl-grid">
+          <label class="tgl"><input type="checkbox" id="ntOn"><span class="tr"></span><span class="tl">🔔 ${OEG.t("admin.notiOn")}</span></label>
+          <label class="tgl"><input type="checkbox" id="ntBell"><span class="tr"></span><span class="tl">🛎 ${OEG.t("admin.notiBell")}</span></label>
+          <label class="tgl"><input type="checkbox" id="ntPosts"><span class="tr"></span><span class="tl">🆕 ${OEG.t("admin.notiPosts")}</span></label>
+          <label class="tgl"><input type="checkbox" id="ntAsk"><span class="tr"></span><span class="tl">❓ ${OEG.t("admin.notiAsk")}</span></label>
+        </div>
+        <div class="form-row" style="margin-top:10px">
+          <div class="field"><label>⏱ ${OEG.t("admin.notiPoll")}</label><input id="ntPoll" type="number" min="1" max="720"></div>
+          <div class="field"><label>📅 ${OEG.t("admin.notiDays")}</label><input id="ntDays" type="number" min="0" max="3650"></div>
+          <div class="field" style="align-self:end"><p class="adm-sec-note" id="ntPerm">—</p></div>
+        </div>
+        <div class="form-row">
+          ${triRow("ntTitle", "📌 " + OEG.t("admin.notiTitleL"), "")}
+        </div>
+        <div class="field"><label>💬 ${OEG.t("admin.notiTextL")}</label><textarea id="ntText" rows="3" placeholder="…"></textarea></div>
+        <div class="form-row">
+          <div class="field"><label>🔗 ${OEG.t("admin.notiUrlL")}</label><input id="ntUrl" placeholder="#/view/…"></div>
+          <div class="field" style="align-self:end"><div class="acc-tools" style="margin:0">
+            <button class="btn btn-brand btn-sm" id="ntSend">📣 ${OEG.t("admin.notiSend")}</button>
+            <button class="btn btn-outline btn-sm" id="ntOn2">🔔 ${OEG.t("n.enable")}</button>
+            <button class="btn btn-outline btn-sm" id="ntTest">🧪 ${OEG.t("n.test")}</button>
+          </div></div>
+        </div>
+        <p class="adm-sec-note">${OEG.t("admin.notiList")}</p>
+        <div class="file-list" id="ntList"><p style="color:var(--muted)">—</p></div>
+        <div id="ntMsg" style="margin-top:10px"></div>
+
+        <h3 style="margin-top:26px">${OEG.t("admin.waTitle")}</h3>
+        <div class="alert alert-info">${OEG.t("admin.waNote")}</div>
+        <div class="form-row">
+          <div class="field"><label>📱 ${OEG.t("admin.waNum")}</label><input id="waNum" inputmode="tel" placeholder="9198••••••••"></div>
+          <div class="field"><label>👀 ${OEG.t("admin.waWho")}</label><select id="waWho">
+            <option value="admin">🛠️ ${OEG.t("nav.admin")}</option>
+            <option value="all">👥 ${OEG.t("admin.users")}</option>
+            <option value="off">🚫 ${OEG.t("admin.no")}</option>
+          </select></div>
+        </div>
+        <div class="field"><label>📝 ${OEG.t("admin.waTpl")} <span style="font-weight:400;color:var(--muted)">— ${OEG.t("admin.waTplNote")}</span></label>
+          <textarea id="waTpl" rows="6"></textarea></div>
+        <div class="acc-tools">
+          <button class="btn btn-brand btn-sm" id="waSave">💾 ${OEG.t("btn.save")}</button>
+          <button class="btn btn-outline btn-sm" id="waPrev">👁 ${OEG.t("admin.waPrev")}</button>
+          <button class="btn btn-outline btn-sm" id="waMark">✅ ${OEG.t("admin.waMark")}</button>
+          <button class="btn btn-outline btn-sm" id="waAgain">🔄 ${OEG.t("admin.waReset")}</button>
+        </div>
+        <div id="waPrevOut" class="help-box" style="display:none;white-space:pre-wrap"></div>
+        <p class="adm-sec-note" style="margin-top:12px">🟢 ${OEG.t("wa.title")} <span id="waCount"></span></p>
+        <div class="file-list" id="waList"><p style="color:var(--muted)">—</p></div>
+        <div id="waMsg" style="margin-top:10px"></div>
       </section>
 
       <!-- File manager -->
@@ -1704,33 +1840,6 @@ OEG.admin = (() => {
       return `<option value="all">${OEG.t("quiz.allGrades")}</option>` + gs.map(g =>
         `<option value="${OEG.esc(g.key)}" ${g.key === cur ? "selected" : ""}>${OEG.esc(OEG.gradeLabel(g.key))}</option>`).join("");
     }
-    async function loadUsers() {
-      const list = $("uList");
-      list.innerHTML = `<p style="color:var(--muted)">…</p>`;
-      const data = await OEG.auth.fetchUsers();
-      const users = data.users || [];
-      list.innerHTML = users.length ? users.map(u => `
-        <div class="file-item"><span>👤</span><code>${OEG.esc(u.email)}</code>
-        <span class="badge">${OEG.esc(u.role || "user")}</span>
-        ${u.grade && u.grade !== "all" ? `<span class="badge">🎓 ${OEG.esc(OEG.gradeLabel(u.grade))}</span>` : ""}
-        ${u.subject && u.subject !== "all" ? `<span class="badge">📘 ${OEG.esc(OEG.subjectLabel(u.subject))}</span>` : ""}
-        <span style="color:var(--muted);font-size:.85rem">${OEG.esc(u.name || "")}</span>
-        <button class="btn btn-outline btn-sm" data-rp="${OEG.esc(u.email)}">${OEG.t("admin.resetPw")}</button>
-        <button class="btn btn-danger btn-sm" data-ru="${OEG.esc(u.email)}">${OEG.t("btn.delete")}</button></div>`).join("")
-        : `<p style="color:var(--muted)">${OEG.t("empty.title")}</p>`;
-      list.querySelectorAll("[data-ru]").forEach(b => b.onclick = async () => {
-        if (!needGh()) return;
-        if (OEG.state.user && OEG.state.user.email === b.dataset.ru) { OEG.toast("⛔"); return; }
-        if (!confirm(b.dataset.ru)) return;
-        try { await OEG.auth.removeUser(b.dataset.ru); loadUsers(); } catch (e) { OEG.toast(e.message); }
-      });
-      list.querySelectorAll("[data-rp]").forEach(b => b.onclick = async () => {
-        if (!needGh()) return;
-        const p = prompt(OEG.t("auth.password") + " — " + b.dataset.rp);
-        if (!p || p.length < 6) return;
-        try { await OEG.auth.resetPassword(b.dataset.rp, p); msg("uMsg", "✅ " + OEG.t("admin.saved"), true); } catch (e) { msg("uMsg", OEG.t("admin.error") + " " + e.message, false); }
-      });
-    }
     $("uAdd").onclick = async () => {
       if (!needGh()) return;
       const email = $("uEmail").value.trim().toLowerCase();
@@ -1741,15 +1850,250 @@ OEG.admin = (() => {
         await OEG.auth.addUser({
           name: $("uName").value.trim() || email.split("@")[0], email, password: $("uPass").value, role: $("uRole").value,
           grade: uHide ? "all" : ($("uGrade") || {}).value || "all",
-          subject: uHide ? "all" : ($("uSubject") || {}).value || "all"
+          subject: uHide ? "all" : ($("uSubject") || {}).value || "all",
+          phone: ($("uPhone") || {}).value || "", verified: ""
         });
         msg("uMsg", "✅ " + OEG.t("admin.saved"), true);
-        ["uName", "uEmail", "uPass"].forEach(id => $(id).value = "");
-        loadUsers();
+        ["uName", "uEmail", "uPass", "uPhone"].forEach(id => { const el = $(id); if (el) el.value = ""; });
+        loadAccounts(); await loadRegs();
       } catch (e) { msg("uMsg", OEG.t("admin.error") + " " + e.message, false); }
     };
-    $("uRefresh").onclick = loadUsers;
-    loadUsers();
+    $("uRefresh").onclick = () => { loadAccounts(); loadRegs(); };
+
+    /* ---------- 👥 ખાતાં + 📋 રજિસ્ટ્રેશન યાદી (નામ · મોબાઈલ · ઈમેઈલ · block/unblock) ---------- */
+    const accSt = { users: [], regs: [], blocks: {}, doc: { users: [], blockedEmails: [] } };
+    const escV = (v) => OEG.esc(v == null ? "" : String(v));
+    const phoneFmt = (p2) => {
+      const d = String(p2 || "").replace(/\D/g, "");
+      if (d.length !== 10) return d || "";
+      const cc = (OEG.verify ? OEG.verify.cfg().phoneCountry : "91") || "91";
+      return "+" + cc + " " + d.slice(0, 5) + " " + d.slice(5);
+    };
+    const isBlocked = (email) => {
+      const em = String(email || "").toLowerCase();
+      const u = (accSt.users || []).find((x) => String(x.email || "").toLowerCase() === em);
+      const b = (accSt.doc.blockedEmails || []).find((x) => String((x && x.email) || x || "").toLowerCase() === em);
+      const st = accSt.blocks[em];
+      return (u && u.blocked) ? String(u.blocked === true ? "" : u.blocked) : (b && (b.reason || " ")) || (st ? st.reason || " " : "");
+    };
+    const roleLab = (r) => { const k = "auth." + (r || "student"); const v = OEG.t(k); return v && v !== k ? v : (r || ""); };
+    const accMatch = (x, q) => !q || [x.name, x.email, x.phone, x.role].join(" ").toLowerCase().indexOf(q) >= 0;
+    function accHead() {
+      return `<thead><tr><th>${OEG.t("admin.tblName")}</th><th>${OEG.t("admin.tblPhone")}</th><th>${OEG.t("admin.tblEmail")}</th>
+        <th>${OEG.t("admin.tblRole")}</th><th>${OEG.t("admin.tblAt")}</th><th>${OEG.t("admin.tblState")}</th><th style="text-align:right">${OEG.t("admin.tblAct")}</th></tr></thead>`;
+    }
+    function stateBadges(x, blocked) {
+      const out = [];
+      if (blocked) out.push(`<span class="badge badge-blk">🚫 ${OEG.t("admin.block")}</span>`);
+      else if (x.verified) out.push(`<span class="badge badge-ok">✅ ${OEG.t("admin.verified")}</span>`);
+      else out.push(`<span class="badge badge-no">⏳ ${OEG.t("admin.unverified")}</span>`);
+      if (x.device) out.push(`<span class="badge badge-dev">💻 ${OEG.t("admin.device")}</span>`);
+      if (x.inUsers) out.push(`<span class="badge">👤</span>`);
+      return out.join(" ");
+    }
+    function accRow(x, kind) {
+      const blocked = !!x.blockedReason;
+      return `<tr class="${blocked ? "blk" : ""}">
+        <td><b>${escV(x.name || "—")}</b></td>
+        <td>${x.phone ? `<a href="https://wa.me/${escV(x.dial || "")}" target="_blank" rel="noopener">${escV(phoneFmt(x.phone))}</a>` : "<span style='color:var(--muted)'>—</span>"}</td>
+        <td><code>${escV(x.email)}</code></td>
+        <td>${escV(roleLab(x.role))}</td>
+        <td>${escV(x.at || x.created || "")}</td>
+        <td>${stateBadges(x, blocked)}</td>
+        <td><div class="acc-act">
+          <button class="btn btn-outline btn-sm" data-wa1="${escV(x.email)}" title="${OEG.t("admin.waOpen")}">🟢</button>
+          ${blocked ? `<button class="btn btn-outline btn-sm" data-unb="${escV(x.email)}" data-k="${kind}">${OEG.t("admin.unblock")}</button>`
+                    : `<button class="btn btn-outline btn-sm" data-blk="${escV(x.email)}" data-k="${kind}">${OEG.t("admin.block")}</button>`}
+          ${kind === "user" ? `<button class="btn btn-outline btn-sm" data-rp="${escV(x.email)}">🔑</button>
+             <button class="btn btn-danger btn-sm" data-ru="${escV(x.email)}">${OEG.t("btn.delete")}</button>`
+             : (x.inUsers ? "" : `<button class="btn btn-brand btn-sm" data-regu="${escV(x.email)}">${OEG.t("admin.regToUser")}</button>`)}
+        </div></td></tr>`;
+    }
+    function bindAccRows(list) {
+      list.querySelectorAll("[data-blk],[data-unb]").forEach((b) => {
+        b.onclick = async () => {
+          const on = b.hasAttribute("data-blk");
+          const email = (on ? b.dataset.blk : b.dataset.unb);
+          let reason = "";
+          if (on) { try { reason = prompt(OEG.t("admin.blockWhy"), "") || ""; } catch (e) { reason = ""; } }
+          try {
+            await OEG.auth.setBlocked(email, on, reason);
+            msg("uMsg", (on ? "🚫 " : "✅ ") + OEG.t(on ? "admin.blockDone" : "admin.unblockDone"), true);
+            await loadAccounts(); await loadRegs();
+          } catch (e) { msg("uMsg", OEG.t("admin.error") + " " + e.message, false); }
+        };
+      });
+      list.querySelectorAll("[data-rp]").forEach((b) => {
+        b.onclick = async () => {
+          const p2 = prompt(OEG.t("auth.password") + " — " + b.dataset.rp);
+          if (!p2 || p2.length < 6) return;
+          try { await OEG.auth.resetPassword(b.dataset.rp, p2); msg("uMsg", "✅ " + OEG.t("admin.saved"), true); } catch (e) { msg("uMsg", OEG.t("admin.error") + " " + e.message, false); }
+        };
+      });
+      list.querySelectorAll("[data-ru]").forEach((b) => {
+        b.onclick = async () => {
+          if (!needGh()) return;
+          if (OEG.state.user && OEG.state.user.email === b.dataset.ru) { OEG.toast("⛔"); return; }
+          if (!confirm(b.dataset.ru)) return;
+          try { await OEG.auth.removeUser(b.dataset.ru); await loadAccounts(); } catch (e) { OEG.toast(e.message); }
+        };
+      });
+      list.querySelectorAll("[data-wa1]").forEach((b) => {
+        b.onclick = () => {
+          const em = b.dataset.wa1, u = (accSt.users || []).concat(accSt.regs || []).find((x) => String(x.email).toLowerCase() === em.toLowerCase());
+          const txt = "📩 " + OEG.siteName() + " — " + (u && u.name ? u.name : "") + "\n" + (u && u.email ? u.email : "") + (u && u.phone ? "\n📱 +" + String(u.phone) : "");
+          window.open(OEG.notify.waLink(txt, ""), "_blank", "noopener");
+        };
+      });
+      list.querySelectorAll("[data-regu]").forEach((b) => {
+        b.onclick = async () => {
+          if (!needGh()) return;
+          const em = b.dataset.regu.toLowerCase();
+          const rec = (accSt.regs || []).find((x) => String(x.email).toLowerCase() === em);
+          let pass = ($("regPass") || {}).value || "";
+          if (pass.length < 6) { try { pass = prompt(OEG.t("auth.password") + " (≥6)", "") || ""; } catch (e) { pass = ""; } }
+          if (pass.length < 6) { msg("regMsg", "❌ " + OEG.t("auth.password"), false); return; }
+          try {
+            await OEG.auth.addRegAsUser(rec, pass);
+            msg("regMsg", "✅ " + OEG.t("admin.saved") + " · " + escV(em), true);
+            await loadAccounts(); await loadRegs();
+          } catch (e) { msg("regMsg", OEG.t("admin.error") + " " + e.message, false); }
+        };
+      });
+    }
+    async function loadAccounts() {
+      const doc = await OEG.auth.fetchUsers();
+      accSt.doc = doc; accSt.users = doc.users || [];
+      try { accSt.blocks = await OEG.auth.blockList(); } catch (e) { accSt.blocks = {}; }
+      paintAcc();
+    }
+    function paintAcc() {
+      const list = $("uTable"); if (!list) return;
+      const q = (($("accQ") || {}).value || "").trim().toLowerCase();
+      const rows = accSt.users.map((u) => {
+        const d = String(u.phone || "").replace(/\D/g, "");
+        return Object.assign({}, u, {
+          at: u.created || "", phone: d, dial: "91" + d.slice(-10),
+          blockedReason: isBlocked(u.email), inUsers: 1
+        });
+      }).filter((x) => accMatch(x, q));
+      const nblk = rows.filter((x) => x.blockedReason).length;
+      const sum = $("accSum");
+      if (sum) sum.innerHTML = `<span>👥 ${rows.length}</span><span>🚫 ${nblk}</span><span>✅ ${rows.filter((x) => x.verified && !x.blockedReason).length} ${OEG.t("admin.verified")}</span>`;
+      list.innerHTML = accHead() + "<tbody>" + (rows.length ? rows.map((x) => accRow(x, "user")).join("")
+        : `<tr><td colspan="7" style="color:var(--muted);padding:14px">${OEG.t("empty.title")}</td></tr>`) + "</tbody>";
+      bindAccRows(list);
+    }
+    async function loadRegs() {
+      const r = await OEG.auth.fetchRegs();
+      accSt.regs = r.all || [];
+      paintRegs();
+    }
+    function paintRegs() {
+      const list = $("regTable"); if (!list) return;
+      const q = (($("accQ") || {}).value || "").trim().toLowerCase();
+      const emails = {};
+      (accSt.users || []).forEach((u) => { emails[String(u.email).toLowerCase()] = 1; });
+      const rows = accSt.regs.map((x) => {
+        const d = String(x.phone || "").replace(/\D/g, "");
+        const em = String(x.email || "").toLowerCase();
+        return Object.assign({}, x, {
+          phone: d, dial: "91" + d.slice(-10), inUsers: emails[em] ? 1 : 0,
+          blockedReason: isBlocked(em), device: x.device ? 1 : 0
+        });
+      }).filter((x) => accMatch(x, q));
+      const dev = rows.filter((x) => x.device).length;
+      const sum = $("regSum");
+      if (sum) sum.innerHTML = `<span>📋 ${rows.length} ${OEG.t("admin.regCount")}</span><span>💻 ${dev}</span>`
+        + `<span>✅ ${rows.filter((x) => x.verified).length} ${OEG.t("admin.verified")}</span>`
+        + `<span>🚫 ${rows.filter((x) => x.blockedReason).length}</span>`;
+      list.innerHTML = accHead() + "<tbody>" + (rows.length ? rows.map((x) => accRow(x, "reg")).join("")
+        : `<tr><td colspan="7" style="color:var(--muted);padding:14px">${OEG.t("admin.regEmpty")}</td></tr>`) + "</tbody>";
+      bindAccRows(list);
+    }
+    if ($("accQ")) $("accQ").oninput = () => { paintAcc(); paintRegs(); };
+    if ($("regRefresh")) $("regRefresh").onclick = async () => { await loadRegs(); msg("regMsg", "🔄 " + OEG.t("admin.saved"), true); };
+    if ($("regSave")) $("regSave").onclick = async () => {
+      if (!needGh()) return;
+      const items = accSt.regs.filter((x) => !x.device).concat(accSt.regs.filter((x) => x.device))
+        .map((x) => ({ name: x.name || "", email: x.email, phone: x.phone || "", role: x.role || "student", grade: x.grade || "all", subject: x.subject || "all", at: x.at || "", verified: x.verified || "" }));
+      try {
+        await OEG.auth.saveRegs(items);
+        msg("regMsg", "✅ " + OEG.t("admin.saved") + " · " + items.length + " " + OEG.t("admin.regCount"), true);
+        await loadRegs();
+      } catch (e) { msg("regMsg", OEG.t("admin.error") + " " + e.message, false); }
+    };
+    if ($("regSheet")) $("regSheet").onclick = async () => {
+      try {
+        const remote = await OEG.auth.fetchRegsRemote();
+        if (!remote.length) { msg("regMsg", "ℹ️ " + OEG.t("admin.regEmpty"), false); return; }
+        accSt.regs = remote.concat(accSt.regs.filter((x) => !remote.some((y) => String(y.email).toLowerCase() === String(x.email).toLowerCase())));
+        paintRegs();
+        msg("regMsg", "✅ " + remote.length + " " + OEG.t("admin.regCount"), true);
+      } catch (e) { msg("regMsg", OEG.t("admin.error") + " " + e.message, false); }
+    };
+    if ($("regAll")) $("regAll").onclick = async () => {
+      if (!needGh()) return;
+      let pass = ($("regPass") || {}).value || "";
+      if (pass.length < 6) { try { pass = prompt(OEG.t("auth.password") + " (≥6)", "") || ""; } catch (e) { pass = ""; } }
+      if (pass.length < 6) { msg("regMsg", "❌ " + OEG.t("auth.password"), false); return; }
+      const emails = {};
+      (accSt.users || []).forEach((u) => { emails[String(u.email).toLowerCase()] = 1; });
+      const todo = accSt.regs.filter((x) => x.email && !emails[String(x.email).toLowerCase()]);
+      let done = 0, bad = "";
+      for (const rec of todo) {
+        try { await OEG.auth.addRegAsUser(rec, pass); done++; } catch (e) { bad = e.message; }
+      }
+      msg("regMsg", (done ? "✅ " + done + " · " : "") + (bad ? "⚠️ " + bad : OEG.t("admin.saved")), !bad);
+      await loadAccounts(); await loadRegs();
+    };
+    if ($("accCsv")) $("accCsv").onclick = () => {
+      const rows = [["name", "mobile", "email", "role", "date", "state"]];
+      accSt.regs.forEach((x) => rows.push([x.name || "", "+" + String(x.phone || "").replace(/\D/g, ""), x.email || "", x.role || "", x.at || "", x.verified ? "verified" : "unverified"]));
+      accSt.users.forEach((x) => { if (!accSt.regs.some((r2) => String(r2.email).toLowerCase() === String(x.email).toLowerCase())) rows.push([x.name || "", "+" + String(x.phone || "").replace(/\D/g, ""), x.email || "", x.role || "", x.created || "", x.blocked ? "blocked" : "active"]); });
+      const csv = rows.map((r2) => r2.map((v) => '"' + String(v == null ? "" : v).replace(/"/g, '""') + '"').join(",")).join("\n");
+      try {
+        const a2 = document.createElement("a");
+        a2.href = URL.createObjectURL(new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8" }));
+        a2.download = "oeg-registrations.csv";
+        document.body.appendChild(a2); a2.click(); a2.remove();
+        msg("regMsg", "📋 CSV", true);
+      } catch (e) { OEG.toast(e.message); }
+    };
+    loadAccounts(); loadRegs();
+
+    /* ---------- 🔐 રજિસ્ટ્રેશન નાં નિયમ (data/site-config.json → auth) ---------- */
+    (function rules() {
+      const ac = Object.assign({ emailDomains: "gmail.com", requirePhone: true, checkPatterns: true, googleClientId: "", requireGoogle: false, otpEndpoint: "", webhook: "", webhookList: "" }, (OEG.state.config || {}).auth || {});
+      $("arDom").value = ac.emailDomains || "";
+      $("arGid").value = ac.googleClientId || "";
+      $("arOtp").value = ac.otpEndpoint || "";
+      $("arHook").value = ac.webhook || "";
+      $("arHookList").value = ac.webhookList || "";
+      $("arPhoneReq").checked = ac.requirePhone !== false;
+      $("arPattern").checked = ac.checkPatterns !== false;
+      $("arGReq").checked = !!ac.requireGoogle;
+      $("arSave").onclick = async () => {
+        if (!needGh()) return;
+        try {
+          await patchConfig((c) => {
+            c.auth = {
+              emailDomains: $("arDom").value.trim() || "gmail.com",
+              requirePhone: $("arPhoneReq").checked,
+              checkPatterns: $("arPattern").checked,
+              phoneCountry: "91", phoneLen: 10,
+              googleClientId: $("arGid").value.trim(),
+              requireGoogle: $("arGReq").checked,
+              otpEndpoint: $("arOtp").value.trim(),
+              webhook: $("arHook").value.trim(),
+              webhookList: $("arHookList").value.trim()
+            };
+          }, "OEG: registration rules");
+          dirty();
+          msg("arMsg", "✅ " + OEG.t("admin.saved"), true);
+        } catch (e) { msg("arMsg", OEG.t("admin.error") + " " + e.message, false); }
+      };
+    })();
 
     async function loadFiles() {
       const list = $("fmList");
@@ -2397,6 +2741,184 @@ OEG.admin = (() => {
     if ($("itType")) $("itType").onchange = () => renderItems(root);
     renderItems(root);
 
+    /* ---------- 📣 સમાચાર પટ્ટી · 🔔 સૂચના · 🟢 વૉટ્સએપ પ્રસાર ---------- */
+    (function newsPanel() {
+      const NCFG = Object.assign({}, OEG.news.DEF, (OEG.state.config || {}).news || {});
+      const NT = Object.assign({}, OEG.notify.DEF, (OEG.state.config || {}).notify || {});
+      const tri = (id) => ({
+        gu: ($(id).value || "").trim(), hi: ($(id + "Hi").value || "").trim(), en: ($(id + "En").value || "").trim()
+      });
+      const lab = (o) => (o && typeof o === "object" ? o : { gu: String(o || ""), hi: "", en: "" });
+
+      /* --- 📰 પટ્ટી --- */
+      $("nwOn").checked = NCFG.enabled !== false;
+      $("nwAuto").checked = NCFG.autoPosts !== false;
+      $("nwPause").checked = NCFG.pauseOnHover !== false;
+      const nl = lab(NCFG.label);
+      $("nwLabel").value = nl.gu || ""; $("nwLabelHi").value = nl.hi || ""; $("nwLabelEn").value = nl.en || "";
+      $("nwSpeed").value = NCFG.speed || 46;
+      $("nwCount").value = NCFG.autoCount || 6;
+      $("nwDays").value = NCFG.autoDays || 0;
+      $("nwTypes").value = NCFG.autoTypes || "post";
+      $("nwItems").value = (NCFG.items || []).map((x) => (typeof x === "string" ? x : [x.text || x.title || "", x.url || ""].filter(Boolean).join(" | "))).join("\n");
+      $("nwSave").onclick = async () => {
+        if (!needGh()) return;
+        const items = $("nwItems").value.split(/\r?\n/).map((l) => l.trim()).filter(Boolean).map((l) => {
+          const p2 = l.split("|");
+          return { text: (p2[0] || "").trim(), url: (p2[1] || "").trim() };
+        }).filter((x) => x.text);
+        try {
+          await patchConfig((c) => {
+            c.news = {
+              enabled: $("nwOn").checked, label: tri("nwLabel"), speed: Number($("nwSpeed").value) || 46,
+              autoPosts: $("nwAuto").checked, autoTypes: $("nwTypes").value.trim() || "post",
+              autoDays: Number($("nwDays").value) || 0, autoCount: Number($("nwCount").value) || 6,
+              pauseOnHover: $("nwPause").checked, dismissible: true, items
+            };
+          }, "OEG: news strip");
+          dirty();
+          OEG.news.clearDismiss();
+          try { OEG.news.render(); } catch (e) {}
+          const n2 = (OEG.news.items() || []).length;
+          msg("nwMsg", "✅ " + OEG.t("admin.saved") + " · 📰 " + n2 + " lines · " + ($("nwOn").checked ? OEG.t("admin.yes") : OEG.t("admin.no")), true);
+        } catch (e) { msg("nwMsg", OEG.t("admin.error") + " " + e.message, false); }
+      };
+      $("nwTest").onclick = () => {
+        OEG.news.clearDismiss();
+        try { OEG.news.render(); } catch (e) {}
+        const el = document.getElementById("newsStrip");
+        if (el) { el.scrollIntoView({ behavior: "smooth", block: "start" }); msg("nwMsg", "👀 " + OEG.t("admin.newsTest"), true); }
+        else msg("nwMsg", "⚠️ " + OEG.t("admin.newsOn"), false);
+      };
+      $("nwReset").onclick = () => { $("nwItems").value = ""; msg("nwMsg", "🧹", true); };
+
+      /* --- 🔔 સૂચના --- */
+      $("ntOn").checked = NT.enabled !== false;
+      $("ntBell").checked = NT.bell !== false;
+      $("ntPosts").checked = NT.onNewPosts !== false;
+      $("ntAsk").checked = NT.askOnce !== false;
+      $("ntPoll").value = NT.pollMinutes || 15;
+      $("ntDays").value = NT.days || 30;
+      const permLine = () => {
+        const el = $("ntPerm"); if (!el) return;
+        const pm = OEG.notify.permission();
+        const txt = pm === "granted" ? "✅ " + OEG.t("n.on") : pm === "denied" ? "⛔ " + OEG.t("n.denied") : "⚪ " + OEG.t("n.off");
+        el.textContent = OEG.t("admin.notiPerm") + " " + txt + (OEG.notify.isHttps() ? "" : " · https");
+      };
+      const saveNoti = async (extra, okMsg, mid) => {
+        if (!needGh()) return false;
+        try {
+          await patchConfig((c) => {
+            c.notify = Object.assign({}, c.notify || {}, {
+              enabled: $("ntOn").checked, bell: $("ntBell").checked, onNewPosts: $("ntPosts").checked,
+              askOnce: $("ntAsk").checked, pollMinutes: Number($("ntPoll").value) || 15, days: Number($("ntDays").value) || 30
+            }, extra || {});
+          }, "OEG: notifications");
+          dirty();
+          try { OEG.notify.start(); } catch (e) {}
+          try { OEG.notify.renderBell(); } catch (e) {}
+          if (okMsg) msg(mid, "✅ " + OEG.t("admin.saved") + (extra ? " · " + okMsg : ""), true);
+          return true;
+        } catch (e) { msg(mid, OEG.t("admin.error") + " " + e.message, false); return false; }
+      };
+      ["ntOn", "ntBell", "ntPosts", "ntAsk"].forEach((id) => { $(id).onchange = () => saveNoti(null, "", "ntMsg"); });
+      $("ntPoll").onchange = () => saveNoti(null, "", "ntMsg");
+      $("ntDays").onchange = () => saveNoti(null, "", "ntMsg");
+      $("ntOn2").onclick = async () => {
+        const r = await OEG.notify.enable();
+        msg("ntMsg", r.ok ? "✅ " + OEG.t("n.onOk") : "⛔ " + OEG.t(r.why === "unsupported" ? "n.unsupported" : "n.denied"), r.ok);
+        permLine();
+      };
+      $("ntTest").onclick = () => OEG.notify.show({ id: "admtest" + Date.now(), title: OEG.t("n.title"), text: OEG.t("n.testText") });
+      async function noticesDoc() { return await OEG.data.readJson(OEG.notify.FILE + "?ts=" + Date.now(), { v: 1, items: [] }); }
+      async function renderNotices() {
+        const box = $("ntList"); if (!box) return;
+        let doc = { v: 1, items: [] };
+        try { doc = await noticesDoc(); } catch (e) {}
+        const items = (doc.items || []).slice(0, 12);
+        box.innerHTML = items.length ? items.map((x) => {
+          const tg = OEG.langField(x.title) || OEG.langField(x.text) || "";
+          return `<div class="file-item"><span>🔔</span><b style="font-size:.86rem">${OEG.esc(tg)}</b>
+            <span style="color:var(--muted);font-size:.82rem;flex:1 1 200px">${OEG.esc(String(OEG.langField(x.text) || "").slice(0, 90))}</span>
+            <code>${OEG.esc(x.id || "")}</code><span style="color:var(--muted);font-size:.78rem">${OEG.esc(String(x.at || "").slice(0, 10))}</span>
+            <button class="btn btn-danger btn-sm" data-ndel="${OEG.esc(x.id || "")}">${OEG.t("admin.notiDel")}</button></div>`;
+        }).join("") : `<p style="color:var(--muted)">${OEG.t("n.empty")}</p>`;
+        box.querySelectorAll("[data-ndel]").forEach((b) => {
+          b.onclick = async () => {
+            if (!needGh()) return;
+            try {
+              const d2 = await noticesDoc();
+              d2.items = (d2.items || []).filter((x) => String(x.id) !== b.dataset.ndel);
+              await OEG.data.writeJson(OEG.notify.FILE, { v: 1, updated: new Date().toISOString().slice(0, 10), items: d2.items }, "OEG: notice del " + b.dataset.ndel);
+              renderNotices(); msg("ntMsg", "🗑 " + OEG.t("admin.saved"), true);
+            } catch (e) { msg("ntMsg", OEG.t("admin.error") + " " + e.message, false); }
+          };
+        });
+      }
+      $("ntSend").onclick = async () => {
+        if (!needGh()) return;
+        const title = tri("ntTitle"), text = ($("ntText").value || "").trim();
+        if (!title.gu && !title.hi && !title.en && !text) { msg("ntMsg", "❌ " + OEG.t("admin.notiTextL"), false); return; }
+        try {
+          const d2 = await noticesDoc();
+          const id = "n" + Date.now().toString(36);
+          d2.items = [{ id, title: title, text: text, url: ($("ntUrl").value || "").trim(), at: new Date().toISOString().slice(0, 10), level: "notice" }]
+            .concat((d2.items || []).slice(0, 11));
+          await OEG.data.writeJson(OEG.notify.FILE, { v: 1, updated: new Date().toISOString().slice(0, 10), items: d2.items }, "OEG: notice " + id);
+          dirty();
+          renderNotices();
+          try { OEG.notify.markRead(); await OEG.notify.check("silent"); } catch (e) {}
+          msg("ntMsg", "📣 ✅ " + OEG.t("admin.saved") + " · " + OEG.t("n.on"), true);
+          $("ntTitle").value = ""; $("ntTitleHi").value = ""; $("ntTitleEn").value = ""; $("ntText").value = ""; $("ntUrl").value = "";
+        } catch (e) { msg("ntMsg", OEG.t("admin.error") + " " + e.message, false); }
+      };
+      renderNotices(); permLine();
+
+      /* --- 🟢 વૉટ્સએપ --- */
+      $("waNum").value = NT.waNumber || "";
+      $("waWho").value = NT.waAuto || "admin";
+      $("waTpl").value = NT.waTemplate || OEG.notify.TPL_DEFAULT;
+      function renderWa() {
+        const box = $("waList"); if (!box) return;
+        const list = OEG.notify.pending().slice(0, 14);
+        const cnt = $("waCount");
+        if (cnt) cnt.textContent = list.length ? "· " + list.length + " 🆕" : "";
+        box.innerHTML = list.length ? list.map((it) => `<div class="file-item"><span>${OEG.typeIcon(it.type) || "📄"}</span>
+            <b style="font-size:.86rem">${OEG.esc(OEG.title(it))}</b>
+            <span style="color:var(--muted);font-size:.8rem">${OEG.esc(OEG.typeLabel(it.type))}</span>
+            <button class="btn btn-brand btn-sm" data-was="${OEG.esc(it.id)}">${OEG.t("admin.waOpen")}</button>
+            <button class="btn btn-outline btn-sm" data-wask="${OEG.esc(it.id)}">✅</button></div>`).join("")
+          : `<p style="color:var(--muted)">${OEG.t("admin.waNone")}</p>`;
+        box.querySelectorAll("[data-was]").forEach((b) => {
+          b.onclick = () => {
+            const it = OEG.byId(b.dataset.was); if (!it) return;
+            OEG.notify.sendOne(it, $("waNum").value.trim());
+            msg("waMsg", "🟢 " + OEG.t("wa.done"), true);
+            renderWa();
+          };
+        });
+        box.querySelectorAll("[data-wask]").forEach((b) => {
+          b.onclick = () => { OEG.notify.markSent(b.dataset.wask); renderWa(); };
+        });
+      }
+      $("waSave").onclick = async () => {
+        const tpl = $("waTpl").value;
+        if (!await saveNoti({ waNumber: $("waNum").value.replace(/[^\d+]/g, ""), waAuto: $("waWho").value, waTemplate: tpl }, "🟢", "waMsg")) return;
+        renderWa();
+      };
+      $("waPrev").onclick = () => {
+        const out = $("waPrevOut");
+        const it = OEG.notify.pending()[0] || (OEG.state.catalog || [])[0];
+        if (!it) { out.textContent = OEG.t("admin.waNone"); out.style.display = "block"; return; }
+        out.textContent = OEG.notify.waText(it);
+        out.style.display = "block";
+      };
+      $("waMark").onclick = () => { OEG.notify.markAll(OEG.notify.pending().map((x) => x.id)); renderWa(); msg("waMsg", "✅ " + OEG.t("admin.waMark"), true); };
+      $("waAgain").onclick = () => { OEG.notify.resetSent(); renderWa(); msg("waMsg", "🔄", true); };
+      renderWa();
+
+    })();
+
     /* ---------- 🔄 પેનલ-વચ્ચે જોડાણ: ઉમેરો/કાઢી નાખો તરત જ બધી યાદીમાં દેખાય ---------- */
     function renderVis() {
       const box = $("stVis");
@@ -2493,6 +3015,44 @@ OEG.admin = (() => {
       keep("ceGrade", gradeOpts("all"));
     }
 
+    /* ---------- 🖼 લોગો ચઢાવો (repo માં uploads/branding/) + લાઈવ પૂર્વદર્શન ---------- */
+    const logoPrev = (v) => {
+      const el = $("stLogoPrev"); if (!el) return;
+      const url = String(v || "").trim();
+      el.innerHTML = url
+        ? `<img src="${OEG.esc(/^https?:/i.test(url) ? url : OEG.base(url))}" alt="" style="height:34px;vertical-align:middle;border:1px solid var(--border);border-radius:8px;padding:2px;background:var(--surface-2)"> <code>${OEG.esc(url)}</code>`
+        : "—";
+    };
+    if ($("stLogoFile")) {
+      logoPrev(($("stLogoUrl") || {}).value || "");
+      $("stLogoFile").onchange = () => {
+        const f = $("stLogoFile").files[0];
+        logoPrev(f ? (f.name + " (" + Math.round(f.size / 1024) + " KB)") : "");
+        if (f && !/^image\//.test(f.type || "")) msg("siteMsg", "❌ PNG / JPG / SVG / WEBP", false);
+      };
+    }
+    if ($("stLogoUrl")) $("stLogoUrl").oninput = (e) => logoPrev(e.target.value);
+    if ($("stLogoUp")) $("stLogoUp").onclick = uploadLogo;
+    if ($("stLogoClear")) $("stLogoClear").onclick = () => { $("stLogoUrl").value = ""; logoPrev(""); msg("siteMsg", "🧹 ઈમોજિ પર પાછા — 💾 સેવ કરો", true); };
+    async function uploadLogo() {
+      if (!needGh()) return;
+      const f = ($("stLogoFile") || {}).files && $("stLogoFile").files[0];
+      if (!f) { msg("siteMsg", "❌ " + OEG.t("admin.logoUpload"), false); return; }
+      if (f.size > 900 * 1024) { msg("siteMsg", "❌ 900 KB from vadu nathi", false); return; }
+      const btn = $("stLogoUp"); btn.disabled = true; btn.textContent = "⏳";
+      try {
+        const buf = await f.arrayBuffer();
+        const b64 = btoa(String.fromCharCode.apply(null, new Uint8Array(buf)));
+        const ext = (String(f.name).split(".").pop() || "png").toLowerCase();
+        const path = "uploads/branding/logo." + (ext === "jpeg" ? "jpg" : ext);
+        await OEG.gh.uploadFile(path, b64, "OEG: site logo");
+        $("stLogoUrl").value = path;
+        logoPrev(path);
+        msg("siteMsg", "✅ " + OEG.t("admin.saved") + " · " + path + " · 💾 " + OEG.t("btn.save"), true);
+      } catch (e) { msg("siteMsg", OEG.t("admin.error") + " " + e.message, false); }
+      btn.disabled = false; btn.textContent = "🖼 " + OEG.t("admin.logoUpload");
+    }
+
     /* ---------- ⚙️ Site settings ---------- */
     if ($("siteSave")) $("siteSave").onclick = async () => {
       if (!needGh()) return;
@@ -2522,11 +3082,20 @@ OEG.admin = (() => {
             tagline: tag, heroTitle: hero, heroSub: hsub, footerAbout: about,
             footerNote: $("stNote").value.trim(),
             viewersBase: Math.max(0, Math.round(Number($("stVisitors").value) || 0)),
+            logoUrl: ($("stLogoUrl").value || "").trim().replace(/^\/+/, ""),
+            counts: {
+              student: Math.max(0, Math.round(Number($("stCntSt").value) || 0)),
+              teacher: Math.max(0, Math.round(Number($("stCntTe").value) || 0)),
+              principal: Math.max(0, Math.round(Number($("stCntPr").value) || 0)),
+              other: Math.max(0, Math.round(Number($("stCntOt").value) || 0))
+            },
             showSearch: $("stSearch").checked, antiCopy: $("stGuard").checked,
             sections: sections
           });
         }, "site: settings");
         dirty();
+        try { if (OEG.paintLogo) OEG.paintLogo(); } catch (e) {}
+        try { if (OEG.paintCounts) OEG.paintCounts(); } catch (e) {}
         notify("siteMsg", "✅ " + OEG.t("admin.saved") + " · " + OEG.t("admin.savedSite"), true);
       } catch (e) { msg("siteMsg", OEG.t("admin.error") + " " + e.message, false); }
       btn.disabled = false; btn.textContent = "💾 " + OEG.t("btn.save");

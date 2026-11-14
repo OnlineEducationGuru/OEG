@@ -3,5 +3,9 @@ Allow: /
 Disallow: /#/admin
 Disallow: /admin
 Disallow: /*?shareBase=
+Disallow: /data/users.json
+Disallow: /data/registrations.json
+Disallow: /data/notice.json
+Disallow: /sw.js
 
 Sitemap: https://onlineeducationguru.github.io/OEG/sitemap.xml

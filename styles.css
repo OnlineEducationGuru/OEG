@@ -42,8 +42,8 @@ h1,h2,h3,h4{font-family:var(--font-display);line-height:1.25;font-weight:700}
 .hidden{display:none!important}
 
 /* ---------- Header ---------- */
-.header{position:sticky;top:0;z-index:200;height:var(--header-h);background:color-mix(in srgb,var(--surface) 88%,transparent);backdrop-filter:blur(14px);border-bottom:1px solid var(--border)}
-.header-inner{max-width:1400px;margin:0 auto;height:100%;display:flex;align-items:center;gap:14px;padding:0 18px}
+.header{position:sticky;top:0;z-index:200;height:auto;min-height:56px;background:color-mix(in srgb,var(--surface) 88%,transparent);backdrop-filter:blur(14px);border-bottom:1px solid var(--border)}
+.header-inner{max-width:1400px;margin:0 auto;height:auto;display:flex;align-items:center;gap:14px;padding:7px 18px}
 .logo{display:flex;align-items:center;gap:10px;color:var(--text);font-family:var(--font-display);font-weight:800;font-size:1.25rem;white-space:nowrap}
 .logo:hover{text-decoration:none}
 .logo-mark{width:42px;height:42px;border-radius:12px;background:var(--grad);display:grid;place-items:center;color:#fff;font-size:1.3rem;box-shadow:var(--shadow)}
@@ -342,7 +342,7 @@ h1,h2,h3,h4{font-family:var(--font-display);line-height:1.25;font-weight:700}
   .search-box input{width:150px}
   .search-box input:focus{width:190px}
 }
-@media(max-width:1280px){.nav-desktop{display:none}}
+@media(max-width:1023px){.nav-desktop{display:none}}
 @media(max-width:640px){.nav-fly{min-width:180px}}
 @media(max-width:640px){
   .search-box input{width:130px}.search-box input:focus{width:170px}
@@ -695,7 +695,6 @@ body.allow-select img, body.allow-select video { -webkit-user-drag: auto; }
 .vw-row code{flex:1 1 auto;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .vw-row .vw-n{font-weight:800;color:var(--brand);white-space:nowrap}
 .vw-ic{font-size:1rem}
-.qz-cat-card.qz-soon{opacity:.72;border-style:dashed}
 .qz-cat-card.qz-soon .qz-go{color:var(--muted)}
 
 /* ================= 🎯 પ્રેક્ષક (audience) cascade + taxonomy reorder ================= */
@@ -762,3 +761,131 @@ body.allow-select img, body.allow-select video { -webkit-user-drag: auto; }
 /* ⚡ પોસ્ટર તરત લોડ થાય (પ્લે નો સમય ઘટે) — .yt-poster નું img હવે eager+fhd */
 .video-card .yt-poster img{transition:transform .35s ease}
 .video-card:hover .yt-poster img{transform:scale(1.045)}
+
+/* ============================================================
+   📰 બ્રેકિંગ ન્યૂઝ સ્ટ્રીપ  ·  🔔 સૂચના  ·  🟢 વૉટ્સએપ પટ  ·  👥 ખાતાં યાદી
+   ============================================================ */
+:root{--strip-h:30px}
+body.has-news{--header-h:calc(68px + var(--strip-h))}
+body.has-news .header{height:auto}
+body.has-news .header-inner{height:auto;padding-top:7px;padding-bottom:7px}
+.news-strip{position:relative;height:var(--strip-h);display:flex;align-items:center;background:linear-gradient(90deg,#b91c1c,#ef4444 45%,#f59e0b);color:#fff;font-size:.85rem;overflow:hidden;border-bottom:1px solid rgba(0,0,0,.18)}
+[data-theme="dark"] .news-strip{background:linear-gradient(90deg,#7f1d1d,#b91c1c 48%,#b45309)}
+.news-strip .ns-in{display:flex;align-items:center;gap:10px;width:100%;max-width:1400px;margin:0 auto;padding:0 10px 0 14px;min-width:0}
+.ns-tag{flex-shrink:0;font-weight:800;font-size:.72rem;letter-spacing:.06em;text-transform:uppercase;background:rgba(0,0,0,.26);padding:3px 9px;border-radius:999px;white-space:nowrap}
+.ns-vp{flex:1 1 auto;min-width:0;overflow:hidden;-webkit-mask-image:linear-gradient(90deg,transparent,#000 24px,#000 calc(100% - 24px),transparent);mask-image:linear-gradient(90deg,transparent,#000 24px,#000 calc(100% - 24px),transparent)}
+.ns-run{display:inline-flex;white-space:nowrap;will-change:transform;animation:oeg-ticker 34s linear infinite}
+.ns-seq{display:inline-flex;align-items:center;padding-right:46px}
+.ns-item{color:#fff;font-weight:700;display:inline-flex;align-items:center;gap:6px;text-decoration:none}
+.ns-item:hover{text-decoration:underline;color:#fffef2}
+.ns-ic{opacity:.92}
+.ns-sep{opacity:.55;margin:0 16px;font-size:.62rem}
+.ns-x{flex-shrink:0;border:none;background:rgba(255,255,255,.18);color:#fff;width:20px;height:20px;border-radius:50%;font-size:.72rem;line-height:1;display:grid;place-items:center}
+.ns-x:hover{background:rgba(0,0,0,.34)}
+@keyframes oeg-ticker{from{transform:translateX(0)}to{transform:translateX(-50%)}}
+@media (prefers-reduced-motion: reduce){.ns-run{animation:none!important}.ns-vp{overflow:auto;-webkit-mask-image:none;mask-image:none}}
+@media (max-width:600px){.news-strip{font-size:.8rem}.ns-tag{display:none}}
+
+/* ---------- 🔔 સૂચના ની ઘંટડી ---------- */
+.n-bell{position:relative}
+.n-bell .n-dot{position:absolute;top:-1px;right:-2px;min-width:16px;height:16px;padding:0 3px;border-radius:999px;background:#ef4444;color:#fff;font-size:.62rem;font-weight:800;font-style:normal;display:grid;place-items:center;line-height:1}
+.n-panel{position:absolute;right:10px;top:70px;width:min(360px,94vw);background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm);box-shadow:var(--shadow-lg);z-index:260;display:none;overflow:hidden}
+.n-panel.open{display:block}
+.np-head{display:flex;align-items:center;gap:8px;padding:10px 12px;border-bottom:1px solid var(--border);font-weight:800;font-size:.92rem}
+.np-head .btn{margin-left:auto}
+.np-list{max-height:min(58vh,420px);overflow:auto}
+.np-item{display:block;padding:10px 12px;border-bottom:1px solid var(--border);color:var(--text);text-decoration:none}
+.np-item:hover{background:var(--surface-2);text-decoration:none}
+.np-item b{display:block;font-size:.88rem}
+.np-item span{display:block;color:var(--muted);font-size:.8rem;line-height:1.45}
+.np-item small{color:var(--muted);font-size:.72rem}
+.np-none{padding:18px 12px;color:var(--muted);font-size:.86rem;text-align:center}
+.np-foot{display:flex;align-items:center;gap:8px;padding:8px 12px;background:var(--surface-2);font-size:.76rem;color:var(--muted)}
+.np-foot span:last-child{margin-left:auto;display:flex;gap:6px}
+
+/* ---------- 🟢 નવી પોસ્ટ ⇒ વૉટ્સએપ પટ ---------- */
+.wa-chip{position:fixed;right:14px;bottom:78px;z-index:240;width:min(310px,92vw);background:var(--surface);border:1px solid var(--border);border-left:4px solid #25d366;border-radius:var(--radius-sm);box-shadow:var(--shadow-lg);padding:10px 12px;font-size:.86rem}
+.wa-chip b{display:block;margin-bottom:6px}
+.wa-chip ul{list-style:none;display:grid;gap:5px;max-height:190px;overflow:auto;margin:0 0 8px}
+.wa-chip a{color:var(--text);text-decoration:none;display:flex;gap:6px;align-items:center;padding:4px 6px;border-radius:8px;background:var(--surface-2)}
+.wa-chip a:hover{text-decoration:none;filter:brightness(.97)}
+.wa-row{display:flex;gap:6px;align-items:center}
+.wa-row .btn-sm{padding:5px 9px}
+@media (max-width:600px){.wa-chip{bottom:70px;right:8px}}
+
+/* ---------- 👥 ખાતાં / રજિસ્ટ્રેશન યાદી (Admin) ---------- */
+.acc-tools{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin:10px 0 12px}
+.acc-tools .btn-sm{padding:5px 10px}
+.acc-search{flex:1 1 190px;min-width:140px;border:1px solid var(--border);border-radius:10px;padding:7px 10px;font-size:.86rem;background:var(--surface);color:var(--text)}
+.acc-tbl{width:100%;border-collapse:collapse;font-size:.85rem}
+.acc-tbl th,.acc-tbl td{text-align:left;padding:8px 6px;border-bottom:1px solid var(--border);vertical-align:top}
+.acc-tbl th{position:sticky;top:0;background:var(--surface-2);font-size:.74rem;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);z-index:1}
+.acc-tbl tr.blk td{background:rgba(239,68,68,.09)}
+.acc-tbl tr.new td{background:var(--glow-soft)}
+.acc-tbl td .btn-sm{padding:4px 8px;font-size:.76rem}
+.acc-tbl .acc-act{white-space:nowrap;display:flex;gap:4px;flex-wrap:wrap;justify-content:flex-end}
+.acc-tbl code{font-size:.8rem}
+.acc-wrap{max-height:min(60vh,560px);overflow:auto;border:1px solid var(--border);border-radius:12px}
+.acc-sum{display:flex;gap:8px;flex-wrap:wrap;margin:2px 0 10px}
+.acc-sum span{background:var(--surface-2);border:1px solid var(--border);border-radius:999px;padding:3px 10px;font-size:.78rem;font-weight:700}
+.badge-ok{background:var(--green-bg);color:var(--green-fg)}
+.badge-no{background:rgba(245,158,11,.16);color:#b45309}
+.badge-blk{background:rgba(239,68,68,.14);color:#b91c1c}
+.badge-dev{background:var(--surface-2);color:var(--muted)}
+
+/* ---------- ✅ ફોર્મ ની ચકાસણી (રજિસ્ટ્રેશન) ---------- */
+.f-err{display:none;margin-top:5px;font-size:.8rem;font-weight:700;color:#b91c1c}
+.f-err.on{display:block}
+.f-ok{display:none;margin-top:5px;font-size:.8rem;font-weight:700;color:var(--green-fg)}
+.f-ok.on{display:block}
+.field input.bad{border-color:#ef4444;box-shadow:0 0 0 3px rgba(239,68,68,.14)}
+.field input.good{border-color:var(--green);box-shadow:0 0 0 3px var(--green-bg)}
+.v-row{display:flex;flex-wrap:wrap;gap:8px;align-items:center;background:var(--surface-2);border:1px dashed var(--border);border-radius:12px;padding:9px 11px;font-size:.82rem;color:var(--muted)}
+.v-row .btn{margin-left:auto}
+.v-row b{color:var(--text)}
+
+/* ============================================================
+   📐 હેડર ઑટો-એડજસ્ટ (ગમે તેટલી ટેબ)  ·  🖼 કસ્ટમ લોગો
+   👥 સભ્ય આંકડા  ·  ▶ વિડિયો પ્રેક્ષક ફિલ્ટર
+   ============================================================ */
+.nav-desktop{flex:1 1 200px;overflow:hidden;gap:clamp(1px,.45vw,5px);margin-left:8px;min-width:0}
+.nav-link,.nav-gbtn{padding:7px clamp(5px,.6vw,12px);font-size:clamp(.75rem,.5rem + .32vw,.92rem)}
+.header-actions{gap:6px;flex-shrink:1}
+.search-box{flex:0 1 auto;min-width:0}
+.search-box input{width:clamp(104px,12vw,190px)}
+.search-box input:focus{width:clamp(140px,16vw,240px)}
+.lang-select{flex:0 1 auto;min-width:0}
+.nav-more > .nav-drop,.nav-more .nav-drop-lg{left:auto;right:0}
+.nav-more-btn{font-weight:700;color:var(--muted)}
+.nav-more.open .nav-more-btn,.nav-more:hover .nav-more-btn{background:var(--surface-2);color:var(--text)}
+@media(max-width:1023px){.nav-desktop{display:none}}
+@media(max-width:1023px){.header-inner{gap:9px}}
+
+/* 🖼 લોગો — છબિ ચઢાવેલી હોય તો ઈમોજિ ની જગ્યા એ લોગો (બૅકગ્રાઉંડ વગર) */
+.logo{gap:9px}
+.logo-mark{width:auto;min-width:42px;height:42px;padding:0 5px}
+.logo-mark.has-img{background:none;box-shadow:none;padding:0;border-radius:12px}
+.logo-mark .logo-img{display:block;width:auto;height:42px;max-width:150px;object-fit:contain;border-radius:12px;background:transparent}
+.footer .logo-mark .logo-img,.foot-brand .logo-mark .logo-img{height:36px}
+@media(max-width:600px){.logo-mark .logo-img{height:34px;max-width:104px}}
+
+/* 👥 હોમ પેજ — સભ્ય આંકડા (વિદ્યાર્થી/શિક્ષક/આચાર્ય/અન્ય + Total Viewers) */
+.hero-members{display:grid;grid-template-columns:repeat(auto-fit,minmax(112px,1fr));gap:clamp(10px,1.6vw,22px);margin-top:28px;position:relative;z-index:1}
+.hero-members>div{background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);border-radius:14px;padding:12px 10px;text-align:center;min-width:0}
+.hero-members b{font-size:clamp(1.15rem,.95rem + .7vw,1.75rem);display:block;line-height:1.15;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.hero-members span{font-size:.76rem;opacity:.9;display:block;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.hero-join{position:relative;z-index:1;display:flex;flex-wrap:wrap;align-items:center;gap:12px;margin:20px 0 0;font-size:.92rem;opacity:.96}
+.hero-join .btn{background:#fff;color:var(--brand);border:none;font-weight:800}
+.hero-join .btn:hover{background:#fff;color:var(--brand);transform:translateY(-1px)}
+
+/* ▶ વિડિયો પાનું — પ્રેક્ષક ▸ ધોરણ ▸ વિષય નાં ફિલ્ટર */
+.vid-filter{margin-bottom:10px;background:var(--surface-2)}
+.vid-filter .sub-chip{white-space:nowrap}
+.vid-filter .sub-chip small{color:var(--muted)}
+.vid-filter .sub-chip.on small{color:var(--brand)}
+.vid-filter .aud-me{font-size:.8rem;font-weight:700;color:var(--muted);margin-left:auto}
+.filters[data-vid-extra] select{opacity:.86}
+.filters[data-vid-extra] label{color:var(--muted)}
+.filters{gap:10px}
+.filters select{min-width:146px;flex:1 1 146px}
+@media(max-width:720px){.filters{gap:8px}.filters select{min-width:120px}}
