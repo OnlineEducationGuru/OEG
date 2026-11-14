@@ -117,8 +117,8 @@ OEG.typeIcon = (k) => OEG.typeOf(k).icon || "📄";
 OEG.gradeIcon = (k) => OEG.gradeOf(k).icon || "🎓";
 OEG.typeRoute = (k) => OEG.typeOf(k).route || "";
 OEG.typeOfRoute = (route) => OEG.tax().types.find(x => x.route === route) || null;
-/* 🎯 દરેક પ્રેક્ષક નું પોતા નું પાનું (hub) — route = audience.route || audience key.
-   એ જ route કોઈ type ન જ પોતા નું પાનું હોય (અને એ type નો પ્રેક્ષક અલગ હોય) તો type જીતે — જુ નાં લિંક તૂટતાં નહીં. */
+/* 🎯 દરેક પ્રેક્ષક નું પોતાનું પાનું (hub) — route = audience.route || audience key.
+   એ જ route કોઈ type ન જ પોતાનું પાનું હોય (અને એ type નો પ્રેક્ષક અલગ હોય) તો type જીતે — જુ નાં લિંક તૂટતાં નહીં. */
 OEG.audRoute = (k) => { const a = OEG.audOf(k); return String((a && a.route) || k || "").trim(); };
 OEG.audOfRoute = (route) => {
   if (!route) return null;
@@ -225,6 +225,29 @@ OEG.views = (() => {
     try { sessionStorage.setItem("oeg.viewed." + id, String(Date.now())); } catch (e) {}
   }
   function count(id) { return (read()[id] || 0) + ((base && base.items && base.items[id]) || 0); }
+  /* 👁 કુલ વિઝિટર — Admin → સાઇટ સેટિંગ્સ ની શરૂ આત નં સખ્યા (અત્યારે ૧૦ લાખ) + સાચા વિઝિટર.
+     એક ઉપકરણે એક દિવસે એક વાર ગણાય; Admin "વ્યુ સેવ" કરે ત્યારે data/views.json માં total ભરાય. */
+  const SITE = "__site";
+  const dayKey = () => "day." + new Date().toISOString().slice(0, 10);
+  function visit() {
+    const m = read(), d = dayKey();
+    if (m[d]) return false;
+    m[d] = 1; m[SITE] = (m[SITE] || 0) + 1; write();
+    return true;
+  }
+  function baseNum() {
+    const ui = (OEG.state.config && OEG.state.config.ui) || {};
+    const n = Number(ui.viewersBase);
+    return isFinite(n) && n >= 0 ? Math.round(n) : 1000000;
+  }
+  function total() {
+    const b = base || {}, m = read();
+    return baseNum() + (Number(b.total) || 0) + (m[SITE] || 0);
+  }
+  function fmt(n) {
+    n = Math.round(Number(n) || 0);
+    try { return new Intl.NumberFormat("en-IN").format(n); } catch (e) { return String(n); }
+  }
   /* catalog ના દરેક item માટે aggregate → desc sort */
   function ranked(list, n) {
     const m = read(), b = (base && base.items) || {};
@@ -234,7 +257,11 @@ OEG.views = (() => {
   }
   async function commit() {
     const b = await load(), m = read();
-    Object.keys(m).forEach(k => { b.items[k] = (b.items[k] || 0) + m[k]; });
+    Object.keys(m).forEach((k) => {
+      if (k.indexOf("day.") === 0) return;                                  /* દિવસ-કી ગણતરી માં નહીં */
+      if (k === SITE) { b.total = (Number(b.total) || 0) + m[k]; return; }  /* કુલ વિઝિટર → total */
+      b.items[k] = (b.items[k] || 0) + m[k];
+    });
     await OEG.data.writeJson(FILE, b, "OEG: views " + Object.keys(m).length);
     try { localStorage.removeItem(LS); map = {}; } catch (e) {}
     return b;
@@ -245,7 +272,7 @@ OEG.views = (() => {
     return b;
   }
   function reload() { base = null; map = null; return load(); }
-  return { hit, count, ranked, load, reload, commit, read, seed, LS, FILE };
+  return { hit, count, ranked, load, reload, commit, read, seed, visit, total, fmt, baseNum, LS, FILE };
 })();
 
 OEG.fileExt = (url) => {

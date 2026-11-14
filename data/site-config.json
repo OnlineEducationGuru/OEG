@@ -550,6 +550,7 @@
       "videos": true,
       "blog": true,
       "links": true
-    }
+    },
+    "viewersBase": 1000000
   }
 }

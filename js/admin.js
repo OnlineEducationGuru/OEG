@@ -197,6 +197,10 @@ OEG.admin = (() => {
         ${triRow("stHeroSub", OEG.t("admin.heroSub"), (cfg.ui || {}).heroSub)}
         ${triRow("stAbout", OEG.t("admin.footerAbout"), (cfg.ui || {}).footerAbout)}
         <div class="field"><label>${OEG.t("admin.footerNote")}</label><input id="stNote" value="${OEG.esc(OEG.langField((cfg.ui || {}).footerNote) || "")}" placeholder="${OEG.t("admin.footerNotePh")}"></div>
+        <div class="form-row">
+          <div class="field"><label>👁 ${OEG.t("admin.viewersBase")}</label><input id="stVisitors" type="number" min="0" step="1000" value="${OEG.esc(String((cfg.ui || {}).viewersBase != null ? (cfg.ui || {}).viewersBase : 1000000))}">
+            <p class="adm-sec-note">${OEG.t("admin.viewersBaseNote")}</p></div>
+        </div>
 
         <h4 style="margin:18px 0 6px">👁️ ${OEG.t("admin.visibility")}</h4>
         <p class="adm-sec-note">${OEG.t("admin.visibilityNote")}</p>
@@ -2517,6 +2521,7 @@ OEG.admin = (() => {
             defaultLang: $("stLang").value || "", defaultTheme: $("stTheme").value || "",
             tagline: tag, heroTitle: hero, heroSub: hsub, footerAbout: about,
             footerNote: $("stNote").value.trim(),
+            viewersBase: Math.max(0, Math.round(Number($("stVisitors").value) || 0)),
             showSearch: $("stSearch").checked, antiCopy: $("stGuard").checked,
             sections: sections
           });

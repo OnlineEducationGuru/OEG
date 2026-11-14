@@ -11,7 +11,7 @@
   const guardOn = () => uiCfg().antiCopy !== false;
   const uiText = (k, fallback) => { const v = uiCfg()[k]; const t2 = v && typeof v === "object" ? OEG.langField(v) : (v || ""); return t2 || fallback; };
 
-  /* 🎯 જે પ્રેક્ષક ન યાંય ના type સાથે જોડાયેલું નથી (જેમં આચાર્ય) — એ નું પોતા નું પાનું મેનુમાં મૂકો */
+  /* 🎯 જે પ્રેક્ષક ન યાંય ના type સાથે જોડાયેલું નથી (જેમં આચાર્ય) — એ નું પોતાનું પાનું મેનુમાં મૂકો */
   const audHubs = () => OEG.auds().filter(a => a.key !== "student" && !a.off && OEG.audRoute(a.key) &&
     !OEG.tax().types.some(x => x.route === OEG.audRoute(a.key)) && !OEG.tax().types.some(x => (x.aud || "") === a.key));
   const NAV = () => [HOME_NAV].concat(
@@ -119,7 +119,16 @@
     return out.slice(0, 8);
   }
   const customNav = () => { const v = uiCfg().nav; const list = normNav(v, 1); return (Array.isArray(v) && list.length) ? list : null; };
-  const navRouteOf = (href) => { const m = String(href || "").match(/^#\/([\w-]+)/); return m ? m[1] : "home"; };
+  /* 🧭 active (લીલુ) ફક્ત એ જ પાનું જે ખરેખર ખુલ્લું હોય.
+     href ન હોય (જેમાં ગ્રુપ બટન) અથવા બહારની લિંક હોય તો "home" માં ગણવા નથી —
+     એટલે હોમ પર ક્લિક કરતાં બધાં બટન લીલું થતાં નથી. */
+  const navRouteOf = (href) => {
+    const h = String(href == null ? "" : href).trim();
+    if (!h) return "\u0000";
+    if (h === "#/" || h === "#" || h === "#/home") return "home";
+    const m = h.match(/^#\/([\w-]+)/);
+    return m ? m[1] : "\u0000";
+  };
   const navOn = (n, cur) => {
     if (!n) return false;
     if (navRouteOf(n.href) === cur) return true;
@@ -151,12 +160,17 @@
     });
     const put = (route, grp) => { const n = byRoute[route]; if (n) { (G[grp] || G.student).kids.push(n); delete byRoute[route]; } };
     Object.keys(NAV_GROUP_OF).forEach(r => put(r, NAV_GROUP_OF[r]));
-    Object.keys(byRoute).forEach(r => { G.student.kids.push(byRoute[r]); });   /* નવું ઉમેરાયેલું ક્યાંય ખોવાય નહીં */
+    const hubs = [];
+    Object.keys(byRoute).forEach(r => {
+      /* 🎯 પ્રેક્ષક ન hub પાનું ગ્રુપની અંદર દબાવવું નહીં — એ ટોચ પર એક જ એન્ટ્રી તરીકે રહે (એક્ટીવ રંગ સાચો પડે) */
+      if (OEG.audOfRoute && OEG.audOfRoute(r)) { hubs.push(byRoute[r]); return; }
+      G.student.kids.push(byRoute[r]);                                          /* નવું ઉમેરાયેલું ક્યાંય ખોવાય નહીં */
+    });
     if (G.student.kids.length) G.student.kids.push(gradeNode);
     const teach = G.teacher;
     teach.kids.push({ label: t("nav.quizCats"), icon: "🧠", href: "#/quiz", kids: quizCatKids(true) });
     const home = { key: "home", label: t("nav.home"), icon: "🏠", href: "#/", route: "home", kids: [] };
-    return [home].concat(NAV_GROUPS.map(g => G[g.key]).filter(g => g.kids.length));
+    return [home].concat(NAV_GROUPS.map(g => G[g.key]).filter(g => g.kids.length), hubs);
   }
   /* કસ્ટમ હોય તો એ જ, નહીં તો ઑટો — બધી જગ્યાએ (header + sidebar) એ જ વૃક્ષ ચાલે */
   function navTree() { return customNav() || autoNavTree(); }
@@ -230,6 +244,12 @@
     return n ? `<small>${n}</small>` : "";
   };
 
+  /* 👁 footer નો વિઝિટર આંકડો — દર પાના બદલાએ ત્યારે તરત નવો */
+  function paintVisitors() {
+    const fv = document.getElementById("footerVis");
+    if (!fv) return;
+    try { fv.innerHTML = `👁 <b>${OEG.views.fmt(OEG.views.total())}</b> ${OEG.esc(t("stats.visitors"))}`; } catch (e) { fv.textContent = ""; }
+  }
   function renderFooter() {
     document.getElementById("footerLinks").innerHTML = NAV().slice(0, 9).map(n =>
       `<a href="#/${n.route === "home" ? "" : n.route}">${OEG.esc(n.label || t(n.key))}</a>`).join("");
@@ -242,6 +262,7 @@
     }
     const about = document.getElementById("footerAbout");
     if (about) { const a = uiText("footerAbout", ""); if (a) about.textContent = a; }
+    paintVisitors();
     const ft = document.getElementById("footerTitle");
     if (ft) { const n2 = uiText("siteTitle", ""); ft.textContent = n2 ? "🎓 " + n2 : "🎓 Online Education Guru"; }
   }
@@ -340,7 +361,7 @@
     return `<article class="card reveal glow">${img}<div class="card-body">
       <span class="badge">${OEG.typeIcon(item.type)} ${OEG.esc(OEG.typeLabel(item.type))} • ${OEG.esc(OEG.gradeLabel(item.grade))}</span>
       <h3>${OEG.esc(OEG.title(item))}</h3><p>${OEG.esc(OEG.desc(item))}</p>
-      <div class="card-meta">${n ? `<span>👁 ${n}</span>` : ""}<span>📅 ${OEG.esc(item.date || "")}</span>${item.subject ? `<span>🏷️ ${OEG.esc(OEG.subjectLabel(item.subject))}</span>` : ""}${kind !== "link" ? `<span>📄 ${kind.toUpperCase()}</span>` : ""}</div>
+      <div class="card-meta">${n ? `<span>👁 ${OEG.views.fmt(n)}</span>` : ""}<span>📅 ${OEG.esc(item.date || "")}</span>${item.subject ? `<span>🏷️ ${OEG.esc(OEG.subjectLabel(item.subject))}</span>` : ""}${kind !== "link" ? `<span>📄 ${kind.toUpperCase()}</span>` : ""}</div>
       <div class="card-actions">${action}</div></div></article>`;
   }
 
@@ -533,6 +554,7 @@
         <div><b>${REAL_GRADES().length}</b><span>${t("sec.grades")}</span></div>
         <div><b>${OEG.tax().types.length}</b><span>${t("admin.catTab")}</span></div>
         <div><b>3</b><span>${t("lang.name")}</span></div>
+        <div><b>👁 ${OEG.views.fmt(OEG.views.total())}</b><span>${t("stats.visitors")}</span></div>
       </div>
       <div class="follow-strip"><span class="fs-title">👉 ${t("follow.title")}</span>${followButtons("fb-sm")}</div>
     </section>
@@ -576,33 +598,22 @@
     return `<article class="video-card reveal glow" data-yt="${id}" data-vid="${OEG.esc(item.id)}">
       <div class="ratio yt-poster" data-ytbox="${OEG.esc(id)}" data-play="${OEG.esc(id)}" role="button" tabindex="0" aria-label="▶ ${OEG.esc(OEG.title(item))}">
       <img src="${OEG.esc(th.big)}" onerror="this.onerror=null;this.src='${OEG.esc(th.poster)}'" alt="${OEG.esc(OEG.title(item))}" loading="lazy" draggable="false">
-      <button type="button" class="yt-play" data-play="${OEG.esc(id)}" aria-label="▶"><span>▶</span></button>
-      <span class="yt-note">${t("yt.playHere")}</span></div>
+      <button type="button" class="yt-play" data-play="${OEG.esc(id)}" aria-label="▶ Play"><span>▶ Play</span></button></div>
       <div class="vc-body"><h3>${OEG.esc(OEG.title(item))}</h3><p>${OEG.esc(OEG.desc(item))}</p>
-      <div class="vc-meta">${item.channel ? `<span>📺 ${OEG.esc(item.channel)}</span>` : ""}<span>👁 ${views}</span><span>📅 ${OEG.esc(item.date || "")}</span></div>
-      <div class="card-actions"><a class="btn btn-brand btn-sm" href="#/view/${item.id}">▶ ${t("btn.view")}</a></div></div></article>`;
+      <div class="vc-meta">${item.channel ? `<span>📺 ${OEG.esc(item.channel)}</span>` : ""}<span>👁 ${OEG.views.fmt(views)}</span><span>📅 ${OEG.esc(item.date || "")}</span></div>
+      <div class="card-actions"><a class="btn btn-brand btn-sm" href="#/view/${item.id}">▶ ${t("btn.play")}</a></div></div></article>`;
   }
-  /* ▶ અહીં જ ચાલે — youtube-nocookie, નહીં ચાલે તો youtube.com નો બીજો રસ્તો */
-  function ytSrc(id, alt) {
-    const host = alt ? "https://www.youtube.com/embed/" : "https://www.youtube-nocookie.com/embed/";
+  /* ▶ વિડિયો અહીં જ ચાલે — એક જ સર્વર (youtube-nocookie embed).
+     "બીજો સર્વર" નું બટન / ફેલબૉક હવે નથી — પ્લેયર પર ફક્ત Play શબ્દ જ રહે છે. */
+  function ytSrc(id) {
     const lang = (OEG.state && OEG.state.lang) || "gu";
-    return host + encodeURIComponent(id) + "?autoplay=1&rel=0&modestbranding=1&playsinline=1&iv_load_policy=3&disablekb=0&hl=" + lang;
+    return "https://www.youtube-nocookie.com/embed/" + encodeURIComponent(id) +
+      "?autoplay=1&rel=0&modestbranding=1&playsinline=1&iv_load_policy=3&hl=" + lang;
   }
-  function playInline(box, id, autoplay, alt, keep) {
+  function playInline(box, id) {
     if (!box || !id) return;
-    if (!keep) box.dataset.alt = alt ? "1" : "0";
-    const useAlt = alt === undefined ? box.dataset.alt === "1" : !!alt;
-    box.innerHTML = `<iframe src="${ytSrc(id, useAlt)}" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen" allowfullscreen="true" webkitallowfullscreen="true" mozallowfullscreen="true" title="YouTube" loading="eager"></iframe>
-      <span class="yt-altwrap"><button type="button" class="yt-alt" data-alt="${OEG.esc(id)}" title="${OEG.esc(t("yt.altServer"))}">↻ ${OEG.esc(t("yt.altServer"))}</button></span>`;
+    box.innerHTML = `<iframe src="${ytSrc(id)}" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen" allowfullscreen="true" webkitallowfullscreen="true" mozallowfullscreen="true" title="YouTube" loading="eager"></iframe>`;
     box.classList.add("yt-live");
-    const fr = box.querySelector("iframe");
-    const ab = box.querySelector("[data-alt]");
-    if (ab) ab.onclick = (e) => { e.preventDefault(); e.stopPropagation(); playInline(box, id, true, !useAlt, true); };
-    if (fr) {
-      let ok = false;
-      fr.onload = () => { ok = true; };
-      setTimeout(() => { if (!ok && !useAlt) playInline(box, id, true, true, true); }, 4000);
-    }
   }
   function bindVideoPlayers(root) {
     const seen = [];
@@ -616,7 +627,7 @@
         if (box && box.classList.contains("yt-live")) return;   /* પહેલેથી જ ચાલે છે */
         const card = b.closest("[data-vid]");
         if (card && card.dataset.vid) OEG.views.hit(card.dataset.vid);
-        playInline(box, id, true, false);
+        playInline(box, id);
       };
       b.onclick = go;
       b.onkeydown = (e) => { if (e.key === "Enter" || e.key === " ") go(e); };
@@ -660,12 +671,11 @@
           <span class="lock-tag">${t("yt.playHere")}</span></div>
         <div class="ratio yt-poster yt-big" data-ytbox="${OEG.esc(id)}" data-play="${OEG.esc(id)}" data-vid="${OEG.esc(item.id)}" role="button" tabindex="0" aria-label="▶ ${OEG.esc(OEG.title(item))}">
           <img src="${OEG.esc(th.big)}" onerror="this.onerror=null;this.src='${OEG.esc(th.poster)}'" alt="${OEG.esc(OEG.title(item))}" draggable="false">
-          <button type="button" class="yt-play" data-play="${OEG.esc(id)}" aria-label="▶"><span>▶</span></button>
-          <span class="yt-note">${t("yt.playHere")}</span>
+          <button type="button" class="yt-play" data-play="${OEG.esc(id)}" aria-label="▶ Play"><span>▶ Play</span></button>
         </div>
         <div class="yt-bar"><b>${OEG.esc(OEG.title(item))}</b>
           ${item.channel ? `<span>📺 ${OEG.esc(item.channel)}</span>` : ""}
-          <span>👁 ${OEG.views.count(item.id)}</span></div></div>`;
+          <span>👁 ${OEG.views.fmt(OEG.views.count(item.id))}</span></div></div>`;
     }
     if (kind === "pdf" && item.fileUrl) {
       return `<div class="viewer"><div class="viewer-head"><b>📄 ${t("viewer.pdf")}</b><span class="lock-tag">🔒</span></div>
@@ -818,6 +828,8 @@
   async function render() {
     const { seg, query } = parseHash();
     const route = seg[0] || "home";
+    /* 👁 વિઝિટ ગણો (એક ઉપકરણે એક દિવસે એક વાર) — footer + હોમ નો આંકડો એ જ મુજબ વધે */
+    try { if (OEG.views && OEG.views.visit) OEG.views.visit(); } catch (e) {}
     /* Admin માં ઉમેર્યું/કાઢ્યું/બદલ્યું હોય તો સાઇટ પર પાછા આવતાં જ તરત નવું દેખાય */
     if (OEG.state.__dirty && route !== "admin") {
       OEG.state.__dirty = false;
@@ -888,6 +900,7 @@
     app.querySelectorAll(".reveal").forEach(el => io.observe(el));
     renderNav();
     renderSidebar();
+    paintVisitors();
   }
 
   /* ---------- 🔎 SEO meta (title/desc/canonical/OG/JSON-LD) ---------- */

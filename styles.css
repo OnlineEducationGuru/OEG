@@ -401,10 +401,11 @@ h1,h2,h3,h4{font-family:var(--font-display);line-height:1.25;font-weight:700}
 /* ---------- ▶ In-page YouTube player ---------- */
 .yt-poster{position:relative;background:#000;overflow:hidden}
 .yt-poster img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:.92}
-.yt-poster .yt-play{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:74px;height:74px;border-radius:50%;border:none;background:rgba(255,255,255,.92);color:#111;font-size:1.7rem;display:grid;place-items:center;cursor:pointer;box-shadow:0 12px 34px rgba(0,0,0,.4);transition:.25s}
-.yt-poster .yt-play span{margin-left:5px}
-.yt-poster .yt-play:hover{background:#ff0033;color:#fff;transform:translate(-50%,-50%) scale(1.08)}
-.yt-poster .yt-note{position:absolute;right:10px;bottom:10px;background:rgba(0,0,0,.62);color:#fff;font-size:.72rem;font-weight:700;padding:4px 9px;border-radius:999px}
+/* ▶ Play — ગોળ બટન નહીં, હવે ફક્ત "Play" શબ્દ વાળું પિલ (બીજું કંઈ ઓવરલે પર નહીં) */
+.yt-poster .yt-play{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);min-width:106px;height:44px;padding:0 18px;border-radius:999px;border:none;background:rgba(255,255,255,.94);color:#111;font-size:1rem;font-weight:800;letter-spacing:.3px;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;box-shadow:0 12px 34px rgba(0,0,0,.4);transition:.25s}
+.yt-poster .yt-play span{display:inline-flex;align-items:center;gap:8px;line-height:1}
+.yt-poster .yt-play:hover{background:#ff0033;color:#fff;transform:translate(-50%,-50%) scale(1.06)}
+.yt-big .yt-play{min-width:150px;height:56px;font-size:1.18rem}
 .yt-live iframe{position:absolute;inset:0;width:100%;height:100%;border:none}
 .card-img.has-play .play-badge{position:absolute;inset:0;display:grid;place-items:center;font-size:2rem;color:#fff;background:rgba(0,0,0,.28)}
 
@@ -631,9 +632,6 @@ body.allow-select img, body.allow-select video { -webkit-user-drag: auto; }
 .yt-poster.yt-live{cursor:default}
 .yt-big{border-radius:var(--radius);overflow:hidden}
 .yt-live iframe{z-index:1}
-.yt-altwrap{position:absolute;left:10px;bottom:10px;z-index:5}
-.yt-alt{display:inline-flex;align-items:center;gap:6px;border:1px solid rgba(255,255,255,.35);background:rgba(12,12,26,.72);color:#fff;font-size:.76rem;font-weight:700;border-radius:999px;padding:6px 11px;cursor:pointer;transition:.2s}
-.yt-alt:hover{background:#ff0033;border-color:#ff0033}
 .yt-bar{display:flex;flex-wrap:wrap;align-items:center;gap:12px;padding:12px 2px 0;font-size:.86rem;color:var(--muted)}
 .yt-bar b{color:var(--text);font-size:.98rem}
 .video-card .vc-meta{display:flex;flex-wrap:wrap;gap:10px;margin-top:8px;font-size:.78rem;color:var(--muted);font-weight:700}
@@ -742,3 +740,7 @@ body.allow-select img, body.allow-select video { -webkit-user-drag: auto; }
 .aud-kids{padding:6px 0 0 14px;display:grid;gap:4px;width:100%}
 .tax-row.lv3{background:transparent;border:1px dashed var(--border);margin-bottom:0}
 @media (max-width:720px){.csc .form-row{gap:8px}.tax-mv{margin-left:0}.aud-row{gap:6px}}
+
+/* 👁 વિઝિટર આંકડો (footer) + હોમનાं stat ટાઇલ */
+.footer-vis{text-align:center;font-size:.9rem;color:var(--muted);margin:2px auto 10px;padding:7px 14px;border:1px solid var(--line);border-radius:999px;max-width:max-content;background:var(--card)}
+.footer-vis b{color:var(--brand);font-variant-numeric:tabular-nums;letter-spacing:.2px}
