@@ -12,7 +12,7 @@
   const uiText = (k, fallback) => { const v = uiCfg()[k]; const t2 = v && typeof v === "object" ? OEG.langField(v) : (v || ""); return t2 || fallback; };
 
   const NAV = () => [HOME_NAV].concat(
-    OEG.tax().types.filter(x => x.route).map(x => ({ route: x.route, icon: x.icon || "📄", key: "type." + x.key, label: OEG.typeLabel(x.key) })),
+    OEG.audAllow(OEG.tax().types.filter(x => x.route)).map(x => ({ route: x.route, icon: x.icon || "📄", key: "type." + x.key, label: OEG.typeLabel(x.key) })),
     [ADMIN_NAV]).filter(n => n.route === "home" || n.route === "admin" || sectionOn(n.route));
   const GRADES = () => OEG.tax().grades.filter(g => g.key !== "all").map(g => g.key);
   const REAL_GRADES = () => GRADES().filter(k => k === "balvatika" || /^\d+$/.test(k));
@@ -39,6 +39,19 @@
     return on ? " " + t(k) : "";
   };
   const emptySub = () => t("empty.sub") + adminTip("empty.subAdmin");
+  /* 🎯 પ્રેક્ષક પ્રમાણે યાદી — login ન હોય કે Admin હોય તો બધું દેખાય */
+  const mine = (list) => OEG.mine(list || []);
+  const gViewKeys = () => OEG.gradeTypes().map(x => x.key);
+  const gView = (list) => { const k = gViewKeys(); return (list || []).filter(i => k.indexOf(i.type) >= 0); };
+  const audChips = (typeKey, cur) => {
+    const aud = OEG.typeAud(typeKey);
+    const subs = (aud && aud !== "all") ? OEG.audSubs(aud) : [];
+    if (!subs.length) return "";
+    return `<div class="aud-row"><span class="aud-lab">🎯 ${OEG.esc(OEG.audLabel(aud))}</span>
+      <a class="sub-chip ${!cur ? "on" : ""}" href="#/${OEG.esc(OEG.typeRoute(typeKey))}">${t("filter.all")}</a>
+      ${subs.map(x => `<a class="sub-chip ${cur === x.key ? "on" : ""}" href="#/${OEG.esc(OEG.typeRoute(typeKey))}?audSub=${OEG.esc(x.key)}">${x.icon || "📄"} ${OEG.esc(OEG.taxLabel(x, "subject"))}</a>`).join("")}
+      ${(() => { const kids = ((subs.filter(y => y.key === cur)[0] || {}).subs) || []; return kids.length ? `<span class="aud-kids-row">` + kids.map(y => `<a class="sub-chip sm" href="#/${OEG.esc(OEG.typeRoute(typeKey))}?audSub=${OEG.esc(cur)}&audSub2=${OEG.esc(y.key)}">${y.icon || "🔹"} ${OEG.esc(OEG.taxLabel(y, "subject"))}</a>`).join("") + `</span>` : ""; })()}</div>`;
+  };
 
   /* ---------- i18n apply ---------- */
   function applyI18n() {
@@ -120,6 +133,17 @@
     if (byRoute.textbooks) byRoute.textbooks.kids = gradeKids("textbook");
     if (byRoute.workbooks) byRoute.workbooks.kids = gradeKids("workbook");
     if (byRoute.quiz) byRoute.quiz.kids = [{ label: t("quiz.pickCat"), icon: "🗂️", href: "#/quiz", kids: [] }].concat(quizCatKids(false));
+    /* 🎯 શિક્ષક/આચાર્ય/ઓફિસ પાનાંની બાબતો પણ મેનુમાં (બીજું-ત્રીજું સ્તર) */
+    Object.keys(byRoute).forEach((r) => {
+      const n = byRoute[r], ty = OEG.tax().types.filter(x => x.route === r)[0];
+      const aud = ty ? (ty.aud || "") : "";
+      const subs = aud && aud !== "all" ? OEG.audSubs(aud) : [];
+      if (!subs.length) return;
+      n.kids = (n.kids || []).concat(subs.map(x => {
+        const kids2 = (x.subs || []).map(y => ({ label: OEG.taxLabel(y, "subject"), icon: y.icon || "🔹", href: "#/" + r + "?audSub=" + x.key + "&audSub2=" + y.key, kids: [] }));
+        return { label: OEG.taxLabel(x, "subject"), icon: x.icon || "📄", href: "#/" + r + "?audSub=" + x.key, kids: kids2 };
+      }));
+    });
     const put = (route, grp) => { const n = byRoute[route]; if (n) { (G[grp] || G.student).kids.push(n); delete byRoute[route]; } };
     Object.keys(NAV_GROUP_OF).forEach(r => put(r, NAV_GROUP_OF[r]));
     Object.keys(byRoute).forEach(r => { G.student.kids.push(byRoute[r]); });   /* નવું ઉમેરાયેલું ક્યાંય ખોવાય નહીં */
@@ -197,7 +221,7 @@
   }
   const gradeInUrl = () => { const m = (location.hash || "").match(/#\/grade\/([\w-]+)/); return m ? m[1] : ""; };
   const countOfGrade = (g) => {
-    const n = OEG.state.catalog.filter(i => i.grade === g).length;
+    const n = gView(mine(OEG.state.catalog.filter(i => i.grade === g))).length;
     return n ? `<small>${n}</small>` : "";
   };
 
@@ -316,17 +340,20 @@
   }
 
   function filtersHtml(typeKey, route, grade, subject, topic) {
-    const ty = OEG.tax().types.filter(x => x.key === typeKey).length ? null : null;
-    const cats = OEG.tax().types.filter(x => x.route);
+    const cats = OEG.audAllow(OEG.tax().types.filter(x => x.route));
+    /* 🎯 ફક્ત વિદ્યાર્થી માટેની શ્રેણીમાં જ ધોરણ + વિષયનું છાંટણં (ઓફિસ/શિક્ષક પાનાં પર નહીં) */
+    const stu = OEG.typeAud(typeKey) === "student" || OEG.gradeView(typeKey);
+    const subs = OEG.tax().gradeSubjects.map(x => x.key);
     return `<div class="filters">
-      <label>${t("filter.grade")}</label>
+      ${stu ? `<label>${t("filter.grade")}</label>
       <select id="fGrade"><option value="all">${t("filter.all")}</option>${GRADES().map(g => `<option value="${g}" ${g === grade ? "selected" : ""}>${OEG.esc(OEG.gradeLabel(g))}</option>`).join("")}</select>
       <label>${t("filter.subject")}</label>
-      <select id="fSubject"><option value="all">${t("filter.all")}</option>${SUBJECTS().map(s => `<option value="${s}" ${s === subject ? "selected" : ""}>${OEG.esc(OEG.subjectLabel(s))}</option>`).join("")}</select>
+      <select id="fSubject"><option value="all">${t("filter.all")}</option>${subs.map(x => `<option value="${x}" ${x === subject ? "selected" : ""}>${OEG.esc(OEG.subjectLabel(x))}</option>`).join("")}</select>` : ""}
       <label>${t("admin.catTab")}</label>
       <select id="fCat">${cats.map(c => `<option value="${c.route}" ${c.key === typeKey ? "selected" : ""}>${OEG.typeIcon(c.key)} ${OEG.esc(OEG.typeLabel(c.key))}</option>`).join("")}</select>
     </div>`;
   }
+
 
   function gridWithAd(items, startAt, adKey) {
     if (!items.length) return "";
@@ -336,10 +363,12 @@
   }
 
   function listingPage(typeKey, route, query) {
-    const grade = query.grade || "all", subject = query.subject || "all";
-    let items = OEG.byType(typeKey);
+    const grade = query.grade || "all", subject = query.subject || "all", audSub = query.audSub || "", audSub2 = query.audSub2 || "";
+    let items = mine(OEG.byType(typeKey));
     if (grade !== "all") items = items.filter(i => i.grade === grade || i.grade === "all");
     if (subject !== "all") items = items.filter(i => i.subject === subject);
+    if (audSub) items = items.filter(i => !i.audSub || i.audSub === audSub);
+    if (audSub2) items = items.filter(i => !i.audSub2 || i.audSub2 === audSub2);
     const label = OEG.typeLabel(typeKey);
     const body = items.length
       ? gridWithAd(items, 6, "listMid")
@@ -347,6 +376,7 @@
     return `<div class="page-head"><div class="breadcrumb"><a href="#/">${t("nav.home")}</a> / ${OEG.esc(label)}</div>
       <h1>${OEG.typeIcon(typeKey)} ${OEG.esc(label)}</h1>
       <p class="sub">${items.length} ${t("grade.items")}</p></div>
+      ${audChips(typeKey, audSub)}
       ${filtersHtml(typeKey, route, grade, subject)}
       ${adSlot("listTop")}
       <div id="listWrap">${body}</div>${adSlot("contentBottom")}`;
@@ -354,14 +384,16 @@
 
   function bindFilters(typeKey, route) {
     const g = document.getElementById("fGrade"), s = document.getElementById("fSubject"), c = document.getElementById("fCat");
-    if (!g) return;
+    if (!g && !c) return;
     const apply = () => {
       const q = [];
-      if (g.value !== "all") q.push("grade=" + g.value);
-      if (s.value !== "all") q.push("subject=" + s.value);
+      if (g && g.value !== "all") q.push("grade=" + g.value);
+      if (s && s.value !== "all") q.push("subject=" + s.value);
       location.hash = `#/${c && c.value !== route ? c.value : route}` + (q.length ? "?" + q.join("&") : "");
     };
-    g.onchange = apply; s.onchange = apply; if (c) c.onchange = apply;
+    if (g) g.onchange = apply;
+    if (s) s.onchange = apply;
+    if (c) c.onchange = apply;
   }
 
   /* ---------- 🎓 ધોરણ પેજ — બધાં પ્રકારનું મટિરિયલ + ૭ વિષયો ---------- */
@@ -373,12 +405,13 @@
     }
     const subject = query.subject || "all", cat = query.cat || "all";
     const subs = OEG.tax().gradeSubjects;
-    let items = OEG.state.catalog.filter(i => i.grade === g || i.grade === "all");
+    /* એ ધોરણ મુજબની બાબતો જ — પાઠ્યપુસ્તક · સ્વાધ્યાયપોથી · વિડિયો · રમત (Office/Teachers Helper વગેરે નહીં) */
+    const gBase = gView(mine(OEG.state.catalog.filter(i => i.grade === g || i.grade === "all")));
+    let items = gBase;
     if (subject !== "all") items = items.filter(i => i.subject === subject);
     if (cat !== "all") items = items.filter(i => i.type === cat);
-    const types = OEG.tax().types.filter(x => items.length || true);
     const counts = {};
-    OEG.state.catalog.filter(i => i.grade === g || i.grade === "all").forEach(i => { counts[i.type] = (counts[i.type] || 0) + 1; });
+    gBase.forEach(i => { counts[i.type] = (counts[i.type] || 0) + 1; });
     const body = items.length ? gridWithAd(items, 6, "listMid")
       : `<div class="panel" style="text-align:center;padding:46px 20px"><div style="font-size:2.6rem">📭</div><h3>${t("grade.noItems")}</h3></div>`;
     return `<div class="page-head">
@@ -387,20 +420,20 @@
       <p class="sub">${t("grade.materialsSub")}</p>
     </div>
     <div class="grade-tabs" id="gTypes">
-      <a class="g-tab ${cat === "all" ? "on" : ""}" href="#/grade/${g}${subject !== "all" ? "?subject=" + subject : ""}">${t("grade.all")} <small>${OEG.state.catalog.filter(i => i.grade === g || i.grade === "all").length}</small></a>
-      ${OEG.tax().types.filter(x => x.route).map(x => `<a class="g-tab ${cat === x.key ? "on" : ""}" href="#/grade/${g}?cat=${x.key}${subject !== "all" ? "&subject=" + subject : ""}">${x.icon || "📄"} ${OEG.esc(OEG.typeLabel(x.key))} <small>${counts[x.key] || 0}</small></a>`).join("")}
+      <a class="g-tab ${cat === "all" ? "on" : ""}" href="#/grade/${g}${subject !== "all" ? "?subject=" + subject : ""}">${t("grade.all")} <small>${gBase.length}</small></a>
+      ${OEG.gradeTypes().map(x => `<a class="g-tab ${cat === x.key ? "on" : ""}" href="#/grade/${g}?cat=${x.key}${subject !== "all" ? "&subject=" + subject : ""}">${x.icon || "📄"} ${OEG.esc(OEG.typeLabel(x.key))} <small>${counts[x.key] || 0}</small></a>`).join("")}
     </div>
     <div class="section-head"><div><h2>📚 ${t("grade.subjects")} <small style="font-weight:700;color:var(--muted)">(${subs.length})</small></h2><p>${t("grade.subjectsSub")} — ${OEG.esc(OEG.gradeLabel(g))}</p></div>
-      <a href="#/quiz?cat=grade&grade=${g}">🧠 ${t("grade.quizNow")} →</a></div>
+      ${OEG.gradeTypes().some(x => x.key === "quiz") ? `<a href="#/quiz?cat=grade&grade=${g}">🧠 ${t("grade.quizNow")} →</a>` : ""}</div>
     <div class="subject-row" id="gSubs">
-      ${subs.map(s => `<a class="sub-chip ${subject === s.key ? "on" : ""}" href="#/grade/${g}?subject=${s.key}${cat !== "all" ? "&cat=" + cat : ""}">${OEG.esc(OEG.subjectLabel(s.key))}<small>${OEG.state.catalog.filter(i => (i.grade === g || i.grade === "all") && i.subject === s.key).length}</small></a>`).join("")}
+      ${subs.map(s => `<a class="sub-chip ${subject === s.key ? "on" : ""}" href="#/grade/${g}?subject=${s.key}${cat !== "all" ? "&cat=" + cat : ""}">${OEG.esc(OEG.subjectLabel(s.key))}<small>${gBase.filter(i => i.subject === s.key).length}</small></a>`).join("")}
     </div>
     ${adSlot("gradeTop")}
     <div id="listWrap">${body}</div>
     ${adSlot("contentBottom")}`;
   }
   function gradeCard(k) {
-    const n = OEG.state.catalog.filter(i => i.grade === k).length;
+    const n = gView(mine(OEG.state.catalog.filter(i => i.grade === k))).length;
     return `<a class="grade-card reveal glow" href="#/grade/${k}"><div class="g-ic">${OEG.gradeIcon(k)}</div><b>${OEG.esc(OEG.gradeLabel(k))}</b><span class="g-meta">${n} ${t("grade.items")} · ${OEG.tax().gradeSubjects.length} ${t("grade.subjects")}</span></a>`;
   }
 
@@ -425,7 +458,7 @@
   }
   /* 👁 સૌથી વધુ જોવાયેલ પોસ્ટ (localStorage + data/views.json) */
   function mostViewed() {
-    const pool = OEG.state.catalog.filter(i => ["post", "video", "textbook", "workbook", "link"].includes(i.type));
+    const pool = mine(OEG.state.catalog.filter(i => ["post", "video", "textbook", "workbook", "link"].includes(i.type)));
     const top = OEG.views.ranked(pool, 4);
     const best = top.filter(x => x.n > 0);
     if (best.length) return best.slice(0, 4);
@@ -444,12 +477,12 @@
 
   /* ---------- Pages ---------- */
   function homePage() {
-    const posts = OEG.byType("post").slice(0, 3);
-    const vids = OEG.byType("video").slice(0, 6);
-    const popular = OEG.state.catalog.filter(i => ["textbook", "workbook"].includes(i.type)).slice(0, 4);
+    const posts = mine(OEG.byType("post")).slice(0, 3);
+    const vids = mine(OEG.byType("video")).slice(0, 6);
+    const popular = mine(OEG.state.catalog.filter(i => ["textbook", "workbook"].includes(i.type))).slice(0, 4);
     const quizCats = (OEG.quiz && OEG.quiz.cats ? OEG.quiz.cats() : []);
-    const total = OEG.state.catalog.length;
-    const quizN = OEG.state.catalog.filter(i => i.type === "quiz").length;
+    const total = mine(OEG.state.catalog).length;
+    const quizN = mine(OEG.state.catalog.filter(i => i.type === "quiz")).length;
     return `
     <section class="hero">
       <h1>${OEG.esc(uiText("heroTitle", t("hero.title")))}</h1><p>${OEG.esc(uiText("heroSub", t("hero.sub")))}</p>
@@ -551,7 +584,7 @@
 
   function videosPage(query) {
     const grade = (query && query.grade) || "all";
-    let vids = OEG.byType("video");
+    let vids = mine(OEG.byType("video"));
     if (grade !== "all") vids = vids.filter(i => i.grade === grade || i.grade === "all");
     return `<div class="page-head"><div class="breadcrumb"><a href="#/">${t("nav.home")}</a> / ${t("page.videos")}</div><h1>▶️ ${t("page.videos")}</h1>
       <p class="sub">${vids.length} ${t("grade.items")} · ${t("yt.byUrlNote")}</p></div>
@@ -562,7 +595,7 @@
   }
 
   function gamesPage() {
-    const uploaded = OEG.byType("game");
+    const uploaded = mine(OEG.byType("game"));
     return `<div class="page-head"><div class="breadcrumb"><a href="#/">${t("nav.home")}</a> / ${t("page.games")}</div><h1>🎮 ${t("page.games")}</h1>
       <p>${t("game.builtIn")} + ${t("game.uploaded")}</p></div>
       ${adSlot("gameTop")}
@@ -621,7 +654,7 @@
   function viewPage(id) {
     const item = OEG.byId(id);
     if (!item) return `<div class="panel" style="text-align:center;padding:50px"><h3>${t("empty.title")}</h3><a class="btn btn-brand" href="#/">${t("btn.back")}</a></div>`;
-    const related = OEG.state.catalog.filter(i => i.id !== item.id && (i.grade === item.grade || i.subject === item.subject)).slice(0, 4);
+    const related = mine(OEG.state.catalog.filter(i => i.id !== item.id && (i.grade === item.grade || i.subject === item.subject))).slice(0, 4);
     return `<div class="page-head"><div class="breadcrumb"><a href="#/">${t("nav.home")}</a> / <a href="#/${OEG.typeRoute(item.type)}">${OEG.esc(OEG.typeLabel(item.type))}</a>${item.grade && item.grade !== "all" ? ` / <a href="#/grade/${item.grade}">${OEG.esc(OEG.gradeLabel(item.grade))}</a>` : ""}</div>
       <h1>${OEG.esc(OEG.title(item))}</h1>
       <div class="card-meta" style="margin-top:8px"><span class="badge">${OEG.esc(OEG.gradeLabel(item.grade))}</span><span>📅 ${OEG.esc(item.date || "")}</span>${item.subject ? `<span>🏷️ ${OEG.esc(OEG.subjectLabel(item.subject))}</span>` : ""}</div></div>
@@ -649,10 +682,11 @@
         <div class="field"><label>${t("auth.password")}</label><input name="password" type="password" required minlength="6" autocomplete="${isReg ? "new-password" : "current-password"}"></div>
         ${isReg ? `<div class="field"><label>${t("auth.role")}</label><select name="role">
           <option value="student">${t("auth.student")}</option><option value="teacher">${t("auth.teacher")}</option><option value="principal">${t("auth.principal")}</option><option value="other">${t("auth.other")}</option></select></div>
-        <div class="form-row">
+        <div class="form-row" id="regGradeRow">
           <div class="field"><label>${t("grade.pickGrade")}</label><select name="grade">${regGradeOpts()}</select></div>
           <div class="field"><label>${t("auth.subject")}</label><select name="subject">${regSubjectOpts()}</select></div>
-        </div>` : ""}
+        </div>
+        <p class="auth-role-note" id="regRoleNote">ℹ️ ${t("auth.roleNote")}</p>` : ""}
         <button class="btn btn-brand" style="width:100%;justify-content:center" type="submit">${isReg ? t("auth.registerBtn") : t("auth.loginBtn")}</button>
       </form>
       <p style="text-align:center;margin-top:16px;font-size:.92rem"><a href="#/${isReg ? "login" : "register"}">${isReg ? t("auth.haveAccount") : t("auth.noAccount")}</a></p>
@@ -687,13 +721,28 @@
   }
 
   function bindAuth(mode) {
+    /* આચાર્ય/અન્ય માટે ધોરણ-વિષય પૂછાતું નથી (ફક્ત વિદ્યાર્થી-શિક્ષક માટે લાગુ) */
+    const roleSel = document.querySelector('#authForm [name="role"]');
+    const gRow = document.getElementById("regGradeRow");
+    const syncRole = () => {
+      if (!gRow) return;
+      const on = !roleSel || /student|teacher/.test(roleSel.value);
+      gRow.style.display = on ? "" : "none";
+      const note = document.getElementById("regRoleNote");
+      if (note) note.style.display = on ? "" : "none";
+    };
+    if (roleSel) { roleSel.onchange = syncRole; syncRole(); }
     document.getElementById("authForm").onsubmit = async (e) => {
       e.preventDefault();
       const fd = new FormData(e.target);
       const msgEl = document.getElementById("authMsg");
       try {
         const res = mode === "register"
-          ? await OEG.auth.register({ name: fd.get("name"), email: fd.get("email"), password: fd.get("password"), role: fd.get("role"), grade: fd.get("grade"), subject: fd.get("subject") })
+          ? await OEG.auth.register({
+            name: fd.get("name"), email: fd.get("email"), password: fd.get("password"), role: fd.get("role"),
+            grade: (gRow && gRow.style.display === "none") ? "all" : fd.get("grade"),
+            subject: (gRow && gRow.style.display === "none") ? "all" : fd.get("subject")
+          })
           : await OEG.auth.login({ email: fd.get("email"), password: fd.get("password") });
         if (res && res.pending) { showRegisterPending(res); return; }
         renderAuthArea();
@@ -706,9 +755,9 @@
   }
 
   function searchPage(q) {
-    const res = OEG.search(q);
+    const res = mine(OEG.search(q));
     return `<div class="page-head"><h1>🔍 ${t("search.results")}: “${OEG.esc(q)}”</h1></div>
-      ${res.length ? `<div class="grid">${res.map(card).join("")}</div>` : `<div class="panel" style="text-align:center;padding:50px"><h3>${t("search.none")}</h3></div>`}`;
+      ${res.length ? `${adSlot("listTop")}<div class="grid">${res.map(card).join("")}</div>${adSlot("listMid")}` : `<div class="panel" style="text-align:center;padding:50px"><h3>${t("search.none")}</h3></div>`}`;
   }
 
   /* ---------- Router ---------- */
@@ -782,6 +831,7 @@
           else { html = listingPage(ty.key, route, query); after = () => { bindFilters(ty.key, route); bindVideoPlayers(app); }; }
         } else html = homePage();
     }
+    if (route !== "admin") html += adSlot("footerTop");   /* 📢 દરેક પાનાનાં તળિયે એક વધુ જગ્યા */
     app.innerHTML = html;
     if (after) after();
     if (route !== "admin" && route !== "login" && route !== "register") {

@@ -709,6 +709,25 @@ OEG.quiz = (() => {
     bank.questions = all().filter(q => (q.cat || "gk") !== catKey);
     return persist("quiz: category removed");
   }
+  /* ⬆⬇ ક્રમ બદલો (સરકાવીને) — ઉપ-શ્રેણી અને ચેપ્ટર બંને માટે */
+  async function moveSub(catKey, subKey, dir) {
+    const c = catEntry(catKey);
+    const arr = normSubs(c.subs);
+    const i = arr.findIndex(x => x.key === subKey), j = i + (Number(dir) || 0);
+    if (i < 0 || j < 0 || j >= arr.length) return bank;
+    const t = arr[i]; arr[i] = arr[j]; arr[j] = t;
+    c.subs = arr;
+    return persist("quiz: subcategory reordered");
+  }
+  async function moveChap(catKey, subKey, chapKey, dir) {
+    const c = catEntry(catKey), x = subEntry(c, subKey);
+    const arr = normSubs(x.subs, 1);
+    const i = arr.findIndex(y => y.key === chapKey), j = i + (Number(dir) || 0);
+    if (i < 0 || j < 0 || j >= arr.length) return bank;
+    const t = arr[i]; arr[i] = arr[j]; arr[j] = t;
+    x.subs = arr;
+    return persist("quiz: chapter reordered");
+  }
   async function setMode(catKey, mode) {
     const c = catEntry(catKey);
     c.mode = mode;
@@ -716,5 +735,5 @@ OEG.quiz = (() => {
     return persist("quiz: category mode " + mode);
   }
 
-  return { load, mount, raw, save, mutate, applyBank, markSaved, persist, pick, cats, catOf, flagOf, isExamCat, subjOf, countIn, subCount, chapCount, passPct, seconds, certOn, all, matches, modeOf, subsOf, subOf, subLabel, chapsOf, chapOf, chapTitle, guNum, normSubs, addSub, delSub, addChap, delChap, setChap, delCat, setMode };
+  return { load, mount, raw, save, mutate, applyBank, markSaved, persist, pick, cats, catOf, flagOf, isExamCat, subjOf, countIn, subCount, chapCount, passPct, seconds, certOn, all, matches, modeOf, subsOf, subOf, subLabel, chapsOf, chapOf, chapTitle, guNum, normSubs, addSub, delSub, addChap, delChap, setChap, delCat, setMode, moveSub, moveChap };
 })();
