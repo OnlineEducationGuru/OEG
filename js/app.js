@@ -2,6 +2,10 @@
    OEG App — Router + Page Renderers + Shell
    ============================================================ */
 (() => {
+  /* 🩹 પહેલું કામ: mount points ખાતરી કરો. બ્લોગર થીમ markup માંથી કોઈ div/nav નીકળી જાય
+     તો પણ મેનુ/સાઇડબાર/ફૂટર ખાલી ન રહે. (GitHub Pages પર markup પૂરું હોય ⇒ આ કંઈ કરે નહીં.) */
+  try { ensureMounts(); } catch (e) {}
+
   /* ---------- 🧭 Nav & taxonomy (Admin માંથી શ્રેણી/ધોરણ ઉમેર-કાઢ થાય છે) ---------- */
   const HOME_NAV = { route: "home", icon: "🏠", key: "nav.home" };
   const ADMIN_NAV = { route: "admin", icon: "🛠️", key: "nav.admin" };
@@ -64,7 +68,7 @@
     document.documentElement.lang = OEG.state.lang;
     document.querySelectorAll("[data-i18n]").forEach(el => el.textContent = t(el.dataset.i18n));
     document.querySelectorAll("[data-i18n-ph]").forEach(el => el.placeholder = t(el.dataset.i18nPh));
-    document.getElementById("langSelect").value = OEG.state.lang;
+    const ls = document.getElementById("langSelect"); if (ls) ls.value = OEG.state.lang;
     const tag = uiText("tagline", "");
     const tagEl = document.getElementById("logoTagline");
     if (tagEl) tagEl.textContent = tag || t("hero.title");
@@ -73,7 +77,7 @@
     const lg = document.querySelector(".logo-mark");
     if (lg && uiCfg().logoEmoji) lg.textContent = uiCfg().logoEmoji;
     document.body.classList.toggle("allow-select", !guardOn());
-    renderNav(); renderSidebar(); renderFooter(); renderAuthArea();
+    [renderNav, renderSidebar, renderFooter, renderAuthArea].forEach((f) => { try { f(); } catch (e) {} });
   }
 
   /* ---------- Shell ---------- */
@@ -204,6 +208,66 @@
       <div class="nav-drop nav-drop-lg">${kids.map(k => navItem(k, 1)).join("")}</div>
     </div>`;
   };
+  /* ---- 🩹 mount points (ફક્ત ગાયબ હોય ત્યારે જ બને) ---- */
+  function ensureMounts() {
+    const MOUNT_HEADER = `<header class="header"><div class="header-inner">
+        <button class="hamburger" id="hamburger" aria-label="Menu" aria-expanded="false"><span></span><span></span><span></span></button>
+        <a class="logo" href="#/"><span class="logo-mark">🎓</span><span class="logo-text">Online Education Guru<small id="logoTagline" data-i18n="hero.title"></small></span></a>
+        <nav class="nav-desktop" id="navDesktop" aria-label="Main"></nav>
+        <div class="header-actions">
+          <div class="search-box"><input type="search" id="globalSearch" data-i18n-ph="nav.search" placeholder="Search">
+          </div><select class="lang-select" id="langSelect" aria-label="Language"><option value="gu">ગુજરાતી</option><option value="hi">हिन्दी</option><option value="en">English</option></select>
+          <button class="icon-btn" id="themeToggle" aria-label="Dark mode">🌙</button><span id="authArea"></span>
+        </div></div></header>`;
+    const MOUNT_SIDE = `<div class="scrim" id="scrim"></div>
+      <aside class="sidebar" id="sidebar" aria-label="Sidebar">
+        <h3 data-i18n="menu">Menu</h3><div id="sideNav"></div>
+        <h3 data-i18n="sec.grades">Grades</h3><div id="sideGrades"></div>
+        <h3 data-i18n="share.title">Share</h3><div class="share-row" id="sideShare" style="margin:0 4px"></div>
+      </aside>`;
+    const MOUNT_FOOT = `<footer class="footer"><div class="footer-grid">
+        <div><h4 id="footerTitle">Online Education Guru</h4><p id="footerAbout" data-i18n="footer.about"></p><div class="social-row foot-social" id="footerSocial"></div></div>
+        <div><h4 data-i18n="footer.quick">Links</h4><div id="footerLinks"></div></div>
+      </div><div class="footer-vis" id="footerVis"></div>
+      <div class="footer-note" id="footerNote" style="display:none"></div>
+      <div class="footer-bottom" data-i18n="footer.rights"></div></footer>`;
+    const big = [
+      ["#app", `<main class="main" id="app" aria-live="polite"></main>`, "body", 0],
+      ["#toast", `<div class="toast" id="toast" role="status"></div>`, "body", 0],
+      [".header", MOUNT_HEADER, "body", 1],
+      ["#sidebar", MOUNT_SIDE, ".header", 0],
+      [".footer", MOUNT_FOOT, "body", 0]
+    ];
+    big.forEach(([sel, html, parent, first]) => {
+      if (document.querySelector(sel)) return;
+      if (sel === "#app") { const m = document.querySelector("main.main, .main"); if (m && !m.id) { m.id = "app"; return; } }
+      const p = document.querySelector(parent) || document.body;
+      p.insertAdjacentHTML(first ? "afterbegin" : "beforeend", html);
+    });
+    /* shell તૈયાર હોય પણ નાનો ભાગ ગાયબ હોય (બ્લોગર એમpty div કાઢે) ⇒ એટલો જ પાછું મૂકો */
+    const small = [
+      ["navDesktop", ".header-inner", `<nav class="nav-desktop" id="navDesktop" aria-label="Main"></nav>`],
+      ["hamburger", ".header-inner", `<button class="hamburger" id="hamburger" aria-label="Menu" aria-expanded="false"><span></span><span></span><span></span></button>`],
+      ["authArea", ".header-actions", `<span id="authArea"></span>`],
+      ["globalSearch", ".header-actions", `<div class="search-box"><input type="search" id="globalSearch" data-i18n-ph="nav.search" placeholder="Search"></div>`],
+      ["langSelect", ".header-actions", `<select class="lang-select" id="langSelect" aria-label="Language"><option value="gu">ગુજરાતી</option><option value="hi">हिन्दी</option><option value="en">English</option></select>`],
+      ["themeToggle", ".header-actions", `<button class="icon-btn" id="themeToggle" aria-label="Dark mode">🌙</button>`],
+      ["sideNav", "#sidebar", `<h3 data-i18n="menu">Menu</h3><div id="sideNav"></div>`],
+      ["sideGrades", "#sidebar", `<h3 data-i18n="sec.grades">Grades</h3><div id="sideGrades"></div>`],
+      ["sideShare", "#sidebar", `<h3 data-i18n="share.title">Share</h3><div class="share-row" id="sideShare" style="margin:0 4px"></div>`],
+      ["footerLinks", ".footer-grid", `<div><h4 data-i18n="footer.quick">Links</h4><div id="footerLinks"></div></div>`],
+      ["footerSocial", ".footer-grid", `<div class="social-row foot-social" id="footerSocial"></div>`],
+      ["footerVis", ".footer", `<div class="footer-vis" id="footerVis"></div>`],
+      ["footerNote", ".footer", `<div class="footer-note" id="footerNote" style="display:none"></div>`]
+    ];
+    small.forEach(([id, parent, html]) => {
+      if (document.getElementById(id)) return;
+      const p = document.querySelector(parent);
+      if (p) p.insertAdjacentHTML("beforeend", html);
+    });
+    if (document.querySelector("#sideNav,#navDesktop")) { renderNav(); renderSidebar(); }   /* પછિ render() એ પણ ભરી દેશે */
+  }
+
   function renderNav() {
     const tree = navTree();
     const el = document.getElementById("navDesktop");
@@ -303,7 +367,8 @@
 
   function renderAuthArea() {
     const u = OEG.state.user;
-    document.getElementById("authArea").innerHTML = u
+    const area = document.getElementById("authArea"); if (!area) return;
+    area.innerHTML = u
       ? `<span style="font-weight:700;font-size:.88rem;margin-right:6px">👋 ${OEG.esc(u.name)}</span><button class="btn btn-outline btn-sm" id="logoutBtn">${t("nav.logout")}</button>`
       : `<a class="btn btn-outline btn-sm" href="#/login">${t("nav.login")}</a> <a class="btn btn-brand btn-sm" href="#/register">${t("nav.register")}</a>`;
     const lb = document.getElementById("logoutBtn");
@@ -812,30 +877,13 @@
         <div class="form-row" id="regGradeRow">
           <div class="field"><label>${t("grade.pickGrade")}</label><select name="grade">${regGradeOpts()}</select></div>
           <div class="field"><label>${t("auth.subject")}</label><select name="subject">${regSubjectOpts()}</select></div>
-        </div>
-        <p class="auth-role-note" id="regRoleNote">ℹ️ ${t("auth.roleNote")}</p>` : ""}
+        </div>` : ""}
         <button class="btn btn-brand" style="width:100%;justify-content:center" type="submit">${isReg ? t("auth.registerBtn") : t("auth.loginBtn")}</button>
       </form>
       <p style="text-align:center;margin-top:16px;font-size:.92rem"><a href="#/${isReg ? "login" : "register"}">${isReg ? t("auth.haveAccount") : t("auth.noAccount")}</a></p>
     </div>`;
   }
 
-  function showRegisterPending(res) {
-    const c = OEG.state.config;
-    const msgTxt = "OEG Registration\nName: " + res.name + "\nEmail: " + res.email + "\nRole: " + res.role
-      + "\nGrade: " + (res.grade ? OEG.gradeLabel(res.grade) : "-") + "\nSubject: " + (res.subject && res.subject !== "all" ? OEG.subjectLabel(res.subject) : "-");
-    const enc = encodeURIComponent(msgTxt);
-    const msgEl = document.getElementById("authMsg");
-    if (!msgEl) return;
-    msgEl.innerHTML = `<div class="alert alert-ok" style="text-align:left">
-      <b>${t("auth.pendingTitle")}</b>
-      <div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap">
-        <a class="btn btn-sm btn-outline" target="_blank" rel="noopener" href="https://wa.me/${OEG.esc(((c.social || {}).whatsapp || "").replace(/[^0-9]/g, ""))}?text=${enc}">📲 ${t("auth.sendWhatsApp")}</a>
-        ${c.contactEmail ? `<a class="btn btn-sm btn-outline" href="mailto:${OEG.esc(c.contactEmail)}?subject=${encodeURIComponent("OEG Registration Request")}&body=${enc}">📧 ${t("auth.sendEmail")}</a>` : ""}
-      </div></div>`;
-    const f = document.getElementById("authForm");
-    if (f) f.style.display = "none";
-  }
 
   /* 🎓 રજિસ્ટ્રેશન: ધોરણ + વિષય (વિષયની યાદી હંમેશા એ જ ૭ વિષય) */
   function regGradeOpts() {
@@ -854,12 +902,11 @@
     const syncRole = () => {
       if (!gRow) return;
       const on = !roleSel || /student|teacher/.test(roleSel.value);
-      gRow.style.display = on ? "" : "none";
-      const note = document.getElementById("regRoleNote");
-      if (note) note.style.display = on ? "" : "none";
+      gRow.style.display = on ? "" : "none";   /* આચાર્ય/ઓફિસ માટે ધોરણ-વિષય પૂછાતું નથી */
     };
     if (roleSel) { roleSel.onchange = syncRole; syncRole(); }
-    document.getElementById("authForm").onsubmit = async (e) => {
+    const form = document.getElementById("authForm"); if (!form) return;
+    form.onsubmit = async (e) => {
       e.preventDefault();
       const fd = new FormData(e.target);
       const msgEl = document.getElementById("authMsg");
@@ -871,9 +918,8 @@
             subject: (gRow && gRow.style.display === "none") ? "all" : fd.get("subject")
           })
           : await OEG.auth.login({ email: fd.get("email"), password: fd.get("password") });
-        if (res && res.pending) { showRegisterPending(res); return; }
         renderAuthArea();
-        OEG.toast("👋 " + t("auth.welcome") + ", " + (res.name || res.email));
+        OEG.toast((mode === "register" ? "🎉 " + t("auth.regOk") + " — " : "👋 " + t("auth.welcome") + ", ") + (res.name || res.email));
         location.hash = "#/";
       } catch (err) {
         msgEl.innerHTML = `<div class="alert alert-error">${OEG.esc(err.message)}</div>`;
@@ -923,7 +969,7 @@
         <div style="font-size:2.4rem">🚧</div><h2>${OEG.esc(t("ui.sectionOff"))}</h2>
         <p style="color:var(--muted);margin-top:8px">${OEG.esc(t("ui.sectionOffSub") + adminTip("ui.sectionOffSubAdmin"))}</p>
         <div style="margin-top:16px"><a class="btn btn-brand" href="#/">← ${t("btn.home")}</a></div></section>`;
-      renderSidebar();
+      try { renderSidebar(); } catch (e) {}
       return;
     }
     switch (route) {
@@ -965,7 +1011,7 @@
     }
     if (route !== "admin") html += adSlot("footerTop");   /* 📢 દરેક પાનાનાં તળિયે એક વધુ જગ્યા */
     app.innerHTML = html;
-    if (after) after();
+    try { if (after) after(); } catch (e) {}
     if (route !== "admin" && route !== "login" && route !== "register") {
       bindShare(document);
       bindVideoPlayers(app);
@@ -974,9 +1020,7 @@
     }
     const io = new IntersectionObserver(es => es.forEach(e => e.isIntersecting && e.target.classList.add("in")), { threshold: .08 });
     app.querySelectorAll(".reveal").forEach(el => io.observe(el));
-    renderNav();
-    renderSidebar();
-    paintVisitors();
+    [renderNav, renderSidebar, paintVisitors].forEach((f) => { try { f(); } catch (e) {} });
   }
 
   /* ---------- 🔎 SEO meta (title/desc/canonical/OG/JSON-LD) ---------- */
@@ -1071,13 +1115,13 @@
 
   /* ---------- Sidebar / theme / lang ---------- */
   const sidebar = document.getElementById("sidebar"), scrim = document.getElementById("scrim"), burger = document.getElementById("hamburger");
-  function closeSidebar() { sidebar.classList.remove("open"); scrim.classList.remove("show"); burger.classList.remove("open"); burger.setAttribute("aria-expanded", "false"); }
-  burger.onclick = () => {
+  function closeSidebar() { if (!sidebar || !scrim || !burger) return; sidebar.classList.remove("open"); scrim.classList.remove("show"); burger.classList.remove("open"); burger.setAttribute("aria-expanded", "false"); }
+  if (burger) burger.onclick = () => {
     const open = sidebar.classList.toggle("open");
     scrim.classList.toggle("show", open); burger.classList.toggle("open", open);
     burger.setAttribute("aria-expanded", String(open));
   };
-  scrim.onclick = closeSidebar;
+  if (scrim) scrim.onclick = closeSidebar;
 
   function applyTheme() {
     document.documentElement.dataset.theme = OEG.state.theme;
@@ -1092,19 +1136,22 @@
       document.documentElement.style.removeProperty("--brand");
       document.documentElement.style.removeProperty("--brand-2");
     }
-    document.getElementById("themeToggle").textContent = OEG.state.theme === "dark" ? "☀️" : "🌙";
+    const tb = document.getElementById("themeToggle"); if (tb) tb.textContent = OEG.state.theme === "dark" ? "☀️" : "🌙";
   }
-  document.getElementById("themeToggle").onclick = () => {
+  const tBtn = document.getElementById("themeToggle");
+  if (tBtn) tBtn.onclick = () => {
     OEG.state.theme = OEG.state.theme === "dark" ? "light" : "dark";
     localStorage.setItem("oeg-theme", OEG.state.theme);
     applyTheme();
   };
-  document.getElementById("langSelect").onchange = (e) => {
+  const lSel = document.getElementById("langSelect");
+  if (lSel) lSel.onchange = (e) => {
     OEG.state.lang = e.target.value;
     localStorage.setItem("oeg-lang", OEG.state.lang);
     applyI18n(); render();
   };
-  document.getElementById("globalSearch").addEventListener("keydown", (e) => {
+  const gIn = document.getElementById("globalSearch");
+  if (gIn) gIn.addEventListener("keydown", (e) => {
     if (e.key === "Enter" && e.target.value.trim()) location.hash = "#/search?q=" + encodeURIComponent(e.target.value.trim());
   });
 

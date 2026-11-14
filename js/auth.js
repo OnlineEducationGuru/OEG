@@ -3,14 +3,14 @@
    ------------------------------------------------------------
    સામાન્ય વપરાશકર્તા (વિદ્યાર્થી/શિક્ષક/આચાર્ય/અન્ય):
      login → data/users.json (Admin panel થી ઉમેરાયેલાં ખાતાં)
-     register → વિનંતી નોંધાય છે; Admin મંજૂર કરે તો login ચાલુ
+     register → ખાતું બને એટલે તરત login (Admin ની મંજૂરી નહીં)
    Admin Panel:
      ફક્ત data/admin.json માં રાખેલ email + પાસવર્ડ થી જ ખુલે
      (પાસવર્ડ SHA-256 hash સ્વરૂપે સેવ — plaintext નહીં)
    ============================================================ */
 OEG.auth = (() => {
   const LS_USER = "oeg-user";
-  const LS_REQ = "oeg-reg-requests";
+  const LS_LOCAL = "oeg-users-local";   /* રજિસ્ટ્રેશન થયેલું ખાતું (એ જ ઉપકરણે login ચાલુ રહે) */
   const SS_ADMIN = "oeg-admin";
   const USERS_FILE = "data/users.json";
   const ADMIN_FILE = "data/admin.json";
@@ -22,6 +22,8 @@ OEG.auth = (() => {
 
   const save = (u) => { OEG.state.user = u; try { localStorage.setItem(LS_USER, JSON.stringify(u)); } catch (e) {} };
   const load = () => { try { OEG.state.user = JSON.parse(localStorage.getItem(LS_USER) || "null"); } catch (e) { OEG.state.user = null; } return OEG.state.user; };
+  const localUsers = () => { try { const a = JSON.parse(localStorage.getItem(LS_LOCAL) || "[]"); return Array.isArray(a) ? a : []; } catch (e) { return []; } };
+  const addLocalUser = (u) => { try { localStorage.setItem(LS_LOCAL, JSON.stringify(localUsers().concat([u]))); } catch (e) {} };
 
   /* ---- SHA-256 (pure JS — દરેક environment માં એકજ પરિણામ) ---- */
   const K = [
@@ -115,7 +117,7 @@ OEG.auth = (() => {
     return j;
   }
 
-  /* ---- રજિસ્ટર (વિદ્યાર્થી/શિક્ષક/આચાર્ય/અન્ય) — Admin મંજૂરી વાળો ફ્લો ---- */
+  /* ---- રજિસ્ટ્રેશન (વિદ્યાર્થી/શિક્ષક/આચાર્ય/ઓફિસ) — મંજૂરી વગર તરત login ---- */
   async function register({ name, email, password, role, grade, subject }) {
     email = norm(email);
     if (isFirebase()) {
@@ -124,13 +126,13 @@ OEG.auth = (() => {
       save(user); return user;
     }
     const users = await fetchUsers();
-    if (users.users.some(u => norm(u.email) === email)) throw new Error(OEG.t("auth.exists"));
-    try {
-      const l = JSON.parse(localStorage.getItem(LS_REQ) || "[]");
-      l.push({ name, email, role, grade: cleanGrade(grade), subject: cleanSub(subject), passLen: String(password).length, at: Date.now() });
-      localStorage.setItem(LS_REQ, JSON.stringify(l));
-    } catch (e) {}
-    return { pending: true, name, email, role, grade: cleanGrade(grade), subject: cleanSub(subject) };
+    const all = (users.users || []).concat(localUsers());
+    if (all.some(u => norm(u.email) === email)) throw new Error(OEG.t("auth.exists"));
+    const rec = await makeUserRecord({ name, email, password, role, grade, subject });
+    addLocalUser(rec);
+    const user = { name: rec.name, email, role: rec.role, grade: rec.grade, subject: rec.subject, provider: "local" };
+    save(user);
+    return user;                                  /* ⇒ કોઈ Admin મંજૂરી નહીં, એકાઉન્ટ તરત ચાલુ */
   }
 
   /* ---- લોગિન ---- */
@@ -142,7 +144,7 @@ OEG.auth = (() => {
       save(user); return user;
     }
     const users = await fetchUsers();
-    const u = users.users.find(x => norm(x.email) === email);
+    const u = (users.users || []).concat(localUsers()).find(x => norm(x.email) === email);
     if (!u) throw new Error(OEG.t("auth.noUser"));
     if (sha256hex(u.salt + ":" + password) !== u.hash) throw new Error(OEG.t("auth.badpass"));
     const user = { name: u.name, email, role: u.role || "user", grade: u.grade || "all", subject: cleanSub(u.subject), provider: "github" };

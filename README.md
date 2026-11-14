@@ -56,7 +56,9 @@
 1. Blogger Dashboard → **Theme** → **Customize ▼** → **Backup** (હાલની થીમ સાચવો — જરૂરી!).
 2. **Theme → Customize ▼ → Restore → Upload** → `blogger/OEG-Blogger-Native.xml` પસંદ કરો.
 3. **Setting → Permissions → Bloggers → +Add authors** માં તમારું email રાખો (એ જ email થી Admin login થશે).
-4. જુઓ → બ્લોગર પર આખી સાઈટ ચાલે. CSS/JS/JSON ફાઈલો jsDelivr CDN પરથી આવે છે
+4. થઈમ માં ૪ `<b:section>` છે ⇒ **Blogger → Layout** માં હવે Header / Sidebar / Footer જગ્યા માં **Add a Gadget** ચાલે
+   (Label, Link List, HTML/JavaScript, AdSense gadget વગેરે — એ સાઈટ ની ડિઝાઇન પ્રમાણે સજાય).
+5. જુઓ → બ્લોગર પર આખી સાઈટ ચાલે. CSS/JS/JSON ફાઈલો jsDelivr CDN પરથી આવે છે
    (`https://cdn.jsdelivr.net/gh/OnlineEducationGuru/OEG@main/`), એટલે **નવો XML ફરી upload કરવાની જરૂર નથી** —
    GitHub માં push કરો (અથવા Admin Panel માં save કરો) ⇒ બ્લોગર ની સાઈટ પણ થોડી મિનિટ માં નવી દેખાશે.
 
@@ -72,6 +74,10 @@ node scripts/blogger.mjs --pages-links # SEO પાનાં (g/ p/ q/) GitHub P
 પણ SEO/UX દૃષ્ટિએ native થીમ જ સારો: iframe માં GitHub Pages ની સાઈટ નીચે બંધાયેલી રહે છે
 અને browser ના address bar માં `github.io` સરનામું પણ દેખાય છે.
 
+**જો મેનુ/સાઈડબાર ખાલી દેખાય (જૂના થીમ માં એવું બન્યું હતું):** આ વર્ઝન માં સાઈટ પોતે જ એ જગ્યા બનાવી લે છે
+(કોઈ div બ્લોગર કાઢી નાખે તો પણ મેનુ ફરી ભરાય), ઉપર નું બ્લોગર bar છુપાવે છે, અને ફોન્ટ ની CSS પણ CDN થી લોડ કરે છે.
+એટલે **નવો XML ફરી એક વાર upload કરો** (Theme → Restore) — એ જ ઉકેલ છે.
+
 **મર્યાદા (જાણીને રાખો):**
 - ✍️ Admin Panel બ્લોગર પર પણ **ચાલે** (login + edit + save) — ફાઈલો GitHub માં જ સેવ થાય, બ્લોગર એ જ ડેટા વાપરે. એટલે બ્લોગર પર કંઈ upload કરવું પડતું નથી.
 - 🖼 **▶ વિડિયો પ્લેલિસ્ટ / ચૅનલ લિંક** પણ કામ કરે: `youtube.com/playlist?list=…`, `watch?v=…&list=…` કે `…/channel/UC…` ਨાં લિંક ਨાંખો ⇒ એ જ સિરીઝ સાઈટ પર ચાલે, અને "🔁 આગલો વિડિયો" કાર્ડ + વિડિયો પૂરો થાય એટલે આગલો આપોઆપ ચાલે.
@@ -85,6 +91,8 @@ node scripts/blogger.mjs --pages-links # SEO પાનાં (g/ p/ q/) GitHub P
 
 > 🔒 **એક્સેસ:** Admin Panel **ફક્ત એક જ email+પાસવર્ડથી** ખુલે છે, જે `data/admin.json` માં **email = base64** + **પાસવર્ડ = SHA-256 hash** સ્વરૂપે સુરક્ષિત સેવ છે (કોઈ પણ ભાષક ફાઈલ વાંચે તો email/પાસવર્ડ સીધા દેખાતા નથી).
 
+0. **વિદ્યાર્થી/શિક્ષક રજિસ્ટ્રેશન:** `#/register` — નામ+ઈમેઈલ+પાસવર્ડ+ભૂમિકા ભરો ⇒ **તરત login** (Admin ની મંજૂરી નહીં).
+   ખાતું એ ઉપકરણ ના localStorage માં (salt + SHA-256 hash થઈ ને) રહે છે; પછી તે જ ઉપકરણ એ જ email+પાસવર્ડ થી login કરી શકે.
 1. **Admin ખોલવું:** 🛠️ **Admin Panel લિંક મેનુ માં છુપાયેલી છે** — એ ફક્ત unlock થયા પછિ જ દેખાય.
    પહેલી વાર URL માં `#/admin` લખો (અથવા બ્લોગર/પેજ પર `…/#/admin`) → login → પછી મેનુ માં લિંક આપોઆપ આવે.
 2. **પ્રથમ વખત (setup):** email + તમારો નવો પાસવર્ડ + **એકવાર સિક્રેટ કોડ** ભરો → **દાખલ થાઓ**.

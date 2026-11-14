@@ -53,23 +53,67 @@ if (/="(?:js|vendor|assets|styles\.css|favicon|manifest|g\/|p\/|q\/|sitemap)/.te
   console.error("⚠️ હજી local path રહ્યો છે — index.html નું markup તપાસો"); process.exit(1);
 }
 
-/* ---------- 3) HTML → XHTML (બ્લોગર નો parser strict છે) ---------- */
-let j = null;
-try { j = (await import("jsdom")).JSDOM; } catch (e) { /* jsdom ન હોય તો fallback */ }
-let mode = "";
-if (j) {
-  const doc = new j(`<!DOCTYPE html><html><body>${body}</body></html>`);
+/* ---------- 2b) head ની ફાઈલો (ફોન્ટ CSS + preconnect) પણ થીમ માં લાવો ---------- */
+/* XHTML માં દરેક attribute ને મૂલ્ય જોઈએ અને tag બંધ થવો જોઈએ ⇒ attributes ફરી લખીએ */
+function fixTag(tag) {
+  const nm = (/^<([a-zA-Z-]+)/.exec(tag) || [0, "link"])[1];
+  const rest = tag.replace(/^<[a-zA-Z-]+/, "").replace(/\s*\/?>$/, "");
+  const out = [];
+  const re = /([a-zA-Z-]+)(?:\s*=\s*"([^"]*)"|\s*=\s*'([^']*)')?/g;
+  let m;
+  while ((m = re.exec(rest))) {
+    const k = m[1];
+    let v = m[2] !== undefined ? m[2] : m[3];
+    if (v === undefined) v = k === "crossorigin" ? "anonymous" : k;
+    v = v.replace(/href=/g, "");
+    out.push(`${k}="${v}"`);
+  }
+  const hrefIdx = out.findIndex((a) => a.startsWith("href="));
+  if (hrefIdx >= 0) out[hrefIdx] = out[hrefIdx].replace(/href="(?!https?:\/\/|\/\/)([^"]*)"/, `href="${CDN}$1"`);
+  return `<${nm} ${out.join(" ")}/>`;
+}
+const headLinkTags = (html.slice(html.indexOf("<head"), html.indexOf("</head>")).match(/<link\b[^>]*>/g) || [])
+  .filter((l) => /rel=("|')?(stylesheet|preconnect|dns-prefetch|icon|manifest)/.test(l))
+  .map(fixTag);
+const byHref = (tag) => (/href="([^"]*)"/.exec(tag) || [0, ""])[1];
+const want = [
+  `<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="anonymous"/>`,
+  `<link rel="preconnect" href="https://fonts.googleapis.com" crossorigin="anonymous"/>`,
+  `<link rel="preconnect" href="https://i.ytimg.com"/>`,
+  `<link rel="preconnect" href="https://www.youtube-nocookie.com"/>`,
+  `<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin="anonymous"/>`,
+  `<link rel="dns-prefetch" href="https://pagead2.googlesyndication.com"/>`,
+  `<link rel="icon" href="${CDN}favicon.svg" type="image/svg+xml"/>`,
+  `<link rel="manifest" href="${CDN}manifest.webmanifest"/>`,
+  `<link rel="stylesheet" href="${CDN}styles.css"/>`
+];
+const headSet = new Map();
+headLinkTags.concat(want).forEach((t) => { if (!headSet.has(byHref(t))) headSet.set(byHref(t), t); });
+const headExtra = [...headSet.values()].join("\n");
+
+/* ---------- 3) HTML → XHTML (બ્લોગર નો parser strict છે — jsdom જ એ રીતે કરી શકે) ---------- */
+let JSDOM;
+try { ({ JSDOM } = await import("jsdom")); }
+catch (e) {
+  console.error("❌ jsdom મળ્યો નહીં. પહેલાં:  npm install   પછી ફરી:  node scripts/blogger.mjs");
+  process.exit(1);
+}
+const JSDOMC = JSDOM;
+{
+  const doc = new JSDOMC(`<!DOCTYPE html><html><body>${body}</body></html>`);
   let xml = new doc.window.XMLSerializer().serializeToString(doc.window.document.body);
   xml = xml.replace(/^<body[^>]*>/, "").replace(/<\/body>$/, "");
   body = xml.replace(/<script([^>]*?)\/>/g, "<script$1></script>");   /* self-close → બ્લોગર માં સલામત રીતે */
-  mode = "jsdom (XHTML normalized)";
-} else {
-  body = body
-    .replace(/<(img|br|hr|input|link|meta|source|track|wbr|area|base|col|embed|param)\b([^>]*?)(?<!\/)>/g, "<$1$2/>")
-    .replace(/<(script[^>]*?)>(?=\s*<\/script>)/g, "<$1></script>")
-    .replace(/\s(checked|defer|async|disabled|hidden|novalidate|autoplay|controls|loop|muted|required|selected)(?=[\s>])/g, ' $1="$1"');
-  mode = "regex fallback (jsdom ન મળ્યું — markup સાદું હોય તો ચાલે)";
 }
+
+/* 🧩 બ્લોગર ના Layout માં “Add a Gadget” ચાલે એ માટે void sections (header / sidebar / footer) */
+const sect = (id, cls) => `<b:section class='${cls}' id='${id}' showaddelement='yes'></b:section>`;
+let slots = 0;
+if (/<\/header>/.test(body)) { body = body.replace(/<\/header>/, (m0) => m0 + sect("oeg-top", "oeg-top")); slots++; }
+if (/<aside[^>]*id=["']?sidebar/.test(body)) { body = body.replace(/(<aside[^>]*id=["']?sidebar["']?[^>]*>)/, (m0) => m0 + sect("oeg-side", "oeg-side")); slots++; }
+if (/<\/footer>/.test(body)) { body = body.replace(/<\/footer>/, (m0) => sect("oeg-foot", "oeg-foot") + m0); slots++; }
+if (!slots) console.warn("   ⚠️ Layout slots (header/sidebar/footer gadget જગ્યા) ઉમેરી શકાયા નહીં");
+else console.log("   🧩 Layout slots: " + slots + " (header/sidebar/footer gadget જગ્યા)");
 
 /* ---------- 3b) OEG_BASE inject (js/catalog.js → data/*.json CDN પરથી વાંચે) ---------- */
 /* ⚠️ CDATA નાં ચિહ્ન અલગ લીટીએ રાખવા — HTML પાર્સર માં `//<![CDATA[` પછી ની બાબત એક જ લીટી હોય તો ટિપ્પણી બની જાય */
@@ -103,7 +147,14 @@ const skin = `<![CDATA[
 /* <Group description="રંગો" selector="body"> */
 /* <Variable name="keycolor" description="મુખ્ય રંગ" type="color" default="#4f46e5" value="#4f46e5"/> */
 /* </Group> */
-body{margin:0;background:#f6f7fb}
+body{margin:0!important;background:#f6f7fb}
+/* બ્લોગર નું પોતા નું bar સાઇટ નું fixed header ઢાંકે નહીં */
+#navbar-iframe,#navbar-iframe-container,.navbar,.blogger-iframe-colorize,.blogger-color{display:none!important;height:0!important}
+/* Layout → Add Gadget થી જે widget આવે એ સાઇટ જી ડિઝાઇન પ્રમાણે બેસે */
+.oeg-side .widget,.oeg-foot .widget,.oeg-top .widget{background:var(--surface,#fff);border:1px solid var(--border,#e3e6f0);border-radius:14px;padding:12px 14px;margin:0 0 12px}
+.oeg-side .widget .title,.oeg-foot .widget .title,.oeg-top .widget .title{font-size:.86rem;letter-spacing:.4px;margin:0 0 8px;text-transform:uppercase;color:var(--muted,#5b5f7a)}
+.oeg-side .widget li,.oeg-foot .widget li{list-style:none;padding:3px 0;font-size:.92rem}
+.oeg-top .widget{max-width:1180px;margin:10px auto;padding:10px 18px}
 .oeg-blog{max-width:900px;margin:26px auto 40px;padding:0 16px;font-family:'Noto Sans Gujarati',system-ui,Segoe UI,sans-serif}
 .oeg-blog h2{font-size:1.2rem;margin:0 0 12px}
 .oeg-post{background:#fff;border:1px solid #e3e6f0;border-radius:14px;padding:16px 18px;margin-bottom:12px}
@@ -136,15 +187,7 @@ ${doc}
 <title><data:blog.pageTitle/></title>
 <meta content='width=device-width, initial-scale=1.0' name='viewport'/>
 <meta content='#4f46e5' name='theme-color'/>
-<link crossorigin='anonymous' href='https://fonts.gstatic.com' rel='preconnect'/>
-<link crossorigin='anonymous' href='https://fonts.googleapis.com' rel='preconnect'/>
-<link href='https://i.ytimg.com' rel='preconnect'/>
-<link href='https://www.youtube-nocookie.com' rel='preconnect'/>
-<link crossorigin='anonymous' href='https://cdn.jsdelivr.net' rel='preconnect'/>
-<link href='https://pagead2.googlesyndication.com' rel='dns-prefetch'/>
-<link href='${CDN}favicon.svg' rel='icon' type='image/svg+xml'/>
-<link href='${CDN}manifest.webmanifest' rel='manifest'/>
-<link href='${CDN}styles.css' rel='stylesheet'/>
+${headExtra}
 <b:skin>${skin}</b:skin>
 </head>
 <body>
@@ -161,9 +204,9 @@ if ((() => { const re = /<!--([\s\S]*?)-->/g; let m; while ((m = re.exec(xml))) 
 if (/<(img|br|hr|input|link|meta)\b[^>]*[^/]>/.test(xml)) problems.push("void tag self-close નથી (/> લાગે)");
 mkdirSync(join(root, "blogger"), { recursive: true });
 writeFileSync(out, xml);
-if (j) {
+{
   try {
-    const v = new j(xml, { contentType: "text/xml" });
+    const v = new JSDOM(xml, { contentType: "text/xml" });
     const err = v.window.document.querySelector("parsererror");
     if (err) problems.push("XML parse: " + err.textContent.trim().split("\n").slice(0, 2).join(" "));
   } catch (e) {
@@ -174,7 +217,7 @@ if (j) {
     problems.push("XML parse: " + m + ctx);
   }
 }
-console.log(`${problems.length ? "❌ " : "✅ "}blogger/OEG-Blogger-Native.xml — ${(xml.length / 1024).toFixed(1)} KB  [${mode}]
+console.log(`${problems.length ? "❌ " : "✅ "}blogger/OEG-Blogger-Native.xml — ${(xml.length / 1024).toFixed(1)} KB  [jsdom XHTML + XML તપાસ]
    CDN:   ${CDN}
    SEO લિંક: ${pagesLinks ? "GitHub Pages પાનાં (" + PAGES + ")" : "બ્લોગર નાં app routes (host બદલાતો નહીં)"}
    પાનાં ની લિંક દાખલ: g/1.html → ${pagesLinks ? PAGES + "g/1.html" : "#/grade/1"}`);
