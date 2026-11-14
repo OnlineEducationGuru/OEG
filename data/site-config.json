@@ -398,16 +398,6 @@
     ],
     "audiences": [
       {
-        "key": "student",
-        "icon": "🧑‍🎓",
-        "label": {
-          "gu": "વિદ્યાર્થી",
-          "hi": "छात्र",
-          "en": "Student"
-        },
-        "subs": []
-      },
-      {
         "key": "teacher",
         "icon": "👩‍🏫",
         "label": {
@@ -444,6 +434,16 @@
             }
           }
         ]
+      },
+      {
+        "key": "student",
+        "icon": "🧑‍🎓",
+        "label": {
+          "gu": "વિદ્યાર્થી",
+          "hi": "छात्र",
+          "en": "Student"
+        },
+        "subs": []
       },
       {
         "key": "principal",
