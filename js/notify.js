@@ -11,14 +11,14 @@
 OEG.news = (() => {
   const DEF = {
     enabled: true,
-    label: "તાજા સમાચાર",
+    label: "Breaking News",           /* પટ્ટી નાં ડાબે નું chip નામ (વપરાશકર્તા બદલી શકે નહીં) */
     speed: 46,                 /* અક્ષર પ્રતિ સેકંડ — જેટલું મોટું એટલું ઝડપી */
     autoPosts: true,           /* નવી પોસ્ટ નું ટાઈટલ આપોઆપ ઉમેરાય */
     autoTypes: "post",
     autoDays: 45,
     autoCount: 6,
     pauseOnHover: true,
-    dismissible: true,
+    dismissible: false,
     items: []                  /* [{text, url}]  — Admin માંથી "લખાણ | લિંક" દરેક લીટીએ */
   };
   const LS_OFF = "oeg.news.off";
@@ -71,15 +71,23 @@ OEG.news = (() => {
     });
   };
   const sig = (list) => { let h = 7; list.forEach((x) => { for (const ch of x.text) h = (h * 31 + ch.charCodeAt(0)) | 0; }); return (h >>> 0).toString(36); };
+  /* 📰 પટ્ટી હેડર ની *બહાર* (ઉપર, સાદા પ્રવાહ માં) બેસે — sticky હેડર માં ભળે નહીં,
+     એટલે સ્ક્રિન પર કંઈ ઢંકાતું / નડતું નથી અને પાનું સરકાવો તો પટ્ટી પણ સાથે સરકે. */
+  function mount(el) {
+    const hd = document.querySelector(".header");
+    if (hd && hd.parentNode) hd.parentNode.insertBefore(el, hd);
+    else document.body.insertBefore(el, document.body.firstChild || null);
+  }
   function render() {
-    const head = document.querySelector(".header") || document.body;
     let el = document.getElementById("newsStrip");
     const c = cfg();
     const list = on() ? items() : [];
+    const dism = c.dismissible === true;              /* default ⇒ ✕ નહીં (વપરાશકર્તા પટ્ટી હટાવી શકે નહીં) */
+    if (!dism) clearDismiss();                        /* એક વાર કાઢેલી હોય તોય હવે દેખાય */
     let off = "";
     try { off = localStorage.getItem(LS_OFF) || ""; } catch (e) {}
     const s = list.length ? sig(list) : "";
-    if (!list.length || (off && off === s)) {
+    if (!list.length || (dism && off && off === s)) {
       if (el) el.remove();
       document.body.classList.remove("has-news");
       return false;
@@ -88,7 +96,9 @@ OEG.news = (() => {
       el = document.createElement("div");
       el.id = "newsStrip";
       el.className = "news-strip";
-      head.appendChild(el);
+      mount(el);
+    } else if (el.parentNode && el.parentNode.classList && el.parentNode.classList.contains("header")) {
+      mount(el);                                      /* જૂનું sticky header અંદર નું placement તાજું કરો */
     }
     const one = list.map((x) =>
       `<a class="ns-item" href="${OEG.esc(x.url || "#/")}"${/^https?:/i.test(x.url || "") ? ' target="_blank" rel="noopener"' : ""}><span class="ns-ic">${x.icon || "📌"}</span>${OEG.esc(x.text)}</a>`
@@ -97,11 +107,11 @@ OEG.news = (() => {
     const chars = list.reduce((n, x) => n + x.text.length + 6, 0);
     const dur = Math.max(14, Math.round(chars / cps));
     el.innerHTML = `<div class="ns-in">
-        <span class="ns-tag">🔴 ${OEG.esc(OEG.langField(c.label) || "તાજા સમાચાર")}</span>
+        <span class="ns-tag">🔴 ${OEG.esc(OEG.langField(c.label) || "Breaking News")}</span>
         <div class="ns-vp"><div class="ns-run" style="animation-duration:${dur}s"${c.pauseOnHover === false ? " data-nopause" : ""}>
           <span class="ns-seq">${one}</span><span class="ns-seq" aria-hidden="true">${one}</span>
         </div></div>
-        ${c.dismissible ? '<button type="button" class="ns-x" aria-label="close">✕</button>' : ""}
+        ${dism ? '<button type="button" class="ns-x" aria-label="close">✕</button>' : ""}
       </div>`;
     document.body.classList.add("has-news");
     const xb = el.querySelector(".ns-x");
@@ -346,34 +356,14 @@ OEG.notify = (() => {
     window.open(waLink(text, number == null ? c.waNumber : number), "_blank", "noopener");
     return true;
   }
-  /* Admin/શિક્ષક ને પાના ના તળિયે દેખાતો નાનો પટ્ટી — નવી પોસ્ટ વૉટ્સએપ પર મોકલવાની યાદ અપાવણી */
-  function renderChip() {
-    const c = cfg();
-    let el = document.getElementById("waChip");
-    const who = c.waAuto || "admin";
-    const okWho = who === "all" ? true : who === "admin" ? (OEG.canAdmin && OEG.canAdmin()) : false;
-    const list = c.waBroadcast && okWho ? pending().slice(0, 9) : [];
-    if (!list.length) { if (el) el.remove(); return false; }
-    if (!el) {
-      el = document.createElement("div");
-      el.id = "waChip";
-      el.className = "wa-chip";
-      document.body.appendChild(el);
-    }
-    el.innerHTML = `<b>🟢 ${OEG.esc(OEG.t("wa.title"))}</b>
-      <ul>${list.map((it) => `<li><a href="${OEG.esc(waLink(waText(it), ""))}" target="_blank" rel="noopener" data-wa="${OEG.esc(it.id)}">${OEG.typeIcon(it.type)} ${OEG.esc(OEG.title(it).slice(0, 46))}</a></li>`).join("")}</ul>
-      <div class="wa-row"><button type="button" class="btn btn-brand btn-sm" id="waAll">📤 ${OEG.esc(OEG.t("wa.all"))}</button>
-      <button type="button" class="btn btn-outline btn-sm" id="waDone">✅ ${OEG.esc(OEG.t("wa.done"))}</button>
-      <button type="button" class="btn btn-outline btn-sm" id="waX" aria-label="close">✕</button></div>`;
-    el.querySelectorAll("[data-wa]").forEach((a) => { a.onclick = () => { const it = OEG.byId(a.dataset.wa); if (it) markSent(it.id); }; });
-    const all = el.querySelector("#waAll");
-    if (all) all.onclick = () => { sendMany(list); renderChip(); };
-    const done = el.querySelector("#waDone");
-    if (done) done.onclick = () => { markAll(list.map((x) => x.id)); renderChip(); };
-    const x = el.querySelector("#waX");
-    if (x) x.onclick = () => { el.style.display = "none"; try { localStorage.setItem("oeg.wa.chip", "0"); } catch (e) {} };
-    if ((localStorage.getItem("oeg.wa.chip") || "1") === "0") el.style.display = "none";
-    return true;
+  /* 🟢 નવી પોસ્ટ ⇒ વૉટ્સએપ: પાનાં પર કોઈ તરતું બોક્સ નહીં (screen નડતું હતું એટલે કાઢી હાબ).
+     યાદ રહે એટલે બસ ⇒ Admin → 📣 (અથવા 📰 પટ્ટી) પૅનલ માંથી જ મોકલાય.
+     clearChip() ફક્ત જૂના cache માં બચેલું બોક્સ હટાવવા. */
+  function clearChip() {
+    const el = document.getElementById("waChip");
+    if (el) el.remove();
+    try { localStorage.removeItem("oeg.wa.chip"); } catch (e) {}
+    return false;
   }
 
   /* ---------- ⏱ પોલિંગ ---------- */
@@ -403,7 +393,7 @@ OEG.notify = (() => {
   }
   return {
     cfg, DEF, FILE, TPL_DEFAULT, supported, permission, isHttps, enable, show, notices, check, start, maybeAsk,
-    inbox, unread, markRead, clearAll, renderBell, renderChip, swReg,
+    inbox, unread, markRead, clearAll, renderBell, clearChip, swReg,
     waText, waLink, waNumber: () => cfg().waNumber, pending, markSent, markAll, resetSent, sendOne, sendMany, itemLink
   };
 })();

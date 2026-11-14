@@ -574,9 +574,9 @@
   "news": {
     "enabled": true,
     "label": {
-      "gu": "તાજા સમાચાર",
-      "hi": "ताज़ा खबर",
-      "en": "Breaking news"
+      "gu": "Breaking News",
+      "hi": "Breaking News",
+      "en": "Breaking News"
     },
     "speed": 46,
     "autoPosts": true,
@@ -584,7 +584,7 @@
     "autoDays": 45,
     "autoCount": 6,
     "pauseOnHover": true,
-    "dismissible": true,
+    "dismissible": false,
     "items": []
   },
   "notify": {

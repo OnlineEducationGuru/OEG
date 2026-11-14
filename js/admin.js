@@ -678,7 +678,7 @@ OEG.admin = (() => {
         <div class="alert alert-info">${OEG.t("admin.waNote")}</div>
         <div class="form-row">
           <div class="field"><label>📱 ${OEG.t("admin.waNum")}</label><input id="waNum" inputmode="tel" placeholder="9198••••••••"></div>
-          <div class="field"><label>👀 ${OEG.t("admin.waWho")}</label><select id="waWho">
+          <div class="field"><label>${OEG.t("admin.waWho")}</label><select id="waWho">
             <option value="admin">🛠️ ${OEG.t("nav.admin")}</option>
             <option value="all">👥 ${OEG.t("admin.users")}</option>
             <option value="off">🚫 ${OEG.t("admin.no")}</option>
@@ -2773,7 +2773,7 @@ OEG.admin = (() => {
               enabled: $("nwOn").checked, label: tri("nwLabel"), speed: Number($("nwSpeed").value) || 46,
               autoPosts: $("nwAuto").checked, autoTypes: $("nwTypes").value.trim() || "post",
               autoDays: Number($("nwDays").value) || 0, autoCount: Number($("nwCount").value) || 6,
-              pauseOnHover: $("nwPause").checked, dismissible: true, items
+              pauseOnHover: $("nwPause").checked, dismissible: false, items   /* ✕ નહીં ⇒ વપરાશકર્તા પટ્ટી હટાવી શકે નહીં */
             };
           }, "OEG: news strip");
           dirty();
@@ -2880,15 +2880,28 @@ OEG.admin = (() => {
       $("waTpl").value = NT.waTemplate || OEG.notify.TPL_DEFAULT;
       function renderWa() {
         const box = $("waList"); if (!box) return;
+        const who = ($("waWho").value || NT.waAuto || "admin");   /* 🚫 off ⇒ મોકલવાનાં બટન બંધ */
         const list = OEG.notify.pending().slice(0, 14);
         const cnt = $("waCount");
         if (cnt) cnt.textContent = list.length ? "· " + list.length + " 🆕" : "";
-        box.innerHTML = list.length ? list.map((it) => `<div class="file-item"><span>${OEG.typeIcon(it.type) || "📄"}</span>
+        const snd = (it) => `<button class="btn btn-brand btn-sm" data-was="${OEG.esc(it.id)}">${OEG.t("admin.waOpen")}</button>`;
+        box.innerHTML = who === "off"
+          ? `<p style="color:var(--muted)">🚫 ${OEG.t("admin.waWho")} · ${OEG.t("admin.no")}</p>`
+          : (list.length ? list.map((it) => `<div class="file-item"><span>${OEG.typeIcon(it.type) || "📄"}</span>
             <b style="font-size:.86rem">${OEG.esc(OEG.title(it))}</b>
             <span style="color:var(--muted);font-size:.8rem">${OEG.esc(OEG.typeLabel(it.type))}</span>
-            <button class="btn btn-brand btn-sm" data-was="${OEG.esc(it.id)}">${OEG.t("admin.waOpen")}</button>
+            ${snd(it)}
             <button class="btn btn-outline btn-sm" data-wask="${OEG.esc(it.id)}">✅</button></div>`).join("")
-          : `<p style="color:var(--muted)">${OEG.t("admin.waNone")}</p>`;
+              + (who === "all" ? `<div class="acc-tools"><button class="btn btn-brand btn-sm" id="waAllRow">📤 ${OEG.t("wa.all")}</button></div>` : "")
+            : `<p style="color:var(--muted)">${OEG.t("admin.waNone")}</p>`);
+        const allRow = $("waAllRow");
+        if (allRow) allRow.onclick = () => {
+          const l2 = OEG.notify.pending().slice(0, 14);
+          if (!l2.length) return;
+          OEG.notify.sendMany(l2);
+          msg("waMsg", "🟢 " + OEG.t("wa.done") + " · " + l2.length, true);
+          renderWa();
+        };
         box.querySelectorAll("[data-was]").forEach((b) => {
           b.onclick = () => {
             const it = OEG.byId(b.dataset.was); if (!it) return;

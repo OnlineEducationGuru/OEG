@@ -766,12 +766,10 @@ body.allow-select img, body.allow-select video { -webkit-user-drag: auto; }
    📰 બ્રેકિંગ ન્યૂઝ સ્ટ્રીપ  ·  🔔 સૂચના  ·  🟢 વૉટ્સએપ પટ  ·  👥 ખાતાં યાદી
    ============================================================ */
 :root{--strip-h:30px}
-body.has-news{--header-h:calc(68px + var(--strip-h))}
-body.has-news .header{height:auto}
-body.has-news .header-inner{height:auto;padding-top:7px;padding-bottom:7px}
-.news-strip{position:relative;height:var(--strip-h);display:flex;align-items:center;background:linear-gradient(90deg,#b91c1c,#ef4444 45%,#f59e0b);color:#fff;font-size:.85rem;overflow:hidden;border-bottom:1px solid rgba(0,0,0,.18)}
+.news-strip{position:relative;z-index:1;height:auto;min-height:var(--strip-h);display:flex;align-items:center;background:linear-gradient(90deg,#b91c1c,#ef4444 45%,#f59e0b);color:#fff;font-size:.85rem;overflow:hidden;border-bottom:1px solid rgba(0,0,0,.18)}
 [data-theme="dark"] .news-strip{background:linear-gradient(90deg,#7f1d1d,#b91c1c 48%,#b45309)}
-.news-strip .ns-in{display:flex;align-items:center;gap:10px;width:100%;max-width:1400px;margin:0 auto;padding:0 10px 0 14px;min-width:0}
+.news-strip a:focus-visible{outline:2px solid #fff;outline-offset:2px}
+.ns-in{display:flex;align-items:center;gap:10px;width:100%;max-width:1400px;margin:0 auto;padding:0 10px 0 14px;min-width:0}
 .ns-tag{flex-shrink:0;font-weight:800;font-size:.72rem;letter-spacing:.06em;text-transform:uppercase;background:rgba(0,0,0,.26);padding:3px 9px;border-radius:999px;white-space:nowrap}
 .ns-vp{flex:1 1 auto;min-width:0;overflow:hidden;-webkit-mask-image:linear-gradient(90deg,transparent,#000 24px,#000 calc(100% - 24px),transparent);mask-image:linear-gradient(90deg,transparent,#000 24px,#000 calc(100% - 24px),transparent)}
 .ns-run{display:inline-flex;white-space:nowrap;will-change:transform;animation:oeg-ticker 34s linear infinite}
@@ -784,7 +782,7 @@ body.has-news .header-inner{height:auto;padding-top:7px;padding-bottom:7px}
 .ns-x:hover{background:rgba(0,0,0,.34)}
 @keyframes oeg-ticker{from{transform:translateX(0)}to{transform:translateX(-50%)}}
 @media (prefers-reduced-motion: reduce){.ns-run{animation:none!important}.ns-vp{overflow:auto;-webkit-mask-image:none;mask-image:none}}
-@media (max-width:600px){.news-strip{font-size:.8rem}.ns-tag{display:none}}
+@media (max-width:600px){.news-strip{font-size:.8rem}.ns-tag{font-size:.6rem;padding:2px 7px}}
 
 /* ---------- 🔔 સૂચના ની ઘંટડી ---------- */
 .n-bell{position:relative}
@@ -803,15 +801,8 @@ body.has-news .header-inner{height:auto;padding-top:7px;padding-bottom:7px}
 .np-foot{display:flex;align-items:center;gap:8px;padding:8px 12px;background:var(--surface-2);font-size:.76rem;color:var(--muted)}
 .np-foot span:last-child{margin-left:auto;display:flex;gap:6px}
 
-/* ---------- 🟢 નવી પોસ્ટ ⇒ વૉટ્સએપ પટ ---------- */
-.wa-chip{position:fixed;right:14px;bottom:78px;z-index:240;width:min(310px,92vw);background:var(--surface);border:1px solid var(--border);border-left:4px solid #25d366;border-radius:var(--radius-sm);box-shadow:var(--shadow-lg);padding:10px 12px;font-size:.86rem}
-.wa-chip b{display:block;margin-bottom:6px}
-.wa-chip ul{list-style:none;display:grid;gap:5px;max-height:190px;overflow:auto;margin:0 0 8px}
-.wa-chip a{color:var(--text);text-decoration:none;display:flex;gap:6px;align-items:center;padding:4px 6px;border-radius:8px;background:var(--surface-2)}
-.wa-chip a:hover{text-decoration:none;filter:brightness(.97)}
-.wa-row{display:flex;gap:6px;align-items:center}
-.wa-row .btn-sm{padding:5px 9px}
-@media (max-width:600px){.wa-chip{bottom:70px;right:8px}}
+/* ---------- 🟢 નવી પોસ્ટ ⇒ વૉટ્સએપ: પાનાં પર નું તરતું બોક્સ કાઢી હાબ (screen નડતું) —
+   બધું Admin નાં પૅનલ માં જ છે, એટલે અહીં કોઇ સ્ટાઇલ નહીં. ---------- */
 
 /* ---------- 👥 ખાતાં / રજિસ્ટ્રેશન યાદી (Admin) ---------- */
 .acc-tools{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin:10px 0 12px}

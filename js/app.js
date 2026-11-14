@@ -127,7 +127,9 @@
   /* 📰 બ્રેકિંગ ન્યૂઝ + 🔔 સૂચના નો બટન (js/notify.js) — ફાઈલ ન મળે તો ચૂપચાપ ચૂટી જાય */
   function paintNews() { try { if (OEG.news) OEG.news.render(); } catch (e) {} }
   function paintBell() { try { if (OEG.notify) OEG.notify.renderBell(); } catch (e) {} }
-  function paintChip() { try { if (OEG.notify) OEG.notify.renderChip(); } catch (e) {} }
+  /* 🟢 નવી પોસ્ટ ⇒ વૉટ્સએપ: પાનાં પર કોઈ તરતું બોક્સ નહીં (screen નડે એટલે કાઢ્યું).
+     પ્રસાર કરવાનું Admin → 📣 પટ્ટી/વૉટ્સએપ પૅનલ માં જ છે — નીચે paintChip ફક્ત જૂનું બોક્સ હોય તો હટાવે. */
+  function paintChip() { try { if (OEG.notify && OEG.notify.clearChip) OEG.notify.clearChip(); } catch (e) {} }
 
   /* ---------- Shell ---------- */
   const visibleNav = NAV; /* Admin બટન હંમેશ દેખાય — ક્લિક પર માલિક-લોગિન માંગશે */
@@ -722,7 +724,7 @@
         <div data-cnt="other"><b>${OEG.views.fmt(cnt.other)}</b><span>🧑‍🤝‍🧑 ${t("home.countOthers")}</span></div>
         <div id="homeViewers"><b>👁 ${OEG.views.fmt(OEG.views.total())}</b><span>${t("stats.totalViewers")}</span></div>
       </div>
-      <p class="hero-join">${OEG.esc(t("home.joinNote"))} <a class="btn btn-primary" href="#/register">${t("home.joinBtn")}</a></p>
+      <p class="hero-join"><a class="btn btn-primary" href="#/register">${t("home.joinBtn")}</a></p>
       <div class="follow-strip"><span class="fs-title">👉 ${t("follow.title")}</span>${followButtons("fb-sm")}</div>
     </section>
     ${adSlot("homeTop")}
