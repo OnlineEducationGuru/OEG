@@ -538,7 +538,7 @@
     "footerAbout": "",
     "footerNote": "",
     "showSearch": true,
-    "antiCopy": false,
+    "antiCopy": true,
     "sections": {
       "textbooks": true,
       "workbooks": true,
