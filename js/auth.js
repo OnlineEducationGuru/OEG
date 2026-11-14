@@ -285,6 +285,7 @@ OEG.auth = (() => {
     const rec = await makeUserRecord({ name, email, password, role, grade, subject, phone, verified });
     addLocalUser(rec);
     const reg = { name: rec.name, email, phone: rec.phone || "", role: rec.role, grade: rec.grade, subject: rec.subject, at: rec.created, verified: rec.verified || "", source: "web" };
+    try { OEG.counts.add(email, rec.role); } catch (e) {}
     addLocalReg(reg);
     const user = { name: rec.name, email, role: rec.role, grade: rec.grade, subject: rec.subject, phone: rec.phone || "", provider: "local" };
     save(user);
@@ -540,6 +541,53 @@ OEG.auth = (() => {
     try { localStorage.removeItem(LS_VAULT); localStorage.removeItem(LS_MASK); sessionStorage.removeItem(SS_TOKEN); } catch (e) {}
     OEG.state.gh.token = "";
   }
+
+  /* ---------- 👥 હોમ પેજ નાં સભ્ય આંકડા ----------
+     Admin (⚙️ સાઇટ સેટિંગ્સ) ભરેલી શરૂઆત ની સંખ્યા + ખરાં ખાતાં/રજિસ્ટ્રેશન (એક ઈમેઈલ ⇒ એક વાર).
+     નવું રજિસ્ટ્રેશન થાય એટલે add() ⇒ આંક તરત વધે (repo સેવ થાય એટલે બધા ઉપકરણ પર). */
+  OEG.counts = (() => {
+    const ROLES = ["student", "teacher", "principal", "other"];
+    const DEF = { student: 1250, teacher: 96, principal: 24, other: 38 };
+    const key = (r) => { const k = String(r || "").toLowerCase(); return ROLES.indexOf(k) >= 0 ? k : "other"; };
+    const base = () => {
+      const c = ((OEG.state.config || {}).ui || {}).counts || {};
+      const o = {};
+      ROLES.forEach((k) => { const n = Number(c[k]); o[k] = isFinite(n) && n >= 0 ? Math.round(n) : DEF[k]; });
+      return o;
+    };
+    let recs = {}, out = null, job = null, loaded = false;
+    function calc() {
+      const o = base(); o.total = 0; o.real = 0;
+      Object.keys(recs).forEach((e) => { const k = recs[e]; o[k] = (o[k] || 0) + 1; o.real++; });
+      ROLES.forEach((k) => { o.total += o[k]; });
+      out = o;
+      return o;
+    }
+    function add(email, role) {
+      const e = String(email || "").toLowerCase();
+      if (!e || recs[e]) return out || calc();
+      recs[e] = key(role);
+      return calc();
+    }
+    async function refresh(force) {
+      if (loaded && !force) return out;
+      if (job && !force) return job;
+      job = (async () => {
+        const rows = {};
+        const put = (x) => {
+          const e = String((x && x.email) || "").toLowerCase();
+          if (!e || rows[e] || (x && x.blocked)) return;
+          rows[e] = key(x.role);
+        };
+        try { const u = await fetchUsers(); (u.users || []).forEach(put); } catch (e) {}
+        try { const r = await fetchRegs(); (r.all || []).forEach(put); } catch (e) {}
+        recs = rows; job = null; loaded = true;
+        return calc();
+      })();
+      return job;
+    }
+    return { ROLES, key, base, get: () => out || calc(), add, refresh };
+  })();
 
   const SUBJECTS7 = () => ((OEG.tax && OEG.tax().gradeSubjects) || []).slice();
   return { SUBJECTS7, register, login, logout, load, isFirebase, fetchUsers, makeUserRecord, addUser, removeUser, resetPassword,

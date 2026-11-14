@@ -529,6 +529,13 @@
   },
   "ui": {
     "logoEmoji": "🎓",
+    "logoUrl": "",
+    "counts": {
+      "student": 1250,
+      "teacher": 96,
+      "principal": 24,
+      "other": 38
+    },
     "accent": "#6345f7",
     "defaultLang": "",
     "defaultTheme": "",

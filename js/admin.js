@@ -202,6 +202,24 @@ OEG.admin = (() => {
             <p class="adm-sec-note">${OEG.t("admin.viewersBaseNote")}</p></div>
         </div>
 
+        <h4 style="margin:18px 0 6px">${OEG.t("admin.logoTitle")}</h4>
+        <p class="adm-sec-note">${OEG.t("admin.logoNote")}</p>
+        <div class="form-row">
+          <div class="field"><label>${OEG.t("admin.logoUpload")}</label>
+            <input id="stLogoFile" type="file" accept="image/png,image/jpeg,image/webp,image/svg+xml,image/gif,image/x-icon">
+            <p class="adm-sec-note" style="margin-top:6px"><button type="button" class="btn btn-brand btn-sm" id="stLogoUp">🖼 ${OEG.t("admin.logoUpload")}</button> · <span id="stLogoPrev">—</span></p></div>
+          <div class="field"><label>${OEG.t("admin.logoUrl")}</label>
+            <input id="stLogoUrl" placeholder="uploads/branding/logo.png  ·  https://…" value="${OEG.esc(((cfg.ui || {}).logoUrl) || "")}">
+            <p class="adm-sec-note" style="margin-top:6px"><button type="button" class="btn btn-outline btn-sm" id="stLogoClear">${OEG.t("admin.logoClear")}</button></p></div>
+        </div>
+
+        <h4 style="margin:18px 0 6px">🔢 ${OEG.t("admin.countsTitle")}</h4>
+        <div class="form-row">
+          ${[["stCntSt", "home.countStudents", "student"], ["stCntTe", "home.countTeachers", "teacher"], ["stCntPr", "home.countPrincipals", "principal"], ["stCntOt", "home.countOthers", "other"]].map((x) => `
+            <div class="field"><label>➕ ${OEG.t(x[1])}</label><input id="${x[0]}" type="number" min="0" step="10" value="${OEG.esc(String(((((cfg.ui || {}).counts || {})[x[2]]) != null ? (((cfg.ui || {}).counts || {})[x[2]]) : (OEG.counts ? OEG.counts.base()[x[2]] : 0))))}"></div>`).join("")}
+        </div>
+        <p class="adm-sec-note">${OEG.t("admin.countsNote")}</p>
+
         <h4 style="margin:18px 0 6px">👁️ ${OEG.t("admin.visibility")}</h4>
         <p class="adm-sec-note">${OEG.t("admin.visibilityNote")}</p>
         <div class="tgl-grid" id="stVis"></div>
@@ -2997,6 +3015,44 @@ OEG.admin = (() => {
       keep("ceGrade", gradeOpts("all"));
     }
 
+    /* ---------- 🖼 લોગો ચઢાવો (repo માં uploads/branding/) + લાઈવ પૂર્વદર્શન ---------- */
+    const logoPrev = (v) => {
+      const el = $("stLogoPrev"); if (!el) return;
+      const url = String(v || "").trim();
+      el.innerHTML = url
+        ? `<img src="${OEG.esc(/^https?:/i.test(url) ? url : OEG.base(url))}" alt="" style="height:34px;vertical-align:middle;border:1px solid var(--border);border-radius:8px;padding:2px;background:var(--surface-2)"> <code>${OEG.esc(url)}</code>`
+        : "—";
+    };
+    if ($("stLogoFile")) {
+      logoPrev(($("stLogoUrl") || {}).value || "");
+      $("stLogoFile").onchange = () => {
+        const f = $("stLogoFile").files[0];
+        logoPrev(f ? (f.name + " (" + Math.round(f.size / 1024) + " KB)") : "");
+        if (f && !/^image\//.test(f.type || "")) msg("siteMsg", "❌ PNG / JPG / SVG / WEBP", false);
+      };
+    }
+    if ($("stLogoUrl")) $("stLogoUrl").oninput = (e) => logoPrev(e.target.value);
+    if ($("stLogoUp")) $("stLogoUp").onclick = uploadLogo;
+    if ($("stLogoClear")) $("stLogoClear").onclick = () => { $("stLogoUrl").value = ""; logoPrev(""); msg("siteMsg", "🧹 ઈમોજિ પર પાછા — 💾 સેવ કરો", true); };
+    async function uploadLogo() {
+      if (!needGh()) return;
+      const f = ($("stLogoFile") || {}).files && $("stLogoFile").files[0];
+      if (!f) { msg("siteMsg", "❌ " + OEG.t("admin.logoUpload"), false); return; }
+      if (f.size > 900 * 1024) { msg("siteMsg", "❌ 900 KB from vadu nathi", false); return; }
+      const btn = $("stLogoUp"); btn.disabled = true; btn.textContent = "⏳";
+      try {
+        const buf = await f.arrayBuffer();
+        const b64 = btoa(String.fromCharCode.apply(null, new Uint8Array(buf)));
+        const ext = (String(f.name).split(".").pop() || "png").toLowerCase();
+        const path = "uploads/branding/logo." + (ext === "jpeg" ? "jpg" : ext);
+        await OEG.gh.uploadFile(path, b64, "OEG: site logo");
+        $("stLogoUrl").value = path;
+        logoPrev(path);
+        msg("siteMsg", "✅ " + OEG.t("admin.saved") + " · " + path + " · 💾 " + OEG.t("btn.save"), true);
+      } catch (e) { msg("siteMsg", OEG.t("admin.error") + " " + e.message, false); }
+      btn.disabled = false; btn.textContent = "🖼 " + OEG.t("admin.logoUpload");
+    }
+
     /* ---------- ⚙️ Site settings ---------- */
     if ($("siteSave")) $("siteSave").onclick = async () => {
       if (!needGh()) return;
@@ -3026,11 +3082,20 @@ OEG.admin = (() => {
             tagline: tag, heroTitle: hero, heroSub: hsub, footerAbout: about,
             footerNote: $("stNote").value.trim(),
             viewersBase: Math.max(0, Math.round(Number($("stVisitors").value) || 0)),
+            logoUrl: ($("stLogoUrl").value || "").trim().replace(/^\/+/, ""),
+            counts: {
+              student: Math.max(0, Math.round(Number($("stCntSt").value) || 0)),
+              teacher: Math.max(0, Math.round(Number($("stCntTe").value) || 0)),
+              principal: Math.max(0, Math.round(Number($("stCntPr").value) || 0)),
+              other: Math.max(0, Math.round(Number($("stCntOt").value) || 0))
+            },
             showSearch: $("stSearch").checked, antiCopy: $("stGuard").checked,
             sections: sections
           });
         }, "site: settings");
         dirty();
+        try { if (OEG.paintLogo) OEG.paintLogo(); } catch (e) {}
+        try { if (OEG.paintCounts) OEG.paintCounts(); } catch (e) {}
         notify("siteMsg", "✅ " + OEG.t("admin.saved") + " · " + OEG.t("admin.savedSite"), true);
       } catch (e) { msg("siteMsg", OEG.t("admin.error") + " " + e.message, false); }
       btn.disabled = false; btn.textContent = "💾 " + OEG.t("btn.save");
