@@ -10,6 +10,21 @@ OEG.admin = (() => {
   const folderOf = (type) => FOLDERS[type] || ("uploads/" + String(type || "misc").replace(/[^a-z0-9-]/gi, "").toLowerCase() + "s");
 
   const opts = (arr, sel, labelFn) => arr.map(v => `<option value="${v}" ${v === sel ? "selected" : ""}>${labelFn ? labelFn(v) : v}</option>`).join("");
+  /* નામ પરથી આપોઆપ key (કોઈ માન્ય kī field નહીં) — Admin → ફોર્મમાં ફક્ત નામ ભરો */
+  const slugOf = (v) => {
+    const t2 = String(v || "").replace(/[\u0ae6-\u0aef]/g, c => String(c.charCodeAt(0) - 0x0ae6)).replace(/[\u09e6-\u09ef]/g, c => String(c.charCodeAt(0) - 0x09e6));
+    const dig = (t2.match(/[0-9]+/g) || []).join("");
+    const raw = t2.replace(/^#\//, "").replace(/[^\w]+/g, "-").replace(/^-+|-+$/g, "").toLowerCase().slice(0, 20);
+    if (/^[a-z0-9][a-z0-9-]*$/.test(raw)) return raw;
+    if (dig) return dig.slice(0, 8);
+    return raw.replace(/^[^a-z0-9]+/, "").slice(0, 20) || ("x" + Date.now().toString(36).slice(-5));
+  };
+  const uniqKey = (name, arr) => {
+    let k = slugOf(name), i = 2;
+    while ((arr || []).some(x => x && x.key === k)) k = slugOf(name) + "-" + (i++);
+    return k;
+  };
+  const lab3 = (v, key) => { const t2 = String(v || "").trim() || key; return { gu: t2, hi: t2, en: t2 }; };
   const gradeOpts = (sel) => opts(gradeList(), sel, g => OEG.gradeLabel(g));
   const typeOpts = (sel) => opts(typeList(), sel, t => (OEG.typeIcon(t) ? OEG.typeIcon(t) + " " : "") + OEG.typeLabel(t));
   const subjOpts = (sel) => opts(subjList(), sel, s => OEG.subjectLabel(s));
@@ -18,6 +33,53 @@ OEG.admin = (() => {
   const qzSubjOpts = (sel) => opts(qzSubjList(), sel, s => { const g = (OEG.tax().gradeSubjects || []).filter(x => x.key === s)[0] || {}; return (g.icon ? g.icon + " " : "") + OEG.subjectLabel(s); });
   const qzGradeList = () => ["all"].concat(OEG.tax().grades.filter(g => g.key === "balvatika" || /^\d+$/.test(g.key)).map(g => g.key));
   const qzGradeOpts = (sel) => opts(qzGradeList(), sel, g => OEG.gradeLabel(g));
+
+  /* ---------- 🎯 પ્રેક્ષક (audience) cascade — Upload · ✍️ · 🎬 બધે એ જ વ્યવસ્થા ----------
+     પ્રેક્ષક પસંદ કરો → વિદ્યાર્થી હોય તો ધોરણ (પછી જ વિષય), નહીં તો એ પ્રેક્ષકની બાબતો.
+     દરેક dropdown પાસે ➕ (નવું ઉમેરો) + 🗑 (કાઢી નાખો) — key ક્યાંય પૂછાતું નથી. */
+  const audSelOpts = (sel) => [{ key: "all" }].concat(OEG.auds()).map(a =>
+    `<option value="${OEG.esc(a.key)}" ${a.key === (sel || "all") ? "selected" : ""}>${a.icon || "🎯"} ${OEG.esc(a.key === "all" ? OEG.t("aud.all") : OEG.audLabel(a.key))}</option>`).join("");
+  const audSubList = (aud) => OEG.audSubs(aud || "");
+  const audSubOpts = (aud, sel) => `<option value="">${OEG.t("aud.any")}</option>` + audSubList(aud).map(x =>
+    `<option value="${OEG.esc(x.key)}" ${x.key === sel ? "selected" : ""}>${x.icon || "📄"} ${OEG.esc(OEG.taxLabel(x, "subject"))}</option>`).join("");
+  const typeOptsAud = (aud, sel) => {
+    const all = OEG.tax().types.filter(x => x.route);
+    const list = (!aud || aud === "all") ? all : all.filter(x => x.aud === aud || x.aud === "all" || !x.aud || (aud === "office") === (x.aud === "principal"));
+    const use = list.length ? list : all;
+    return use.map(x => `<option value="${OEG.esc(x.key)}" ${x.key === sel ? "selected" : ""}>${x.icon || "📄"} ${OEG.esc(OEG.typeLabel(x.key))}</option>`).join("");
+  };
+  const cscBtn = (act) => `<span class="csc-btns"><button type="button" class="btn btn-outline btn-sm" data-cscadd="${act}" title="${OEG.t("admin.cscAdd")}">➕</button><button type="button" class="btn btn-outline btn-sm" data-cscdel="${act}" title="${OEG.t("admin.cscDel")}">🗑</button></span>`;
+  /* p = id-prefix; v = {aud,type,grade,subject,audSub,audSub2} */
+  function cascadeHtml(p, v) {
+    v = v || {};
+    const aud = v.aud || "all";
+    const stu = aud === "student";
+    const noType = !!v.noType;
+    const subs = stu ? [] : audSubList(aud);
+    const sub2Src = (subs.find(x => x.key === v.audSub) || {}).subs;
+    return `<div class="csc" data-csc="${p}">
+      <div class="form-row">
+        <div class="field"><label>🎯 ${OEG.t("admin.audience")}</label>
+          <div class="csc-auds" data-csc-auds>${OEG.auds().concat([{ key: "all", icon: "🌐", label: { gu: OEG.t("aud.all") } }]).map(z => `<button type="button" class="csc-aud ${z.key === aud ? "on" : ""}" data-audpick="${OEG.esc(z.key)}">${z.icon || "🎯"} ${OEG.esc(z.key === "all" ? OEG.t("aud.all") : OEG.audLabel(z.key))}</button>`).join("")}
+            <span class="csc-btns"><button type="button" class="btn btn-outline btn-sm" data-cscadd="aud" title="${OEG.t("admin.cscAdd")}">➕</button><button type="button" class="btn btn-outline btn-sm" data-cscdel="aud" title="${OEG.t("admin.cscDel")}">🗑</button></span></div>
+          <select id="${p}Aud" class="csc-aud-sel" hidden>${audSelOpts(aud)}</select></div>
+        <div class="field"${noType ? ' style="display:none"' : ""}><label>${OEG.t("admin.type")}</label>
+          <div class="csc-line"><select id="${p}Type">${typeOptsAud(aud, v.type || "post")}</select></div></div>
+      </div>
+      <div class="form-row csc-stu" data-csc-row="stu"${stu ? "" : " style=\"display:none\""}>
+        <div class="field"><label>🎓 ${OEG.t("admin.grade")}</label>
+          <div class="csc-line"><select id="${p}Grade">${gradeOpts(v.grade || "all")}</select>${cscBtn("grade")}</div></div>
+        <div class="field csc-subj"${v.grade && v.grade !== "all" || (v.subject && v.subject !== "all") ? "" : " style=\"display:none\""}"><label>📘 ${OEG.t("admin.subject")}</label>
+          <div class="csc-line"><select id="${p}Subject">${subjOpts(v.subject || "all")}</select>${cscBtn("subject")}</div></div>
+      </div>
+      <div class="form-row csc-aud" data-csc-row="aud"${stu || !subs.length ? " style=\"display:none\"" : ""}>
+        <div class="field"><label>🧩 ${OEG.t("admin.audTopic")}</label>
+          <div class="csc-line"><select id="${p}AudSub">${audSubOpts(aud, v.audSub)}</select>${cscBtn("audSub")}</div></div>
+        <div class="field csc-aud2"${sub2Src && sub2Src.length ? "" : " style=\"display:none\""}"><label>🔹 ${OEG.t("admin.audTopic2")}</label>
+          <div class="csc-line"><select id="${p}AudSub2">${opts((sub2Src || []).map(x => x.key), v.audSub2, k => { const f = (sub2Src || []).find(y => y.key === k) || {}; return OEG.taxLabel(f, "subject"); })}</select>${cscBtn("audSub2")}</div></div>
+      </div>
+    </div>`;
+  }
 
   /* ---------- 🌐 ભાષાંતર (એક ભાષા → બાકીની ભાષાઓ auto-fill) ---------- */
   const TR_LANGS = ["gu", "hi", "en"];
@@ -160,12 +222,10 @@ OEG.admin = (() => {
       <!-- Upload -->
       <section class="panel adm-sec" data-sec="upload">
         <h3>📤 ${OEG.t("admin.uploadTitle")}</h3>
+        <p class="adm-sec-note">🎯 ${OEG.t("admin.audNote")}</p>
         <div class="field"><label>${OEG.t("admin.file")}</label><input id="upFile" type="file" accept=".pdf,.ppt,.pptx,.doc,.docx,.html,.htm,.png,.jpg,.jpeg,.gif,.webp,.svg,.zip"></div>
-        <div class="form-row">
-          <div class="field"><label>${OEG.t("admin.type")}</label><select id="upType">${typeOpts("post")}</select></div>
-          <div class="field"><label>${OEG.t("admin.grade")}</label><select id="upGrade">${gradeOpts("all")}</select></div>
-        </div>
         <div class="field"><label>${OEG.t("admin.folder")}</label><input id="upFolder" value="uploads/misc"></div>
+        ${cascadeHtml("up", { aud: "student", type: "textbook", grade: "all" })}
         <button class="btn btn-brand" id="upBtn">${OEG.t("btn.upload")}</button>
         <div class="progress hidden" id="upProg"><div></div></div>
         <div id="upMsg" style="margin-top:12px"></div>
@@ -179,11 +239,7 @@ OEG.admin = (() => {
           <div class="field"><label>${OEG.t("admin.titleHi")}</label><input id="pTitleHi"></div>
           <div class="field"><label>${OEG.t("admin.titleEn")}</label><input id="pTitleEn"></div>
         </div>
-        <div class="form-row">
-          <div class="field"><label>${OEG.t("admin.type")}</label><select id="pType">${typeOpts("post")}</select></div>
-          <div class="field"><label>${OEG.t("admin.grade")}</label><select id="pGrade">${gradeOpts("all")}</select></div>
-        </div>
-        <div class="field"><label>${OEG.t("admin.subject")}</label><select id="pSubject">${subjOpts("all")}</select></div>
+        ${cascadeHtml("p", { aud: "all", type: "post", grade: "all" })}
         <div class="alert alert-info">🌐 ${OEG.t("admin.autoLangNote")}</div>
         <div class="form-row">
           <div class="field"><label>${OEG.t("admin.srcLang")}</label><select id="pSrcLang"><option value="gu">ગુજરાતી</option><option value="hi">हिन्दी / Hindi</option><option value="en">English</option></select></div>
@@ -210,10 +266,7 @@ OEG.admin = (() => {
         <h3>🎬 ${OEG.t("yt.byUrl")}</h3>
         <div class="alert alert-info">🔒 ${OEG.t("yt.byUrlNote")}</div>
         <div class="field"><label>${OEG.t("admin.youtube")}</label><input id="ytUrl" placeholder="https://www.youtube.com/watch?v=…"></div>
-        <div class="form-row">
-          <div class="field"><label>${OEG.t("admin.grade")}</label><select id="ytGrade">${gradeOpts("all")}</select></div>
-          <div class="field"><label>${OEG.t("admin.subject")}</label><select id="ytSubject">${subjOpts("all")}</select></div>
-        </div>
+        ${cascadeHtml("yt", { aud: "student", type: "video", grade: "all", noType: true })}
         <div class="form-row">
           <div class="field"><label>${OEG.t("admin.srcLang")}</label><select id="ytSrc"><option value="gu">ગુજરાતી</option><option value="hi">हिन्दी</option><option value="en">English</option></select></div>
           <div class="field"><label>&nbsp;</label><button type="button" class="btn btn-outline" id="ytFetchBtn" style="width:100%;justify-content:center">🔎 ${OEG.t("yt.fetch")}</button></div>
@@ -244,35 +297,54 @@ OEG.admin = (() => {
       <!-- 🏷️ Taxonomy -->
       <section class="panel adm-sec" data-sec="tax">
         <h3>🏷️ ${OEG.t("admin.tax")}</h3>
-        <div class="alert alert-info">${OEG.t("admin.taxNote")}</div>
+        <div class="alert alert-info">${OEG.t("admin.taxNote")}<br>💡 ${OEG.t("admin.seqNote")}</div>
         <div class="tax-cols">
           <div>
             <h4>${OEG.t("admin.catTab")}</h4>
             <div id="taxTypes"></div>
-            <div class="field"><label>${OEG.t("admin.newKey")}</label><input id="taxTypeKey" placeholder="notes"></div>
-            <div class="field"><label>${OEG.t("admin.newLabel")}</label><input id="taxTypeLabel" placeholder="નોંસ બુક"></div>
-            <div class="form-row">
-              <div class="field"><label>${OEG.t("admin.newIcon")}</label><input id="taxTypeIcon" placeholder="🗒️"></div>
-              <div class="field"><label>${OEG.t("admin.newRoute")}</label><input id="taxTypeRoute" placeholder="notes"></div>
+            <div class="tax-add">
+              <input id="taxTypeLabel" placeholder="${OEG.t("admin.newLabel")}" maxlength="30">
+              <input id="taxTypeIcon" class="tax-ic" placeholder="🗒️" maxlength="4">
+              <select id="taxTypeAud" title="${OEG.t("admin.catAud")}">${audSelOpts("all")}</select>
+              <button class="btn btn-brand btn-sm" id="taxAddType">➕ ${OEG.t("admin.addCat")}</button>
             </div>
-            <button class="btn btn-brand btn-sm" id="taxAddType">➕ ${OEG.t("admin.addCat")}</button>
+            <label class="chk tax-gv"><input type="checkbox" id="taxTypeGV"> ${OEG.t("admin.gradeViewL")}</label>
           </div>
           <div>
             <h4>${OEG.t("admin.gradeTab")}</h4>
             <div id="taxGrades"></div>
-            <div class="field"><label>${OEG.t("admin.newKey")}</label><input id="taxGradeKey" placeholder="9"></div>
-            <div class="field"><label>${OEG.t("admin.newLabel")}</label><input id="taxGradeLabel" placeholder="ધોરણ ૯"></div>
-            <div class="field"><label>${OEG.t("admin.newIcon")}</label><input id="taxGradeIcon" placeholder="9️⃣"></div>
-            <button class="btn btn-brand btn-sm" id="taxAddGrade">➕ ${OEG.t("admin.addGrade")}</button>
+            <div class="tax-add">
+              <input id="taxGradeLabel" placeholder="${OEG.t("admin.newLabel")}" maxlength="30">
+              <input id="taxGradeIcon" class="tax-ic" placeholder="🎓" maxlength="4">
+              <button class="btn btn-brand btn-sm" id="taxAddGrade">➕ ${OEG.t("admin.addGrade")}</button>
+            </div>
+          </div>
+          <div>
+            <h4>📘 ${OEG.t("grade.subjects")} <small>${OEG.t("admin.onlyStudent")}</small></h4>
+            <div id="taxSubjects"></div>
+            <div class="tax-add">
+              <input id="taxSubjectLabel" placeholder="${OEG.t("admin.newLabel")}" maxlength="30">
+              <input id="taxSubjectIcon" class="tax-ic" placeholder="📘" maxlength="4">
+              <button class="btn btn-brand btn-sm" id="taxAddSubject">➕ ${OEG.t("admin.addSubject")}</button>
+            </div>
           </div>
           <div>
             <h4>${OEG.t("admin.quizCats")}</h4>
             <div id="taxQz"></div>
-            <div class="field"><label>${OEG.t("admin.newKey")}</label><input id="taxQzKey" placeholder="cet"></div>
-            <div class="field"><label>${OEG.t("admin.newLabel")}</label><input id="taxQzLabel" placeholder="CET"></div>
-            <div class="field"><label>${OEG.t("admin.newIcon")}</label><input id="taxQzIcon" placeholder="🎯"></div>
-            <button class="btn btn-brand btn-sm" id="taxAddQz">➕ ${OEG.t("admin.addQuizCat")}</button>
+            <div class="tax-add">
+              <input id="taxQzLabel" placeholder="${OEG.t("admin.newLabel")}" maxlength="30">
+              <input id="taxQzIcon" class="tax-ic" placeholder="🧠" maxlength="4">
+              <button class="btn btn-brand btn-sm" id="taxAddQz">➕ ${OEG.t("admin.addQuizCat")}</button>
+            </div>
           </div>
+        </div>
+        <h4 style="margin:20px 0 6px">🎯 ${OEG.t("admin.audMgmt")}</h4>
+        <p class="adm-sec-note">${OEG.t("admin.audNote")} · ${OEG.t("admin.reorder")}</p>
+        <div id="taxAud" class="aud-cols"></div>
+        <div class="tax-add">
+          <input id="taxAudLabel" placeholder="${OEG.t("admin.newLabel")}" maxlength="30">
+          <input id="taxAudIcon" class="tax-ic" placeholder="🎯" maxlength="4">
+          <button class="btn btn-brand btn-sm" id="taxAddAud">➕ ${OEG.t("admin.addAud")}</button>
         </div>
         <h4 style="margin:20px 0 6px">🧩 ${OEG.t("admin.subCats")} ▸ ${OEG.t("admin.chapters")}</h4>
         <p class="adm-sec-note">${OEG.t("admin.subNote")}<br>🌳 ${OEG.t("admin.taxTreeNote")}</p>
@@ -361,6 +433,11 @@ OEG.admin = (() => {
           <label class="tgl"><input type="checkbox" id="ceSeal" ${!ce || ce.showSeal !== false ? "checked" : ""}><span class="tr"></span><span class="tl">🔏 ${OEG.t("admin.certSeal")}</span></label>
           <label class="tgl"><input type="checkbox" id="ceScore" ${!ce || ce.showScore !== false ? "checked" : ""}><span class="tr"></span><span class="tl">🎯 ${OEG.t("admin.certScore")}</span></label>
         </div>
+        <div class="form-row">
+          <div class="field"><label>🎨 ${OEG.t("admin.certTheme")}</label><select id="ceTheme">${((OEG.cert && OEG.cert.themeKeys) ? OEG.cert.themeKeys() : ["royal"]).map(k =>
+            `<option value="${OEG.esc(k)}" ${((ce || {}).theme || "royal") === k ? "selected" : ""}>${OEG.esc(OEG.cert.themeName(k))}</option>`).join("")}</select></div>
+          <div class="field"><label>&nbsp;</label><p class="adm-sec-note" style="margin:0">💡 ${OEG.t("admin.certThemeNote")}</p></div>
+        </div>
         ${triRow("ceTitle", OEG.t("admin.certTitleL"), (ce || {}).title)}
         ${triRow("ceSub", OEG.t("admin.certSubL"), (ce || {}).sub)}
         <div class="field"><label>${OEG.t("admin.certFooter")}</label><input id="ceFooter" value="${OEG.esc(OEG.langField((ce || {}).footer) || "")}"></div>
@@ -389,6 +466,11 @@ OEG.admin = (() => {
         <div class="alert alert-info">📢 ${OEG.t("ads.autoNote")}<br>${OEG.t("ads.everywhere")}</div>
         <div class="field"><label>${OEG.t("admin.publisher")}</label><input id="adPub" value="${OEG.esc((cfg.adsense && cfg.adsense.publisherId) || "")}" placeholder="ca-pub-XXXXXXXXXXXXXXXX"></div>
         <div class="form-row">
+          <div class="field"><label>📏 ${OEG.t("ads.size")}</label>
+            <select id="adSize">${((OEG.ads && OEG.ads.SIZES) || [["auto", "Auto"]]).map(z => `<option value="${OEG.esc(z[0])}" ${((cfg.adsense || {}).size || "auto") === z[0] ? "selected" : ""}>${OEG.esc(z[1])}</option>`).join("")}</select></div>
+          <div class="field"><label>&nbsp;</label><p class="adm-sec-note" style="margin:0">💡 ${OEG.t("ads.sizeNote")}</p></div>
+        </div>
+        <div class="form-row">
           <div class="field"><label class="chk"><input type="checkbox" id="adOn" ${!cfg.adsense || cfg.adsense.enabled !== false ? "checked" : ""}> Ads ચાલુ</label></div>
           <div class="field"><label class="chk"><input type="checkbox" id="adAuto" ${!cfg.adsense || cfg.adsense.autoAds !== false ? "checked" : ""}> Auto ads</label></div>
         </div>
@@ -397,7 +479,6 @@ OEG.admin = (() => {
           <div class="field"><label>homeMid Slot</label><input id="adHomeMid" value="${OEG.esc(((cfg.adsense || {}).slots || {}).homeMid || "")}"></div>
         </div>
         <div class="form-row">
-          <div class="field"><label>sidebar Slot</label><input id="adSidebar" value="${OEG.esc(((cfg.adsense || {}).slots || {}).sidebar || "")}"></div>
           <div class="field"><label>contentBottom Slot</label><input id="adBottom" value="${OEG.esc(((cfg.adsense || {}).slots || {}).contentBottom || "")}"></div>
         </div>
         <h4 style="margin:12px 0 6px">${OEG.t("ads.slotsMore")}</h4>
@@ -467,10 +548,11 @@ OEG.admin = (() => {
           </select></div>
           <div class="field"><label>${OEG.t("auth.password")}</label><input id="uPass" type="text" minlength="6" placeholder="••••••"></div>
         </div>
-        <div class="form-row">
+        <div class="form-row" id="uGradeRow">
           <div class="field"><label>🎓 ${OEG.t("grade.pickGrade")}</label><select id="uGrade">${userGradeOpts()}</select></div>
           <div class="field"><label>📘 ${OEG.t("auth.subject")}</label><select id="uSubject">${userSubjectOpts()}</select></div>
         </div>
+        <p class="adm-sec-note" id="uRoleNote">ℹ️ ${OEG.t("auth.roleNote")}</p>
         <button class="btn btn-brand" id="uAdd">➕ ${OEG.t("admin.addUser")}</button>
         <div id="uMsg" style="margin-top:12px"></div>
         <div class="file-list" id="uList" style="margin-top:14px"><p style="color:var(--muted)">—</p></div>
@@ -533,9 +615,36 @@ OEG.admin = (() => {
         $("upProg").firstElementChild.style.width = "80%";
         await OEG.gh.uploadFile(path, b64, `Upload ${path}`);
         $("upProg").firstElementChild.style.width = "100%";
-        $("pFileUrl").value = OEG.gh.pagesUrl(path);
-        msg("upMsg", "✅ " + path, true);
+        const url = OEG.gh.pagesUrl(path);
+        $("pFileUrl").value = url;
+        /* 📌 ફાઈલ ચઢાવી એટલે સામગ્રી યાદીમાં પણ ઉમેરાય (પ્રેક્ષક ▸ ધોરણ ▸ વિષય સાથે) */
+        const z = cscVal("up");
+        const nm = ($("upName").value || f.name.replace(/\.[^.]+$/, "")).trim();
+        const ext = (f.name.split(".").pop() || "").toLowerCase();
+        const kind = ["png", "jpg", "jpeg", "gif", "webp", "svg"].indexOf(ext) >= 0 ? "image" : ext === "pdf" ? "pdf" : "file";
+        try {
+          const cur = await OEG.gh.getFile("data/catalog.json");
+          const catalog = JSON.parse(cur.content);
+          catalog.items = catalog.items || [];
+          catalog.items.unshift({
+            id: "item-" + Date.now(),
+            type: z.type || "textbook",
+            aud: z.aud, audSub: z.audSub || "", audSub2: z.audSub2 || "",
+            grade: z.grade, subject: z.subject,
+            title: { gu: nm, hi: nm, en: nm },
+            desc: { gu: path, hi: path, en: path },
+            fileUrl: url, fileType: kind,
+            date: new Date().toISOString().slice(0, 10),
+            tags: [], hidden: false
+          });
+          catalog.updated = new Date().toISOString().slice(0, 10);
+          await OEG.gh.saveCatalog(catalog, "Add: " + nm.slice(0, 40));
+          await OEG.loadCatalog();
+          dirty();
+          msg("upMsg", "✅ " + path + " · ➕ " + OEG.t("admin.taxSaved"), true);
+        } catch (e2) { msg("upMsg", "✅ " + path + " · ⚠️ " + OEG.t("admin.error") + " " + e2.message, false); }
         loadFiles();
+        renderAll();
       } catch (e) { msg("upMsg", OEG.t("admin.error") + " " + e.message, false); }
       setTimeout(() => $("upProg").classList.add("hidden"), 1200);
     };
@@ -555,8 +664,11 @@ OEG.admin = (() => {
         item = {
           id: "item-" + Date.now(),
           type: yt ? "video" : $("pType").value,
-          grade: $("pGrade").value,
-          subject: $("pSubject").value,
+          grade: ($("pGrade") || {}).value || "all",
+          subject: ($("pSubject") || {}).value || "all",
+          aud: ($("pAud") || {}).value || "all",
+          audSub: ($("pAudSub") || {}).value || "",
+          audSub2: ($("pAudSub2") || {}).value || "",
           title, desc, body: bodyObj,
           image: $("pImage").value.trim(),
           fileUrl: yt || encodeURI($("pFileUrl").value.trim()),
@@ -627,7 +739,7 @@ OEG.admin = (() => {
       } catch (e) {}
       return cfg2;
     }
-    const adIds = { homeTop: "adHomeTop", homeMid: "adHomeMid", sidebar: "adSidebar", contentBottom: "adBottom" };
+    const adIds = { homeTop: "adHomeTop", homeMid: "adHomeMid", contentBottom: "adBottom" };
     $("adSave").onclick = async () => {
       if (!needGh()) return;
       try {
@@ -637,13 +749,14 @@ OEG.admin = (() => {
           root.querySelectorAll("[data-adslot]").forEach(inp => { slots[inp.dataset.adslot] = inp.value.trim(); });
           cfg2.adsense = {
             publisherId: $("adPub").value.trim(),
+            size: ($("adSize") || {}).value || "auto",
             enabled: $("adOn") ? $("adOn").checked : true,
             autoAds: $("adAuto") ? $("adAuto").checked : true,
             slots: slots
           };
         }, "Update AdSense config");
         dirty();
-        msg("adMsg", "✅ " + OEG.t("admin.saved") + " · " + OEG.t("ads.everywhere"), true);
+        msg("adMsg", "✅ " + OEG.t("admin.saved") + " · " + OEG.t("ads.everywhere") + " · " + OEG.t("ads.size"), true);
         if (OEG.ads) { OEG.ads.head(); OEG.ads.flush(document); }
       } catch (e) { msg("adMsg", OEG.t("admin.error") + " " + e.message, false); }
     };
@@ -682,13 +795,13 @@ OEG.admin = (() => {
       } catch (e) { msg("seoMsg", OEG.t("admin.error") + " " + e.message, false); }
     };
 
-    /* ---------- 🏷️ Taxonomy: ઉમેર / કાઢી નાખો ---------- */
+    /* ---------- 🏷️ Taxonomy: ઉમેરો · કાઢી નાખો · સરકાવીને ક્રમ બદલો (કોઈ key ફીલ્ડ નહીં) ---------- */
     async function writeTax(mutate, okMsg) {
       if (!needGh()) return;
       const box = $("taxMsg");
       try {
         await patchConfig((cfg2) => {
-          cfg2.taxonomy = Object.assign({ types: [], grades: [], subjects: [], gradeSubjects: [], quizCats: [] }, cfg2.taxonomy || {});
+          cfg2.taxonomy = Object.assign({ types: [], grades: [], subjects: [], gradeSubjects: [], quizCats: [], audiences: [] }, cfg2.taxonomy || {});
           mutate(cfg2.taxonomy);
         }, "tax: update");
         await OEG.loadCatalog().catch(() => {});
@@ -697,56 +810,259 @@ OEG.admin = (() => {
         renderAll();
       } catch (e) { box.innerHTML = `<div class="alert alert-error">❌ ${OEG.esc(e.message)}</div>`; }
     }
-    const inUse = (kind, key) => {
-      const items = OEG.state.catalog || [];
-      if (kind === "types") return items.filter(i => i.type === key);
-      if (kind === "grades") return items.filter(i => i.grade === key);
+    const TAX_KEY = { types: "types", grades: "grades", subjects: "subjects", qz: "quizCats", aud: "audiences", gradeSubjects: "gradeSubjects" };
+    const DEFIC = { types: "📄", grades: "🎓", subjects: "📘", qz: "🧠", aud: "🎯" };
+    const taxList = (tx, kind) => {
+      const k = TAX_KEY[kind] || kind;
+      if (!Array.isArray(tx[k]) || !tx[k].length) tx[k] = JSON.parse(JSON.stringify(OEG.tax()[k] || []));
+      return tx[k];
+    };
+    const taxSay = (kind, text) => { const b = $("taxMsg"); if (b) b.innerHTML = `<div class="alert alert-${kind}">${OEG.esc(text)}</div>`; else OEG.toast(String(text)); };
+    /* audience tree (૩ સ્તર) માં path પ્રમાણે container + item */
+    function audAt(tx, path) {
+      const L = taxList(tx, "aud");
+      if (path.length === 1) return { list: L, item: L.filter(x => x && x.key === path[0])[0] };
+      const a = L.filter(x => x && x.key === path[0])[0]; if (!a) return {};
+      if (!Array.isArray(a.subs)) a.subs = [];
+      if (path.length === 2) return { list: a.subs, item: a.subs.filter(x => x && x.key === path[1])[0] };
+      const x = a.subs.filter(y => y && y.key === path[1])[0]; if (!x) return {};
+      if (!Array.isArray(x.subs)) x.subs = [];
+      return { list: x.subs, item: x.subs.filter(y => y && y.key === path[2])[0] };
+    }
+    const taxAt = (tx, kind, path) => (kind === "aud" ? audAt(tx, path) : (() => {
+      const L = taxList(tx, kind);
+      return { list: L, item: L.filter(x => x && x.key === path[0])[0] };
+    })());
+    async function taxAdd(kind, name, icon, extra) {
+      if (!needGh()) return;
+      name = String(name || "").trim();
+      if (!name) { taxSay("error", OEG.t("admin.needLabel")); return; }
+      try {
+        await writeTax((tx) => {
+          const L = taxList(tx, kind);
+          if (L.some(x => OEG.langField(x.label) === name)) throw new Error("⚠️ " + OEG.t("admin.dupExists"));
+          const key = uniqKey(name, L);
+          const o = { key: key, icon: String(icon || "").trim() || DEFIC[kind] || "📄", label: lab3(name, key) };
+          if (kind === "types") { o.route = (extra && extra.route) || key; o.aud = (extra && extra.aud) || "all"; o.gradeView = !!(extra && extra.gradeView); }
+          if (kind === "qz" || kind === "aud") o.subs = [];
+          if (kind === "grades") {
+            const at = L.findIndex(x => x.key === "all");
+            if (at >= 0) { L.splice(at, 0, o); return; }
+          }
+          L.push(o);
+          if (kind === "subjects") {
+            const gs = taxList(tx, "gradeSubjects");
+            if (!gs.some(x => x.key === key)) gs.push({ key: key, icon: o.icon, label: o.label });
+          }
+        }, OEG.t("admin.taxSaved") + " · " + name);
+      } catch (e) { taxSay("error", e.message); }
+    }
+    const affectedBy = (kind, path) => {
+      const items = OEG.state.catalogAll || OEG.state.catalog || [];
+      if (kind === "types") return items.filter(i => i.type === path[0]);
+      if (kind === "grades") return items.filter(i => i.grade === path[0]);
+      if (kind === "subjects") return items.filter(i => i.subject === path[0]);
+      if (kind === "aud") return items.filter(i => OEG.audOfItem(i) === path[0]);
       return [];
     };
-    const dupMsg = (box) => { box.innerHTML = `<div class="alert alert-info">⚠️ ${OEG.esc(OEG.t("admin.dupExists"))}</div>`; };
-    const keyOk = (k) => /^[a-z][a-z0-9-]{0,20}$/.test(k);
-
-    $("taxAddType").onclick = () => {
-      const box = $("taxMsg");
-      const key = $("taxTypeKey").value.trim().toLowerCase().replace(/\s+/g, "-");
-      const label = $("taxTypeLabel").value.trim();
-      if (!keyOk(key)) { box.innerHTML = `<div class="alert alert-error">❌ ${OEG.esc(OEG.t("admin.newKey"))}: a–z, 0–9, - </div>`; return; }
-      if ((OEG.tax().types || []).some(x => x.key === key) || (OEG.tax().types || []).some(x => (x.label && x.label.gu) === label && label)) { dupMsg(box); return; }
-      const route = $("taxTypeRoute").value.trim().toLowerCase().replace(/[^a-z0-9-]/g, "") || key + "s";
-      writeTax((tx) => {
-        tx.types = (tx.types && tx.types.length ? tx.types : null) || OEG.tax().types;
-        tx.types.push({ key, icon: $("taxTypeIcon").value.trim() || "📄", route, label: { gu: label || key, hi: label || key, en: label || key } });
-      }, OEG.t("admin.taxSaved") + " · " + label);
-    };
-    $("taxAddGrade").onclick = () => {
-      const box = $("taxMsg");
-      const key = $("taxGradeKey").value.trim().toLowerCase().replace(/\s+/g, "-");
-      const label = $("taxGradeLabel").value.trim();
-      if (!keyOk(key) && !/^\d+$/.test(key)) { box.innerHTML = `<div class="alert alert-error">❌ ${OEG.esc(OEG.t("admin.newKey"))}</div>`; return; }
-      if ((OEG.tax().grades || []).some(x => x.key === key) || (OEG.tax().grades || []).some(x => (x.label && x.label.gu) === label && label)) { dupMsg(box); return; }
-      writeTax((tx) => {
-        tx.grades = (tx.grades && tx.grades.length ? tx.grades : null) || OEG.tax().grades;
-        const at = tx.grades.findIndex(x => x.key === "all");
-        const obj = { key, icon: $("taxGradeIcon").value.trim() || "🎓", label: { gu: label || key, hi: label || key, en: label || key } };
-        if (at >= 0) tx.grades.splice(at, 0, obj); else tx.grades.push(obj);
-      }, OEG.t("admin.taxSaved") + " · " + label);
-    };
-    $("taxAddQz").onclick = () => {
-      const box = $("taxMsg");
-      const key = $("taxQzKey").value.trim().toLowerCase().replace(/\s+/g, "-");
-      const label = $("taxQzLabel").value.trim();
-      if (!keyOk(key)) { box.innerHTML = `<div class="alert alert-error">❌ ${OEG.esc(OEG.t("admin.newKey"))}</div>`; return; }
-      if ((OEG.tax().quizCats || []).some(x => x.key === key) || (OEG.tax().quizCats || []).some(x => (x.label && x.label.gu) === label && label)) { dupMsg(box); return; }
-      writeTax((tx) => {
-        tx.quizCats = (tx.quizCats && tx.quizCats.length ? tx.quizCats : null) || OEG.tax().quizCats;
-        tx.quizCats.push({ key, icon: $("taxQzIcon").value.trim() || "🧠", label: { gu: label || key, hi: label || key, en: label || key } });
-      }, OEG.t("admin.taxSaved") + " · " + label);
-    };
-    /* quiz sub-cat નું નામ બદલવાનું રાખ્યું છે — ઉમેર/કાઢી બંને ચાલે */
+    async function taxOp(act, kind, path, val) {
+      if (!needGh()) return;
+      const key = path[path.length - 1];
+      if (act === "del") {
+        /* ક્વિઝની કેટેગરી → પ્રશ્નો સાથે રદ (એ જ જૂની સલામત રીત) */
+        if (kind === "qz" && path.length === 1) { window.OEG_admin_tax_remove("qz", key); return; }
+        const used = path.length === 1 ? affectedBy(kind, path) : [];
+        if (used.length && !confirm(OEG.t("admin.delConfirm") + " — " + key + " · " + used.length + " " + OEG.t("admin.qCount"))) return;
+        if (!used.length && !confirm(OEG.t("admin.delConfirm") + " — " + key + "?")) return;
+        try {
+          if (used.length) {
+            const ids = {};
+            used.forEach(x => { ids[x.id] = 1; });
+            await writeCatalog((OEG.state.catalogAll || OEG.state.catalog).filter(x => !ids[x.id]), "Remove: " + key);
+          } else if (path.length > 1) {
+            await untagItems(path.length === 2 ? "audSub" : "audSub2", key);
+          }
+        } catch (e) { taxSay("error", e.message); return; }
+      }
+      try {
+        await writeTax((tx) => {
+          const r = taxAt(tx, kind, path);
+          if (!r || !r.item) throw new Error(OEG.t("admin.deleted") + "? " + key);
+          if (act === "del") {
+            r.list.splice(r.list.indexOf(r.item), 1);
+            if (kind === "subjects") { const gs = taxList(tx, "gradeSubjects"); for (let i = gs.length - 1; i >= 0; i--) if (gs[i].key === key) gs.splice(i, 1); }
+            return;
+          }
+          const i = r.list.indexOf(r.item), j = i + (act === "up" ? -1 : 1);
+          if (j < 0 || j >= r.list.length) return;
+          r.list[j] = r.list.splice(i, 1, r.list[j])[0];
+        }, act === "del" ? OEG.t("admin.deleted") + " · " + key : OEG.t("admin.taxMoved"));
+      } catch (e) { taxSay("error", e.message); }
+    }
+    async function taxSet(kind, path, what, val) {
+      if (!needGh()) return;
+      try {
+        await writeTax((tx) => {
+          if (kind === "subjects" && what === "gv") {
+            const L = taxList(tx, "subjects"), gs = taxList(tx, "gradeSubjects");
+            const it = L.filter(x => x.key === path[0])[0];
+            for (let i = gs.length - 1; i >= 0; i--) if (gs[i].key === path[0]) gs.splice(i, 1);
+            if (val) gs.push({ key: path[0], icon: (it || {}).icon || "📘", label: (it || {}).label || lab3(path[0], path[0]) });
+            return;
+          }
+          const r = taxAt(tx, kind, path);
+          if (!r || !r.item) throw new Error(OEG.t("admin.tax") + " · " + path.join("/"));
+          if (what === "label") {
+            const lg = OEG.state.lang;
+            const src = (r.item.label && typeof r.item.label === "object") ? r.item.label : {};
+            const o = Object.assign({}, src);
+            o[lg] = val;
+            if (!o.gu) o.gu = val; if (!o.hi) o.hi = o.gu; if (!o.en) o.en = o.gu;
+            r.item.label = o;
+          }
+          if (what === "aud") r.item.aud = val;
+          if (what === "gv") r.item.gradeView = !!val;
+        }, OEG.t("admin.taxSaved"));
+      } catch (e) { taxSay("error", e.message); }
+    }
+    /* યાદી: નામ બદલો + ⬆⬇ + 🗑 (બધી જગ્યાએ એ જ નિયમ) */
+    const taxRows = (list, kind) => (list || []).map((x, i) => {
+      const lab = OEG.taxLabel(x, kind === "grades" ? "grade" : kind === "types" ? "type" : "subject");
+      const inGv = kind === "subjects" ? (OEG.tax().gradeSubjects || []).some(g => g.key === x.key) : null;
+      return `<div class="tax-row">
+        <span class="tax-ic">${x.icon || "•"}</span>
+        <input class="tax-ren" data-ren="${kind}:${OEG.esc(x.key)}" value="${OEG.esc(lab || x.key)}" maxlength="30">
+        <code>${OEG.esc(x.key)}</code>
+        ${kind === "types" ? `<select data-taud="${OEG.esc(x.key)}" title="${OEG.t("admin.catAud")}">${audSelOpts(x.aud || "all")}</select>
+          <label class="chk tax-gv" title="${OEG.t("admin.gradeViewL")}"><input type="checkbox" data-tgv="${OEG.esc(x.key)}" ${x.gradeView !== false ? "checked" : ""}></label>` : ""}
+        ${inGv !== null ? `<label class="chk tax-gv" title="${OEG.t("admin.gradeViewL")}"><input type="checkbox" data-tgv2="${OEG.esc(x.key)}" ${inGv ? "checked" : ""}></label>` : ""}
+        <span class="tax-mv">
+          <button type="button" class="btn btn-outline btn-sm" data-tmv="${kind}:${OEG.esc(x.key)}:-1" title="⬆">⬆</button>
+          <button type="button" class="btn btn-outline btn-sm" data-tmv="${kind}:${OEG.esc(x.key)}:1" title="⬇">⬇</button>
+          ${x.key !== "all" ? `<button type="button" class="btn btn-danger btn-sm" data-tdel="${kind}:${OEG.esc(x.key)}" title="${OEG.t("admin.delete")}">🗑</button>` : ""}
+        </span></div>`;
+    }).join("");
+    function audCols() {
+      const tx = OEG.tax();
+      return (tx.audiences || []).map((a) => {
+        const subs = Array.isArray(a.subs) ? a.subs : [];
+        return `<div class="aud-col">
+          <div class="aud-head">
+            <span class="tax-ic">${a.icon || "🎯"}</span>
+            <input class="tax-ren" data-ren="aud:${OEG.esc(a.key)}" value="${OEG.esc(OEG.audLabel(a.key))}" maxlength="24">
+            <code>${OEG.esc(a.key)}</code>
+            <span class="tax-mv">
+              <button type="button" class="btn btn-outline btn-sm" data-tmv="aud:${OEG.esc(a.key)}:-1">⬆</button>
+              <button type="button" class="btn btn-outline btn-sm" data-tmv="aud:${OEG.esc(a.key)}:1">⬇</button>
+              <button type="button" class="btn btn-danger btn-sm" data-tdel="aud:${OEG.esc(a.key)}">🗑</button>
+            </span>
+          </div>
+          ${a.key === "student" ? `<p class="sub-none">🎓 ${OEG.t("admin.studentTopicsNote")}</p>` : ""}
+          <div class="aud-subs">${subs.length ? subs.map(x => {
+            const kids = Array.isArray(x.subs) ? x.subs : [];
+            return `<div class="tax-row lv2"><span class="tax-ic">${x.icon || "🏷️"}</span>
+              <input class="tax-ren" data-ren="aud:${OEG.esc(a.key)}:${OEG.esc(x.key)}" value="${OEG.esc(OEG.taxLabel(x, "subject"))}" maxlength="30">
+              <code>${OEG.esc(x.key)}</code>
+              <span class="tax-mv">
+                <button type="button" class="btn btn-outline btn-sm" data-tmv="aud:${OEG.esc(a.key)}:${OEG.esc(x.key)}:-1">⬆</button>
+                <button type="button" class="btn btn-outline btn-sm" data-tmv="aud:${OEG.esc(a.key)}:${OEG.esc(x.key)}:1">⬇</button>
+                <button type="button" class="btn btn-danger btn-sm" data-tdel="aud:${OEG.esc(a.key)}:${OEG.esc(x.key)}">🗑</button>
+              </span>
+              <div class="aud-kids">${kids.map(y => `<div class="tax-row lv3"><span class="tax-ic">${y.icon || "🔹"}</span>
+                  <input class="tax-ren" data-ren="aud:${OEG.esc(a.key)}:${OEG.esc(x.key)}:${OEG.esc(y.key)}" value="${OEG.esc(OEG.taxLabel(y, "subject"))}" maxlength="30">
+                  <span class="tax-mv"><button type="button" class="btn btn-outline btn-sm" data-tmv="aud:${OEG.esc(a.key)}:${OEG.esc(x.key)}:${OEG.esc(y.key)}:-1">⬆</button>
+                    <button type="button" class="btn btn-outline btn-sm" data-tmv="aud:${OEG.esc(a.key)}:${OEG.esc(x.key)}:${OEG.esc(y.key)}:1">⬇</button>
+                    <button type="button" class="btn btn-danger btn-sm" data-tdel="aud:${OEG.esc(a.key)}:${OEG.esc(x.key)}:${OEG.esc(y.key)}">🗑</button></span></div>`).join("")}
+                <div class="tax-add mini"><input data-a2lab="${OEG.esc(a.key)}:${OEG.esc(x.key)}" placeholder="${OEG.t("admin.audTopic2")}" maxlength="30">
+                  <button type="button" class="btn btn-brand btn-sm" data-a2add="${OEG.esc(a.key)}:${OEG.esc(x.key)}">➕</button></div>
+              </div>
+            </div>`;
+          }).join("") : `<p class="sub-none">${OEG.t("admin.noTopics")}</p>`}</div>
+          ${a.key === "student" ? "" : `<div class="tax-add mini"><input data-alab="${OEG.esc(a.key)}" placeholder="${OEG.t("admin.audTopic")}" maxlength="30">
+            <input data-aic="${OEG.esc(a.key)}" class="tax-ic" placeholder="🏷️" maxlength="4">
+            <button type="button" class="btn btn-brand btn-sm" data-aadd="${OEG.esc(a.key)}">➕ ${OEG.t("admin.subAdd")}</button></div>`}
+        </div>`;
+      }).join("");
+    }
+    function bindTax() {
+      const box = $("taxTypes");
+      if (!box) return;
+      const tx = OEG.tax();
+      box.innerHTML = taxRows(tx.types, "types");
+      $("taxGrades").innerHTML = taxRows(tx.grades.filter(g => g.key !== "all"), "grades");
+      $("taxSubjects").innerHTML = taxRows(tx.subjects, "subjects");
+      $("taxQz").innerHTML = taxRows(tx.quizCats, "qz");
+      $("taxAud").innerHTML = audCols();
+      const all = root;
+      Array.prototype.forEach.call(all.querySelectorAll("[data-tmv]"), (b) => {
+        b.onclick = () => { const p = b.dataset.tmv.split(":"); const dir = p.pop(); taxOp(dir === "-1" ? "up" : "down", p[0], p.slice(1)); };
+      });
+      Array.prototype.forEach.call(all.querySelectorAll("[data-tdel]"), (b) => {
+        b.onclick = () => { const p = b.dataset.tdel.split(":"); taxOp("del", p[0], p.slice(1)); };
+      });
+      Array.prototype.forEach.call(all.querySelectorAll("[data-ren]"), (inp) => {
+        inp.onchange = () => { const p = inp.dataset.ren.split(":"); const v = inp.value.trim(); if (v) taxSet(p[0], p.slice(1), "label", v); };
+      });
+      Array.prototype.forEach.call(all.querySelectorAll("[data-taud]"), (sel) => {
+        sel.onchange = () => taxSet("types", [sel.dataset.taud], "aud", sel.value);
+      });
+      Array.prototype.forEach.call(all.querySelectorAll("[data-tgv]"), (ck) => {
+        ck.onchange = () => taxSet("types", [ck.dataset.tgv], "gv", ck.checked);
+      });
+      Array.prototype.forEach.call(all.querySelectorAll("[data-tgv2]"), (ck) => {
+        ck.onchange = () => taxSet("subjects", [ck.dataset.tgv2], "gv", ck.checked);
+      });
+      Array.prototype.forEach.call(all.querySelectorAll("[data-aadd]"), (b) => {
+        b.onclick = () => {
+          const k = b.dataset.aadd;
+          const inp = all.querySelector('[data-alab="' + k + '"]'), ic = all.querySelector('[data-aic="' + k + '"]');
+          const name = ((inp || {}).value || "").trim();
+          if (!name) { if (inp) inp.focus(); taxSay("error", OEG.t("admin.needLabel")); return; }
+          addAudSub(k, name, ((ic || {}).value || "").trim(), null);
+        };
+      });
+      Array.prototype.forEach.call(all.querySelectorAll("[data-a2add]"), (b) => {
+        b.onclick = () => {
+          const k = b.dataset.a2add;
+          const inp = all.querySelector('[data-a2lab="' + k + '"]');
+          const name = ((inp || {}).value || "").trim();
+          if (!name) { if (inp) inp.focus(); taxSay("error", OEG.t("admin.needLabel")); return; }
+          addAudSub(k.split(":")[0], name, "", k.split(":")[1]);
+        };
+      });
+    }
+    async function addAudSub(audKey, name, icon, subKey) {
+      if (!needGh()) return;
+      try {
+        await writeTax((tx) => {
+          const path = subKey ? [audKey, subKey] : [audKey];
+          const r = audAt(tx, path);
+          if (!r || !r.list) throw new Error(OEG.t("admin.tax") + " · " + audKey);
+          const L = subKey ? r.list : (r.item.subs = r.item.subs || []);
+          if (L.some(x => OEG.langField(x.label) === name)) throw new Error("⚠️ " + OEG.t("admin.dupExists"));
+          const key = uniqKey(name, L);
+          const o = { key: key, icon: icon || (subKey ? "🔹" : "🏷️"), label: lab3(name, key) };
+          if (!subKey) o.subs = [];
+          L.push(o);
+        }, (subKey ? OEG.t("admin.subAdded2") : OEG.t("admin.topicAdded")) + " · " + name);
+      } catch (e) { taxSay("error", e.message); }
+    }
+    /* બાબત/ઉપ-બાબત કાઢી નાખો → એ ટૅગ ધરાવતી આઇટમમાંથી ટૅગ દૂર (સામગ્રી રહે) */
+    async function untagItems(field, key) {
+      const items = (OEG.state.catalogAll || OEG.state.catalog || []).map(x => (x[field] === key ? Object.assign({}, x, { [field]: "" }) : x));
+      await writeCatalog(items, "Untag " + field + ": " + key);
+    }
+    /* જુના બટન (key ફીલ્ડ વગર હવે ફક્ત નામ પરથી) */
+    $("taxAddType").onclick = () => taxAdd("types", $("taxTypeLabel").value, $("taxTypeIcon").value,
+      { aud: ($("taxTypeAud") || {}).value || "all", gradeView: !!($("taxTypeGV") || {}).checked });
+    $("taxAddGrade").onclick = () => taxAdd("grades", $("taxGradeLabel").value, $("taxGradeIcon").value, null);
+    $("taxAddSubject").onclick = () => taxAdd("subjects", $("taxSubjectLabel").value, $("taxSubjectIcon").value, null);
+    $("taxAddQz").onclick = () => taxAdd("qz", $("taxQzLabel").value, $("taxQzIcon").value, null);
+    $("taxAddAud").onclick = () => taxAdd("aud", $("taxAudLabel").value, $("taxAudIcon").value, null);
+    /* quiz category કાઢવી હોય તો પ્રશ્નો પણ સાથે જ રદ (અગાઉ પ્રમાણે) */
     window.OEG_admin_tax_remove = async (kind, key) => {
       const box = $("taxMsg");
       if (kind === "qz") {
-        /* quiz category: પ્રશ્નો + flags + taxonomy — બધું એકસાથે જ કાયમ માટે દૂર */
         const bank = OEG.quiz.raw();
         const qs = (bank.questions || []).filter(q => (q.cat || "gk") === key);
         if (qs.length && !confirm(OEG.t("admin.qzDelCatAsk") + "\n" + key + " → " + qs.length + " " + OEG.t("admin.qCount"))) return;
@@ -763,15 +1079,8 @@ OEG.admin = (() => {
         }, OEG.t("admin.deleted") + " · " + key + (qs.length ? ` (${qs.length} ${OEG.t("admin.qCount")})` : ""));
         return;
       }
-      const used = inUse(kind, key);
-      if (used.length) { box.innerHTML = `<div class="alert alert-error">⛔ ${OEG.esc(OEG.t("admin.cannotRemove"))} (${used.length}) — ${OEG.esc(OEG.t("admin.cannotRemove2"))}</div>`; return; }
-      if (!confirm(OEG.t("admin.delConfirm") + " — " + key + "?")) return;
-      writeTax((tx) => {
-        const path = kind === "grades" ? "grades" : kind;
-        tx[path] = (tx[path] && tx[path].length ? tx[path] : OEG.tax()[path]).filter(x => x.key !== key);
-      }, OEG.t("admin.deleted") + " · " + key);
+      taxOp("del", kind === "grades" ? "grades" : kind, [key]);
     };
-
     /* ---------- 🧠 Quiz questions ---------- */
     const say = (box, kind, html) => {
       if (box) box.innerHTML = `<div class="alert alert-${kind}">${html}</div>`;
@@ -1261,7 +1570,9 @@ OEG.admin = (() => {
         const catalog = JSON.parse(cur.content);
         catalog.items = catalog.items || [];
         catalog.items.unshift({
-          id: "item-" + Date.now(), type: "video", grade: $("ytGrade").value, subject: $("ytSubject").value,
+          id: "item-" + Date.now(), type: "video",
+          grade: ($("ytGrade") || {}).value || "all", subject: ($("ytSubject") || {}).value || "all",
+          aud: (cscVal("yt").aud) || "all", audSub: cscVal("yt").audSub || "", audSub2: cscVal("yt").audSub2 || "",
           title: t3, desc: t3, body: "", image: OEG.yt.thumb(id, "maxresdefault"),
           fileUrl: "https://www.youtube.com/watch?v=" + id, fileType: "video", ytId: id,
           channel: m.author || "",
@@ -1306,6 +1617,7 @@ OEG.admin = (() => {
           <code title="${OEG.esc(i.id)}">${OEG.esc(String(OEG.title(i) || i.id).slice(0, 54))}</code>
           ${isYt ? `<span class="badge">▶ ${OEG.t("yt.playHere")}</span>` : ""}
           <span class="badge">${OEG.esc(OEG.typeLabel(i.type))}</span>
+          <span class="badge">🎯 ${OEG.esc(OEG.audLabel(i.aud))}</span>
           <span class="badge">${OEG.esc(OEG.gradeLabel(i.grade))}</span>${i.hidden ? `<span class="badge">🙈 ${OEG.t("admin.hidden")}</span>` : ""}
           <a class="btn btn-outline btn-sm" href="#/view/${i.id}" target="_blank" rel="noopener">${OEG.t("btn.view")}</a>
           <button class="btn btn-outline btn-sm" data-edit="${OEG.esc(i.id)}">✏️ ${OEG.t("admin.edit")}</button>
@@ -1332,28 +1644,32 @@ OEG.admin = (() => {
         try { await writeCatalog(items, (it.hidden ? "Publish: " : "Hide: ") + String(OEG.title(it)).slice(0, 40)); OEG.toast(it.hidden ? "👁️" : "🙈"); }
         catch (e) { OEG.toast(e.message); b.textContent = "🙈"; }
       });
+      /* ✏️ સુધારો: પહેલાં ✍️ ટૅબ ખોલો (પાનાં છુપા હોય ત્યારે ભરાયેલું ફોર્મ દેખાતું નથી), પછી ભરો */
       box.querySelectorAll("[data-edit]").forEach(b => b.onclick = () => {
         const it = OEG.byId(b.dataset.edit);
-        if (!it) return;
+        if (!it) { OEG.toast("❓ " + OEG.t("admin.error")); return; }
         editId = it.id;
-        $("pTitleGu").value = it.title && it.title.gu || (typeof it.title === "string" ? it.title : "");
-        $("pTitleHi").value = (it.title || {}).hi || "";
-        $("pTitleEn").value = (it.title || {}).en || "";
-        $("pType").value = it.type || "post";
-        $("pGrade").value = it.grade || "all";
-        $("pSubject").value = it.subject || "all";
-        $("pDesc").value = (it.desc || {}).gu || (typeof it.desc === "string" ? it.desc : "");
-        $("pBody").value = (it.body || {}).gu || (typeof it.body === "string" ? it.body : "");
-        $("pImage").value = it.image || "";
-        $("pYoutube").value = OEG.youtubeId(it.fileUrl) ? it.fileUrl : "";
-        $("pFileUrl").value = OEG.youtubeId(it.fileUrl) ? "" : (it.fileUrl || "");
-        if ($("pDate")) $("pDate").value = it.date || "";
-        if ($("pTags")) $("pTags").value = (it.tags || []).join(", ");
-        if ($("pHidden")) $("pHidden").checked = !!it.hidden;
-        $("pSave").textContent = "💾 " + OEG.t("admin.update");
-        $("pMsg").innerHTML = `<div class="alert alert-info">✏️ ${OEG.esc(OEG.title(it))}</div>`;
-        const anchor = $("pSave");
-        anchor.scrollIntoView({ behavior: "smooth", block: "center" });
+        admTab = "material";
+        try { localStorage.setItem("oeg-adm-tab", admTab); } catch (e) {}
+        applyTabs();
+        const set = (id, val) => { const el = $(id); if (el) el.value = val; };
+        const tt = it.title || {};
+        set("pTitleGu", (typeof tt === "string" ? tt : tt.gu) || "");
+        set("pTitleHi", (tt && tt.hi) || "");
+        set("pTitleEn", (tt && tt.en) || "");
+        set("pDesc", (typeof it.desc === "string" ? it.desc : (it.desc || {}).gu) || "");
+        set("pBody", (typeof it.body === "string" ? it.body : (it.body || {}).gu) || "");
+        set("pImage", it.image || "");
+        set("pYoutube", OEG.youtubeId(it.fileUrl) ? it.fileUrl : "");
+        set("pFileUrl", OEG.youtubeId(it.fileUrl) ? "" : (it.fileUrl || ""));
+        set("pDate", it.date || "");
+        set("pTags", (it.tags || []).join(", "));
+        const hd = $("pHidden"); if (hd) hd.checked = !!it.hidden;
+        cscSet("p", { aud: it.aud || OEG.typeAud(it.type) || "all", type: it.type || "post", grade: it.grade || "all", subject: it.subject || "all", audSub: it.audSub || "", audSub2: it.audSub2 || "" });
+        const sv = $("pSave");
+        if (sv) { sv.textContent = "💾 " + OEG.t("admin.update"); sv.scrollIntoView({ behavior: "smooth", block: "center" }); }
+        const pm = $("pMsg");
+        if (pm) pm.innerHTML = `<div class="alert alert-info">✏️ ${OEG.esc(OEG.title(it))}</div>`;
       });
     }
 
@@ -1417,7 +1733,12 @@ OEG.admin = (() => {
       if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) { msg("uMsg", "❌ " + OEG.t("auth.email"), false); return; }
       if (($("uPass").value || "").length < 6) { msg("uMsg", "❌ " + OEG.t("auth.password"), false); return; }
       try {
-        await OEG.auth.addUser({ name: $("uName").value.trim() || email.split("@")[0], email, password: $("uPass").value, role: $("uRole").value, grade: $("uGrade").value, subject: $("uSubject").value });
+        const uHide = ($("uGradeRow") || {}).style && $("uGradeRow").style.display === "none";
+        await OEG.auth.addUser({
+          name: $("uName").value.trim() || email.split("@")[0], email, password: $("uPass").value, role: $("uRole").value,
+          grade: uHide ? "all" : ($("uGrade") || {}).value || "all",
+          subject: uHide ? "all" : ($("uSubject") || {}).value || "all"
+        });
         msg("uMsg", "✅ " + OEG.t("admin.saved"), true);
         ["uName", "uEmail", "uPass"].forEach(id => $(id).value = "");
         loadUsers();
@@ -1466,8 +1787,7 @@ OEG.admin = (() => {
           </div>
           <div class="sub-list">${subs.length ? subs.map(x => subNode(c.key, x, mode)).join("") : `<span class="sub-none">${OEG.t("admin.noSubsYet")}</span>`}</div>
           <div class="sub-add">
-            <input data-subkey="${OEG.esc(c.key)}" placeholder="${OEG.t("admin.subKeyOpt")}" maxlength="20">
-            <input data-sublabel="${OEG.esc(c.key)}" placeholder="${OEG.t("admin.newLabel")}">
+            <input data-sublabel="${OEG.esc(c.key)}" placeholder="${OEG.t("admin.newLabel")}" maxlength="40">
             <input data-subicon="${OEG.esc(c.key)}" placeholder="🏷️" maxlength="4">
             <button type="button" class="btn btn-brand btn-sm" data-subadd="${OEG.esc(c.key)}">➕ ${OEG.t("admin.addSub")}</button>
           </div>
@@ -1479,11 +1799,16 @@ OEG.admin = (() => {
       Array.prototype.forEach.call(box.querySelectorAll("[data-subadd]"), (b2) => {
         b2.onclick = () => {
           const at = (nm) => box.querySelector('[data-' + nm + '="' + b2.dataset.subadd + '"]');
-          const key = ((at("subkey") || {}).value || "").trim().toLowerCase();
           const label = ((at("sublabel") || {}).value || "").trim();
           const icon = ((at("subicon") || {}).value || "").trim();
-          window.OEG_admin_sub_add(b2.dataset.subadd, key, label, icon);
+          window.OEG_admin_sub_add(b2.dataset.subadd, "", label, icon);
         };
+      });
+      Array.prototype.forEach.call(box.querySelectorAll("[data-submv]"), (b2) => {
+        b2.onclick = () => { const p = b2.dataset.submv.split(":"); window.OEG_admin_sub_move(p[0], p[1], Number(p[2])); };
+      });
+      Array.prototype.forEach.call(box.querySelectorAll("[data-chapmv]"), (b2) => {
+        b2.onclick = () => { const p = b2.dataset.chapmv.split(":"); window.OEG_admin_chap_move(p[0], p[1], p[2], Number(p[3])); };
       });
       Array.prototype.forEach.call(box.querySelectorAll("[data-subdel]"), (b2) => {
         b2.onclick = () => { const p = b2.dataset.subdel.split(":"); window.OEG_admin_sub_del(p[0], p.slice(1).join(":")); };
@@ -1544,6 +1869,8 @@ OEG.admin = (() => {
         <div class="sub-node-head">
           <span class="sn-ic">${x.icon || "🏷️"}</span><b>${OEG.esc(OEG.quiz.subLabel(catKey, x.key))}</b><code>${OEG.esc(x.key)}</code>
           <span class="badge">${cnt} ${OEG.t("admin.qCount")}</span>
+          <button type="button" class="btn btn-outline btn-sm" data-submv="${OEG.esc(catKey)}:${OEG.esc(x.key)}:-1" title="⬆">⬆</button>
+          <button type="button" class="btn btn-outline btn-sm" data-submv="${OEG.esc(catKey)}:${OEG.esc(x.key)}:1" title="⬇">⬇</button>
           <button type="button" class="btn btn-outline btn-sm" data-chapnew="${OEG.esc(catKey)}:${OEG.esc(x.key)}">📗 ${OEG.t("admin.addChap")}</button>
           <button type="button" class="btn btn-danger btn-sm sub-x" data-subdel="${OEG.esc(catKey)}:${OEG.esc(x.key)}" title="${OEG.t("admin.removeSub")}">🗑</button>
         </div>
@@ -1551,6 +1878,8 @@ OEG.admin = (() => {
             <span class="kid-num">📗 ${OEG.esc(ch.num ? OEG.quiz.guNum(ch.num) : "•")}</span>
             <b>${OEG.esc(OEG.taxLabel(ch, "subject"))}</b><code>${OEG.esc(ch.key)}</code>${ch.grade ? `<span class="badge">🎓 ${OEG.esc(OEG.gradeLabel(ch.grade))}</span>` : ""}
             <span class="badge">${OEG.quiz.chapCount(catKey, x.key, ch.key, "all")}</span>
+            <button type="button" class="btn btn-outline btn-sm" data-chapmv="${OEG.esc(catKey)}:${OEG.esc(x.key)}:${OEG.esc(ch.key)}:-1" title="⬆">⬆</button>
+            <button type="button" class="btn btn-outline btn-sm" data-chapmv="${OEG.esc(catKey)}:${OEG.esc(x.key)}:${OEG.esc(ch.key)}:1" title="⬇">⬇</button>
             <button type="button" class="btn btn-outline btn-sm" data-chapedit="${OEG.esc(catKey)}:${OEG.esc(x.key)}:${OEG.esc(ch.key)}" title="${OEG.t("admin.edit")}">✏️</button>
             <button type="button" class="btn btn-danger btn-sm sub-x" data-chapdel="${OEG.esc(catKey)}:${OEG.esc(x.key)}:${OEG.esc(ch.key)}" title="${OEG.t("admin.delete")}">🗑</button>
           </div>`).join("") : `<span class="sub-none">${OEG.t("quiz.noChaps")}</span>`}</div>
@@ -1575,6 +1904,8 @@ OEG.admin = (() => {
       if (!confirm(OEG.t("admin.delConfirm") + " — " + lab + (kids ? ` · 📗 ${kids}` : "") + (n ? ` · ${n} ${OEG.t("admin.qCount")}` : ""))) return;
       taxGo(() => OEG.quiz.delSub(catKey, subKey), OEG.t("admin.subDeleted") + " · " + lab + (n ? ` (${n} ${OEG.t("admin.qCount")})` : ""));
     };
+    window.OEG_admin_sub_move = (catKey, subKey, dir) => taxGo(() => OEG.quiz.moveSub(catKey, subKey, dir), OEG.t("admin.taxMoved"));
+    window.OEG_admin_chap_move = (catKey, subKey, chapKey, dir) => taxGo(() => OEG.quiz.moveChap(catKey, subKey, chapKey, dir), OEG.t("admin.taxMoved"));
     window.OEG_admin_chap_add = (catKey, subKey, num, label, grade) => taxGo(() => OEG.quiz.addChap(catKey, subKey, num, label, "", grade), OEG.t("admin.chapAdded") + " · " + (label || num));
     window.OEG_admin_chap_edit = (catKey, subKey, chapKey, num, label, grade) => taxGo(() => OEG.quiz.setChap(catKey, subKey, chapKey, num, label, "", grade), OEG.t("admin.taxSaved") + " · " + (label || chapKey));
     window.OEG_admin_chap_del = (catKey, subKey, chapKey) => {
@@ -1591,10 +1922,7 @@ OEG.admin = (() => {
       if (!confirm(OEG.t("admin.delConfirm") + " — " + lab + ` · 📚 ${kids} · ${n} ${OEG.t("admin.qCount")}`)) return;
       taxGo(() => OEG.quiz.delCat(catKey), OEG.t("admin.catDeleted") + " · " + lab);
     };
-    const chipRow = (list, kind, removable) => (list || []).map(x => `
-      <div class="tax-row"><span>${x.icon || "•"}</span><b>${OEG.esc(OEG.taxLabel(x, kind === "grades" ? "grade" : kind === "qz" ? "subject" : "type"))}</b><code>${OEG.esc(x.key)}</code>
-      ${x.route ? `<small>/${OEG.esc(x.route)}</small>` : ""}
-      ${removable && x.key !== "post" && x.key !== "all" ? `<button class="btn btn-danger btn-sm" data-tax="${kind}:${OEG.esc(x.key)}">🗑</button>` : ""}</div>`).join("");
+
     /* ================= 🧭 મેનુ સંચાલન (ટોચનું મેનુ ▸ ઉપ-મેનુ ▸ સબ-સબ મેનુ) =================
        ડેટા: data/site-config.json → ui.nav = [{ key, icon, label{gu,hi,en}, href, subs:[…] }]
        ખાલી હોય તો સાઇટ ઑટો-મેનુ (taxonomy પ્રમાણે) ચલાવે; પહેલી એડપીઝ ઑટો યાદી કૉપી કરી દે. */
@@ -1699,8 +2027,8 @@ OEG.admin = (() => {
       box.innerHTML = `<div class="nav-ed">
         <h4>${navEd.mode === "edit" ? "✏️ " + OEG.t("admin.navEdit") : "➕ " + OEG.t(navEd.parent ? "admin.navAddSub" : "admin.navAddTop")}${navEd.parent ? ` · <code>${OEG.esc(navEd.parent)}</code>` : ""}</h4>
         <div class="form-row">
-          <div class="field"><label>${OEG.t("admin.newKey")}</label><input id="neKey" value="${OEG.esc((cur && cur.key) || "")}" maxlength="20" placeholder="notes"></div>
           <div class="field"><label>${OEG.t("admin.newIcon")}</label><input id="neIcon" value="${OEG.esc((cur && cur.icon) || "")}" maxlength="4" placeholder="🗒️"></div>
+          <div class="field"><label>&nbsp;</label><p class="adm-sec-note" style="margin:0">💡 ${OEG.t("admin.seqNote")}</p></div>
         </div>
         <div class="form-row">
           <div class="field"><label>${OEG.t("admin.navLabel")} · ગુ</label><input id="neGu" value="${OEG.esc(lab.gu || "")}" maxlength="30"></div>
@@ -1728,7 +2056,7 @@ OEG.admin = (() => {
       if (!gu && !hi && !en) { say($("navMsg"), "error", "❌ " + OEG.esc(OEG.t("admin.navNeedLabel"))); return; }
       const custom = String(($("neLink") || {}).value || "").trim();
       if (!custom) { say($("navMsg"), "error", "❌ " + OEG.esc(OEG.t("admin.navNeedLink"))); return; }
-      const key = slugKey(($("neKey").value || "").trim() || custom || gu);
+      const key = slugKey(custom || gu);
       const icon = ($("neIcon").value || "").trim();
       const node = { key: key, icon: icon, label: { gu: gu || hi || en, hi: hi || gu || en, en: en || gu || hi }, href: custom.slice(0, 160) };
       const parent = navEd && navEd.parent;
@@ -1819,41 +2147,189 @@ OEG.admin = (() => {
     function renderTax(r) {
       const box = (r || root).querySelector("#taxTypes");
       if (!box) return;
-      const tx = OEG.tax();
-      box.innerHTML = chipRow(tx.types, "types", true);
-      (r || root).querySelector("#taxGrades").innerHTML = chipRow(tx.grades.filter(g => g.key !== "all"), "grades", true);
-      (r || root).querySelector("#taxQz").innerHTML = chipRow(tx.quizCats, "qz", true);
-      (r || root).querySelectorAll("[data-tax]").forEach(b => b.onclick = () => {
-        const parts = b.dataset.tax.split(":");
-        window.OEG_admin_tax_remove(parts[0], parts.slice(1).join(":"));
-      });
+      bindTax();
       const s = (r || root).querySelector("#qzCat");
       if (s) {
         const keys = (OEG.quiz.cats ? OEG.quiz.cats() : []).map(c => c.key);
-        tx.quizCats.forEach(c => { if (keys.indexOf(c.key) < 0) keys.push(c.key); });
+        OEG.tax().quizCats.forEach(c => { if (keys.indexOf(c.key) < 0) keys.push(c.key); });
         const v = s.value;
         s.innerHTML = opts(keys, v || keys[0] || "gk");
         if (v !== s.value && Array.prototype.some.call(s.options, o => o.value === v)) s.value = v;
       }
       const it = (r || root).querySelector("#itType");
-      if (it) it.innerHTML = `<option value="all">${OEG.t("filter.all")}</option>` + tx.types.map(x => `<option value="${x.key}">${x.icon || ""} ${OEG.esc(OEG.typeLabel(x.key))}</option>`).join("") + `<option value="hidden">🙈 ${OEG.t("admin.hiddenOnly")}</option>`;
-      /* બાકીની dropdown પણ તરત જ અપડેટ (વર્તમાન પસંદગી રાખીને) */
-      const keep = (id, html) => {
-        const el = (r || root).querySelector("#" + id);
-        if (!el) return;
-        const v = el.value;
-        el.innerHTML = html;
-        if (Array.prototype.some.call(el.options, o => o.value === v)) el.value = v;
-      };
-      keep("pType", typeOpts((OEG.tax().types[0] || {}).key || "post"));
-      keep("upType", typeOpts("post"));
-      keep("pGrade", gradeOpts("all"));
-      keep("upGrade", gradeOpts("all"));
-      keep("pSubject", subjOpts("all"));
+      if (it) {
+        const v0 = it.value;
+        it.innerHTML = `<option value="all">${OEG.t("filter.all")}</option>` + OEG.tax().types.map(x => `<option value="${x.key}">${x.icon || ""} ${OEG.esc(OEG.typeLabel(x.key))}</option>`).join("") + `<option value="hidden">🙈 ${OEG.t("admin.hiddenOnly")}</option>`;
+        if (Array.prototype.some.call(it.options, o => o.value === v0)) it.value = v0;
+      }
+      /* 🎯 પ્રેક્ષક cascade ની બધી dropdown તરત જ અપડેટ (વર્તમાન પસંદગી રાખીને) */
+      ["up", "p", "yt"].forEach((pfx) => {
+        const A = (r || root).querySelector("#" + pfx + "Aud");
+        if (A) { const v = A.value; A.innerHTML = audSelOpts(v); if (Array.prototype.some.call(A.options, o => o.value === v)) A.value = v; }
+        cscApply(pfx);
+      });
     }
-    renderTax(root); renderSubs(); renderNavMgr();
-    const taxTypeKey0 = $("taxTypeKey");
-    if (taxTypeKey0) taxTypeKey0.value = "";
+    renderTax(root); renderSubs(); renderNavMgr(); bindCascades(); bindUserRoles();
+
+    /* 👥 આચાર્ય/ઓફિસ વપરાશકર્તા માટે ધોરણ-વિષય દેખાતું નથી */
+    function bindUserRoles() {
+      const sel = $("uRole"), row = $("uGradeRow");
+      if (!sel || !row) return;
+      const sync = () => {
+        const on = /student|teacher/.test(sel.value || "");
+        row.style.display = on ? "" : "none";
+        const n = $("uRoleNote");
+        if (n) n.style.display = on ? "none" : "";
+      };
+      sel.onchange = sync;
+      sync();
+    }
+
+    /* ---------- 🎯 પ્રેક્ષક cascade binding (Upload · ✍️ · 🎬) ---------- */
+    function cscVal(p) {
+      const g = (n) => { const e = $(p + n); return e ? String(e.value || "") : ""; };
+      const aud = g("Aud") || "all";
+      const stu = aud === "student";
+      return {
+        aud: aud, type: g("Type") || "",
+        grade: stu ? (g("Grade") || "all") : "all",
+        subject: stu ? (g("Subject") || "all") : "all",
+        audSub: stu ? "" : g("AudSub"), audSub2: stu ? "" : g("AudSub2")
+      };
+    }
+    function cscApply(p) {
+      const box = root.querySelector('.csc[data-csc="' + p + '"]');
+      if (!box) return;
+      const aud = ($(p + "Aud") || {}).value || "all";
+      const stu = aud === "student";
+      const subs = stu ? [] : OEG.audSubs(aud);
+      const chips = box.querySelector("[data-csc-auds]");
+      if (chips) Array.prototype.forEach.call(chips.querySelectorAll("[data-audpick]"), (b2) => {
+        b2.classList.toggle("on", (b2.dataset.audpick || "all") === aud);
+        if (!b2.bound) { b2.bound = 1; b2.onclick = () => { const A2 = $(p + "Aud"); if (A2) { A2.value = b2.dataset.audpick || "all"; A2.dispatchEvent(new Event("change")); } }; }
+      });
+      const T = $(p + "Type");
+      if (T) { const tv = T.value; T.innerHTML = typeOptsAud(aud, tv || v0(p)); if (!Array.prototype.some.call(T.options, o => o.value === tv)) T.value = v0(p); }
+      const rStu = box.querySelector('[data-csc-row="stu"]'), rAud = box.querySelector('[data-csc-row="aud"]');
+      if (rStu) rStu.style.display = stu ? "" : "none";
+      if (rAud) rAud.style.display = (!stu && subs.length) ? "" : "none";
+      const gSel = $(p + "Grade"), sFld = box.querySelector(".csc-subj");
+      if (sFld) sFld.style.display = (stu && gSel && gSel.value && gSel.value !== "all") ? "" : "none";
+      const a1 = $(p + "AudSub");
+      if (a1) { const keep1 = a1.value; a1.innerHTML = audSubOpts(aud, keep1); }
+      const a2 = $(p + "AudSub2"), f2 = box.querySelector(".csc-aud2");
+      const kids = ((subs.filter(x => a1 && x.key === a1.value)[0] || {}).subs) || [];
+      if (f2) f2.style.display = kids.length ? "" : "none";
+      if (a2) { const keep2 = a2.value; a2.innerHTML = opts(kids.map(x => x.key), keep2, k => OEG.taxLabel(kids.filter(y => y.key === k)[0] || {}, "subject")); }
+    }
+    function cscSet(p, v) {
+      const set = (n, val) => { const e = $(p + n); if (e && val !== undefined && val !== null) e.value = val; };
+      set("Aud", v.aud || "all"); set("Type", v.type);
+      cscApply(p);
+      set("Grade", v.grade || "all"); set("Subject", v.subject || "all");
+      set("AudSub", v.audSub || ""); set("AudSub2", v.audSub2 || "");
+      cscApply(p);
+    }
+    function bindCascades() {
+      ["up", "p", "yt"].forEach((p) => {
+        const A = $(p + "Aud"), G = $(p + "Grade"), S1 = $(p + "AudSub");
+        if (A) A.onchange = () => {
+          const T = $(p + "Type");
+          if (T) T.innerHTML = typeOptsAud(A.value || "all", T.value || v0(p));
+          cscApply(p);
+        };
+        if (G) G.onchange = () => cscApply(p);
+        if (S1) S1.onchange = () => cscApply(p);
+        cscApply(p);
+        const box = root.querySelector('.csc[data-csc="' + p + '"]');
+        if (!box) return;
+        Array.prototype.forEach.call(box.querySelectorAll("[data-cscadd]"), (b) => { b.onclick = () => cscAdd(p, b.dataset.cscadd, b); });
+        Array.prototype.forEach.call(box.querySelectorAll("[data-cscdel]"), (b) => { b.onclick = () => cscDel(p, b.dataset.cscdel); });
+      });
+    }
+    function v0(p) { return p === "yt" ? "video" : p === "up" ? "textbook" : "post"; }
+    /* ➕ / 🗑 — નામ પરથી key આપોઆપ; કોઈ કી ફીલ્ડ નહીં */
+    function cscAdd(p, what, btn) {
+      const box = root.querySelector('.csc[data-csc="' + p + '"]');
+      if (!box) return;
+      const old = box.querySelector(".csc-pop");
+      if (old) { old.remove(); if (old.dataset.what === what) return; }
+      const lab = { aud: OEG.t("admin.audience"), grade: OEG.t("admin.grade"), subject: OEG.t("admin.subject"), audSub: OEG.t("admin.audTopic"), audSub2: OEG.t("admin.audTopic2") }[what] || what;
+      const pop = document.createElement("div");
+      pop.className = "csc-pop"; pop.dataset.what = what;
+      pop.innerHTML = `<label>➕ ${OEG.esc(lab)}</label><input placeholder="${OEG.t("admin.newName")}" maxlength="40"><input class="csc-ic" placeholder="🏷️" maxlength="4">
+        <button type="button" class="btn btn-brand btn-sm">${OEG.t("admin.addBtn") || "➕"}</button><button type="button" class="btn btn-outline btn-sm csc-x">✕</button>`;
+      box.appendChild(pop);
+      const inp = pop.querySelector("input"), go = pop.querySelector(".btn-brand");
+      inp.focus();
+      const done = () => pop.remove();
+      pop.querySelector(".csc-x").onclick = done;
+      const run = () => {
+        const name = inp.value.trim();
+        if (!name) { inp.focus(); return; }
+        cscAddDo(p, what, name, (pop.querySelector(".csc-ic").value || "").trim()).then((k) => { if (k) { cscApply(p); const e = $(p + (what === "aud" ? "Aud" : what === "grade" ? "Grade" : what === "subject" ? "Subject" : what === "audSub" ? "AudSub" : "AudSub2")); if (e) { e.value = k; e.dispatchEvent(new Event("change")); } } done(); });
+      };
+      go.onclick = run;
+      inp.onkeydown = (e) => { if (e.key === "Enter") { e.preventDefault(); run(); } };
+    }
+    async function cscAddDo(p, what, name, icon) {
+      if (!needGh()) return "";
+      const cur = cscVal(p);
+      let out = "";
+      try {
+        await writeTax((tx) => {
+          tx.audiences = (tx.audiences && tx.audiences.length ? tx.audiences : OEG.tax().audiences || []);
+          const push = (arr, obj) => { if (!Array.isArray(arr)) return ""; const k = uniqKey(name, arr); arr.push(obj); obj.key = k; return k; };
+          if (what === "aud") { const k = uniqKey(name, tx.audiences); tx.audiences.push({ key: k, icon: icon || "🎯", label: lab3(name, k), subs: [] }); out = k; return; }
+          if (what === "grade") {
+            tx.grades = (tx.grades && tx.grades.length ? tx.grades : OEG.tax().grades || []);
+            const k = uniqKey(name, tx.grades); const o = { key: k, icon: icon || "🎓", label: lab3(name, k) };
+            const at = tx.grades.findIndex(x => x.key === "all");
+            if (at >= 0) tx.grades.splice(at, 0, o); else tx.grades.push(o);
+            out = k; return;
+          }
+          if (what === "subject") {
+            tx.subjects = (tx.subjects && tx.subjects.length ? tx.subjects : OEG.tax().subjects || []);
+            const k = uniqKey(name, tx.subjects); tx.subjects.push({ key: k, icon: icon || "📘", label: lab3(name, k) });
+            tx.gradeSubjects = (tx.gradeSubjects && tx.gradeSubjects.length ? tx.gradeSubjects : OEG.tax().gradeSubjects || []);
+            if (!tx.gradeSubjects.some(x => x.key === k)) tx.gradeSubjects.push({ key: k, icon: icon || "📘", label: lab3(name, k) });
+            out = k; return;
+          }
+          const a = (tx.audiences || []).filter(x => x.key === (cur.aud === "all" ? "teacher" : cur.aud))[0] || (tx.audiences || [])[0];
+          if (!a) { out = ""; return; }
+          if (!Array.isArray(a.subs)) a.subs = [];
+          if (what === "audSub") { const k = uniqKey(name, a.subs); a.subs.push({ key: k, icon: icon || "🏷️", label: lab3(name, k), subs: [] }); out = k; return; }
+          const x = a.subs.filter(y => y.key === cur.audSub)[0] || a.subs[0];
+          if (!x) { out = ""; return; }
+          if (!Array.isArray(x.subs)) x.subs = [];
+          const k2 = uniqKey(name, x.subs); x.subs.push({ key: k2, icon: icon || "🔹", label: lab3(name, k2) }); out = k2;
+        }, OEG.t("admin.taxSaved"));
+      } catch (e) { msg(p + "Msg", OEG.t("admin.error") + " " + e.message, false); }
+      return out;
+    }
+    async function cscDel(p, what) {
+      if (!needGh()) return;
+      const cur = cscVal(p);
+      const nm = { aud: cur.aud, grade: cur.grade, subject: cur.subject, audSub: cur.audSub, audSub2: cur.audSub2 }[what] || "";
+      if (!nm || nm === "all") { msg(p + "Msg", OEG.t("aud.any"), false); return; }
+      if (!confirm(OEG.t("admin.delConfirm") + " — " + nm + "?")) return;
+      try {
+        await writeTax((tx) => {
+          const cut = (arr) => (Array.isArray(arr) ? arr : []).filter(x => x && x.key !== nm);
+          if (what === "aud") { tx.audiences = cut(tx.audiences.length ? tx.audiences : OEG.tax().audiences); return; }
+          if (what === "grade") { tx.grades = cut(tx.grades.length ? tx.grades : OEG.tax().grades); return; }
+          if (what === "subject") {
+            tx.subjects = cut(tx.subjects.length ? tx.subjects : OEG.tax().subjects);
+            tx.gradeSubjects = cut(tx.gradeSubjects.length ? tx.gradeSubjects : OEG.tax().gradeSubjects);
+            return;
+          }
+          const a = (tx.audiences || []).filter(x => x.key === cur.aud)[0];
+          if (!a) return;
+          if (what === "audSub") a.subs = (a.subs || []).filter(x => x.key !== nm);
+          else { const x = (a.subs || []).filter(y => y.key === cur.audSub)[0]; if (x) x.subs = (x.subs || []).filter(y => y.key !== nm); }
+        }, OEG.t("admin.deleted") + " · " + nm);
+      } catch (e) { msg(p + "Msg", OEG.t("admin.error") + " " + e.message, false); }
+    }
 
     /* ---------- 🧠 Quiz list ---------- */
     function renderQuiz(r) {
@@ -1961,7 +2437,8 @@ OEG.admin = (() => {
         footer: (($("ceFooter") || {}).value || "").trim() || undefined,
         praise: pra && pra.value.trim() ? pra.value.trim() : undefined,
         showUrl: !$("ceUrl") || $("ceUrl").checked, showSeal: !$("ceSeal") || $("ceSeal").checked,
-        showScore: !$("ceScore") || $("ceScore").checked
+        showScore: !$("ceScore") || $("ceScore").checked,
+        palette: ((OEG.cert.THEMES || {})[($("ceTheme") || {}).value || "royal"]) || null
       };
     }
     async function certPreview() {
@@ -2008,8 +2485,7 @@ OEG.admin = (() => {
       };
       keep("qzGrade", qzGradeOpts(($("qzGrade") || {}).value || "all"));
       keep("qzSub", qzSubjOpts(($("qzSub") || {}).value || "all"));
-      keep("ytGrade", gradeOpts("all"));
-      keep("ytSubject", subjOpts("all"));
+      ["up", "p", "yt"].forEach(cscApply);
       keep("ceGrade", gradeOpts("all"));
     }
 
@@ -2053,6 +2529,7 @@ OEG.admin = (() => {
 
     /* ---------- 🏅 પ્રમાણપત્ર સેટિંગ્સ ---------- */
     if ($("cePreview")) $("cePreview").onclick = () => certPreview();
+    if ($("ceTheme")) $("ceTheme").onchange = () => certPreview();
     ["ceName", "ceCat", "ceGrade", "ceSc"].forEach(id => { const el = $(id); if (el) el.onchange = () => certPreview(); });
     if ($("ceSave")) $("ceSave").onclick = async () => {
       if (!needGh()) return;
@@ -2065,9 +2542,10 @@ OEG.admin = (() => {
         const on = $("ceOn").checked, url = $("ceUrl").checked, sl = $("ceSeal").checked, sc = $("ceScore").checked;
         const praise = {};
         root.querySelectorAll("[data-pra]").forEach(inp => { const v = inp.value.trim(); if (v) praise[inp.dataset.pra] = { gu: v, hi: v, en: v }; });
+        const thm = ($("ceTheme") || {}).value || "royal";
         await saveBank((bank) => {
           bank.cert = {
-            enabled: on, showUrl: url, showSeal: sl, showScore: sc,
+            enabled: on, showUrl: url, showSeal: sl, showScore: sc, theme: thm,
             title: title.gu ? title : (bank.cert || {}).title || "",
             sub: sub.gu ? sub : (bank.cert || {}).sub || "",
             footer: note || (bank.cert || {}).footer || ""

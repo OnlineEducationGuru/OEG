@@ -11,19 +11,40 @@ OEG.state = {
   gh: { owner: "", repo: "", branch: "main", token: "" } // token: memory only
 };
 
-/* ---------- 🏷️ Taxonomy (Admin માંથી ઉમેર/કાઢી શકાય — data/site-config.json) ---------- */
+/* દરેક પ્રકાર કોના માટે (aud) + ધોરણ-પાનાં પર બતાવવો કે નહીં (gradeView) — Admin → 🎯 પ્રેક્ષક માંથી બદલાય */
 const DEF_TYPES = [
-  { key: "textbook", icon: "📚", route: "textbooks" },
-  { key: "workbook", icon: "📝", route: "workbooks" },
-  { key: "quiz", icon: "🧠", route: "quiz" },
-  { key: "game", icon: "🎮", route: "games" },
-  { key: "office", icon: "🗂️", route: "office" },
-  { key: "teacher", icon: "👩‍🏫", route: "teachers" },
-  { key: "student", icon: "🧑‍🎓", route: "students" },
-  { key: "video", icon: "▶️", route: "videos" },
-  { key: "post", icon: "📰", route: "blog" },
-  { key: "link", icon: "🔗", route: "links" }
+  { key: "textbook", icon: "\uD83D\uDCDA", route: "textbooks", aud: "student", gradeView: true },
+  { key: "workbook", icon: "\uD83D\uDCDD", route: "workbooks", aud: "student", gradeView: true },
+  { key: "quiz", icon: "\uD83E\uDDE0", route: "quiz", aud: "student", gradeView: true },
+  { key: "game", icon: "\uD83C\uDFAE", route: "games", aud: "student", gradeView: true },
+  { key: "office", icon: "\uD83D\uDDC2\uFE0F", route: "office", aud: "office", gradeView: false },
+  { key: "teacher", icon: "\uD83D\uDC69\u200D\uD83C\uDFEB", route: "teachers", aud: "teacher", gradeView: false },
+  { key: "student", icon: "\uD83E\uDDD1\u200D\uD83C\uDF93", route: "students", aud: "student", gradeView: false },
+  { key: "video", icon: "\u25B6\uFE0F", route: "videos", aud: "all", gradeView: true },
+  { key: "post", icon: "\uD83D\uDCF0", route: "blog", aud: "teacher", gradeView: false },
+  { key: "link", icon: "\uD83D\uDD17", route: "links", aud: "all", gradeView: false }
 ];
+/* 🎯 પ્રેક્ષક (audience) — વિદ્યાર્થી પાસે ધોરણ+વિષય, બાકીના પાસે પોતાની બાબતો (૩ સ્તર સુધી) */
+const L3 = (gu, hi, en) => ({ gu: gu, hi: hi, en: en });
+const DEF_AUDS = [
+  { key: "student", icon: "\uD83E\uDDD1\u200D\uD83C\uDF93", label: L3("વિદ્યાર્થી", "छात्र", "Student"), subs: [] },
+  { key: "teacher", icon: "\uD83D\uDC69\u200D\uD83C\uDFEB", label: L3("શિક્ષક", "शिक्षक", "Teacher"), subs: [
+    { key: "planning", icon: "\uD83D\uDDD3\uFE0F", label: L3("પાઠ આયોજન", "पाठ योजना", "Lesson planning") },
+    { key: "paper", icon: "\uD83E\uDDFE", label: L3("પ્રશ્નપત્ર", "प्रश्न पत्र", "Question papers") },
+    { key: "material", icon: "\uD83D\uDCCE", label: L3("શિક્ષણ સામગ્રી", "सामग्री", "Teaching material") }
+  ] },
+  { key: "principal", icon: "\uD83C\uDFEB", label: L3("આચાર્ય", "प्राचार्य", "Principal"), subs: [
+    { key: "order", icon: "\uD83D\uDCDC", label: L3("શાસકીય આદેશ", "आदेश", "Orders") },
+    { key: "report", icon: "\uD83D\uDCCA", label: L3("અહેવાલ", "रिपोर्ट", "Reports") },
+    { key: "staff", icon: "\uD83D\uDC65", label: L3("શિક્ષક મંડળ", "स्टाफ", "Staff") }
+  ] },
+  { key: "office", icon: "\uD83D\uDDC2\uFE0F", label: L3("ઓફિસ", "कार्यालय", "Office"), subs: [
+    { key: "notice", icon: "\uD83D\uDCCC", label: L3("નોટિસ", "नोटिस", "Notices") },
+    { key: "circular", icon: "\uD83D\uDCE8", label: L3("પરિપત્ર", "परिपत्र", "Circulars") },
+    { key: "statement", icon: "\uD83E\uDDEE", label: L3("વિવરણ/હેશાબ", "विवरण", "Statements") }
+  ] }
+];
+const ROLE_AUD = { student: "student", teacher: "teacher", principal: "principal", office: "office", headmaster: "principal" };
 const DEF_GRADES = [{ key: "balvatika", icon: "\uD83E\uDDF8" }, { key: "1", icon: "1\uFE0F\u20E3" }, { key: "2", icon: "2\uFE0F\u20E3" }, { key: "3", icon: "3\uFE0F\u20E3" }, { key: "4", icon: "4\uFE0F\u20E3" }, { key: "5", icon: "5\uFE0F\u20E3" }, { key: "6", icon: "6\uFE0F\u20E3" }, { key: "7", icon: "7\uFE0F\u20E3" }, { key: "8", icon: "8\uFE0F\u20E3" }];
 const DEF_SUBJECTS = ["gujarati", "hindi", "english", "maths", "science", "social", "sanskrit", "office", "planning", "exam", "news", "official", "blog"].map(k => ({ key: k }));
 /* ધોરણ-પેજ માટે ફક્ત શૈક્ષણિક વિષયો (૭) */
@@ -45,8 +66,41 @@ OEG.tax = () => {
     grades: normList(t.grades, DEF_GRADES),
     subjects: normList(t.subjects, DEF_SUBJECTS),
     gradeSubjects: normList(t.gradeSubjects, DEF_GRADE_SUBJECTS),
-    quizCats: normList(t.quizCats, DEF_QUIZ_CATS)
+    quizCats: normList(t.quizCats, DEF_QUIZ_CATS),
+    audiences: normList(t.audiences, DEF_AUDS)
   };
+};
+/* ---------- 🎯 પ્રેક્ષક (audience) — ભૂમિકા પ્રમાણે શું દેખાય ----------
+   login ન હોય કે Admin હોય તો બધું દેખાય; વિદ્યાર્થી/શિક્ષક/આચાર્ય ને પોતાની બાબતો જ. */
+OEG.auds = () => OEG.tax().audiences;
+OEG.audOf = (k) => OEG.taxFind(OEG.auds(), k);
+OEG.audLabel = (k) => (!k || k === "all") ? OEG.t("aud.all") : OEG.taxLabel(OEG.audOf(k), "aud");
+OEG.audSubs = (k) => { const a = OEG.audOf(k); return Array.isArray(a.subs) ? a.subs : []; };
+OEG.audSubLabel = (k, key) => { const x = OEG.audSubs(k).find(y => y.key === key); return x ? OEG.taxLabel(x, "subject") : (key || ""); };
+OEG.typeAud = (k) => OEG.typeOf(k).aud || "all";
+OEG.gradeView = (k) => OEG.typeOf(k).gradeView !== false;
+OEG.roleAud = (role) => ROLE_AUD[String(role || "").toLowerCase()] || "";
+OEG.audScope = () => {
+  const u = OEG.state.user;
+  if (!u || !u.role) return "";
+  try { if (OEG.canAdmin && OEG.canAdmin()) return ""; } catch (e) {}
+  return OEG.roleAud(u.role);
+};
+/* કયો પ્રેક્ષક શું-શું જુએ (શિક્ષક ને વિદ્યાર્થી નું પણ દેખાય — એમણે તો આપવાનું છે!) */
+const AUD_KIN = { student: ["student"], teacher: ["teacher", "student"], principal: ["principal", "office"], office: ["office", "principal"] };
+OEG.audKin = (a2, sc) => {
+  if (!sc || !a2 || a2 === "all") return true;
+  const kin = AUD_KIN[sc];
+  return kin ? kin.indexOf(a2) >= 0 : true;
+};
+OEG.audAllow = (list) => { const sc = OEG.audScope(); return sc ? (list || []).filter(x => OEG.audKin(x.aud, sc)) : (list || []); };
+OEG.gradeTypes = () => OEG.audAllow(OEG.tax().types.filter(x => x.route && OEG.gradeView(x.key)));
+OEG.audOfItem = (it) => (it && (it.aud || OEG.typeAud(it.type))) || "all";
+OEG.mine = (items) => {
+  const sc = OEG.audScope();
+  const list = items || [];
+  if (!sc) return list;
+  return list.filter(i => OEG.audKin(OEG.audOfItem(i), sc));
 };
 OEG.taxFind = (list, key) => list.find(x => x.key === key) || { key: key };
 OEG.taxLabel = (obj, i18nPrefix) => {

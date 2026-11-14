@@ -21,6 +21,7 @@ window.OEG_CONFIG = {
     "publisherId": "",
     "enabled": true,
     "autoAds": true,
+    "size": "auto",
     "slots": {
       "homeTop": "",
       "homeMid": "",
@@ -34,8 +35,7 @@ window.OEG_CONFIG = {
       "quizResult": "",
       "gameTop": "",
       "inFeed": "",
-      "contentBottom": "",
-      "sidebar": ""
+      "contentBottom": ""
     }
   },
   "contactEmail": "hm89patel78@gmail.com",
@@ -70,7 +70,9 @@ window.OEG_CONFIG = {
           "gu": "પાઠ્યપુસ્તક",
           "hi": "पाठ्यपुस्तक",
           "en": "Textbook"
-        }
+        },
+        "aud": "student",
+        "gradeView": true
       },
       {
         "key": "workbook",
@@ -80,7 +82,9 @@ window.OEG_CONFIG = {
           "gu": "સ્વાધ્યાયપોથી",
           "hi": "स्वाध्यायपोथी",
           "en": "Workbook"
-        }
+        },
+        "aud": "student",
+        "gradeView": true
       },
       {
         "key": "quiz",
@@ -90,7 +94,9 @@ window.OEG_CONFIG = {
           "gu": "ક્વિઝ",
           "hi": "क्विज़",
           "en": "Quiz"
-        }
+        },
+        "aud": "student",
+        "gradeView": true
       },
       {
         "key": "game",
@@ -100,7 +106,9 @@ window.OEG_CONFIG = {
           "gu": "શૈક્ષણિક રમત",
           "hi": "शैक्षणिक खेल",
           "en": "Education Games"
-        }
+        },
+        "aud": "student",
+        "gradeView": true
       },
       {
         "key": "office",
@@ -110,7 +118,9 @@ window.OEG_CONFIG = {
           "gu": "Office Documents",
           "hi": "Office Documents",
           "en": "Office Documents"
-        }
+        },
+        "aud": "office",
+        "gradeView": false
       },
       {
         "key": "teacher",
@@ -120,7 +130,9 @@ window.OEG_CONFIG = {
           "gu": "Teachers Helper",
           "hi": "शिक्षक सहायक",
           "en": "Teachers Helper"
-        }
+        },
+        "aud": "teacher",
+        "gradeView": false
       },
       {
         "key": "student",
@@ -130,7 +142,9 @@ window.OEG_CONFIG = {
           "gu": "વિદ્યાર્થીઓ",
           "hi": "छात्र",
           "en": "Students"
-        }
+        },
+        "aud": "student",
+        "gradeView": false
       },
       {
         "key": "video",
@@ -140,7 +154,9 @@ window.OEG_CONFIG = {
           "gu": "વિડિયો",
           "hi": "वीडियो",
           "en": "Video"
-        }
+        },
+        "aud": "all",
+        "gradeView": true
       },
       {
         "key": "post",
@@ -150,7 +166,9 @@ window.OEG_CONFIG = {
           "gu": "બ્લોગ / પોસ્ટ",
           "hi": "ब्लॉग / पोस्ट",
           "en": "Blog / Posts"
-        }
+        },
+        "aud": "teacher",
+        "gradeView": false
       },
       {
         "key": "link",
@@ -160,7 +178,9 @@ window.OEG_CONFIG = {
           "gu": "ઉપયોગી લિંક્સ",
           "hi": "उपयोगी लिंक",
           "en": "Useful Links"
-        }
+        },
+        "aud": "all",
+        "gradeView": false
       }
     ],
     "grades": [
@@ -377,10 +397,137 @@ window.OEG_CONFIG = {
         "key": "current",
         "icon": "📰"
       }
+    ],
+    "audiences": [
+      {
+        "key": "student",
+        "icon": "🧑‍🎓",
+        "label": {
+          "gu": "વિદ્યાર્થી",
+          "hi": "छात्र",
+          "en": "Student"
+        },
+        "subs": []
+      },
+      {
+        "key": "teacher",
+        "icon": "👩‍🏫",
+        "label": {
+          "gu": "શિક્ષક",
+          "hi": "शिक्षक",
+          "en": "Teacher"
+        },
+        "subs": [
+          {
+            "key": "planning",
+            "icon": "🗓️",
+            "label": {
+              "gu": "પાઠ આયોજન",
+              "hi": "पाठ योजना",
+              "en": "Lesson planning"
+            }
+          },
+          {
+            "key": "paper",
+            "icon": "🧾",
+            "label": {
+              "gu": "પ્રશ્નપત્ર",
+              "hi": "प्रश्न पत्र",
+              "en": "Question papers"
+            }
+          },
+          {
+            "key": "material",
+            "icon": "📎",
+            "label": {
+              "gu": "શિક્ષણ સામગ્રી",
+              "hi": "सामग्री",
+              "en": "Teaching material"
+            }
+          }
+        ]
+      },
+      {
+        "key": "principal",
+        "icon": "🏫",
+        "label": {
+          "gu": "આચાર્ય",
+          "hi": "प्राचार्य",
+          "en": "Principal"
+        },
+        "subs": [
+          {
+            "key": "order",
+            "icon": "📜",
+            "label": {
+              "gu": "શાસકીય આદેશ",
+              "hi": "आदेश",
+              "en": "Orders"
+            }
+          },
+          {
+            "key": "report",
+            "icon": "📊",
+            "label": {
+              "gu": "અહેવાલ",
+              "hi": "रिपोर्ट",
+              "en": "Reports"
+            }
+          },
+          {
+            "key": "staff",
+            "icon": "👥",
+            "label": {
+              "gu": "શિક્ષક મંડળ",
+              "hi": "स्टाफ",
+              "en": "Staff"
+            }
+          }
+        ]
+      },
+      {
+        "key": "office",
+        "icon": "🗂️",
+        "label": {
+          "gu": "ઓફિસ",
+          "hi": "कार्यालय",
+          "en": "Office"
+        },
+        "subs": [
+          {
+            "key": "notice",
+            "icon": "📌",
+            "label": {
+              "gu": "નોટિસ",
+              "hi": "नोटिस",
+              "en": "Notices"
+            }
+          },
+          {
+            "key": "circular",
+            "icon": "📨",
+            "label": {
+              "gu": "પરિપત્ર",
+              "hi": "परिपत्र",
+              "en": "Circulars"
+            }
+          },
+          {
+            "key": "statement",
+            "icon": "🧮",
+            "label": {
+              "gu": "વિવરણ/હેશાબ",
+              "hi": "विवरण",
+              "en": "Statements"
+            }
+          }
+        ]
+      }
     ]
   },
   "quiz": {
     "passPercent": 60,
     "seconds": 45
   }
-};
+}
+;

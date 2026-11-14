@@ -6,7 +6,49 @@ OEG.cert = (() => {
   const W = 2000, H = 1410;                       /* ~A4 landscape @150dpi */
   const DISPLAY = '"Baloo Bhai 2","Noto Sans Gujarati Variable",system-ui,sans-serif';
   const BODY = '"Noto Sans Gujarati Variable","Noto Sans Devanagari Variable",system-ui,sans-serif';
-  const INK = "#1d2340", SOFT = "#6d7392", GOLD = "#b98a1f", GOLD2 = "#e8c46a", DEEP = "#2a2f6b";
+  /* 🎨 સનદની થીમ (રંગ સંયોજન) — Admin → 🏅 સનદ માંથી પસંદ કરો; Preview/PDF/JPG બધામાં લાગુ પડે */
+  const THEMES = {
+    royal:   { name: "👑 રોયલ નેવી", ink: "#1d2340", soft: "#6d7392", deep: "#2a2f6b", gold: "#b98a1f", gold2: "#e8c46a",
+      bg: ["#141a3c", "#1d2456", "#0f2036"], glow: ["rgba(99,102,241,.34)", "rgba(6,182,212,.24)", "rgba(217,119,6,.20)"],
+      hatch: "#dbeafe", card: ["#fdfaf3", "#fbf6ea", "#f6f1e4"], accent: "#7a5f1b", rule: "#9a7b23", mute: "#8d93ad",
+      seal: ["#f2d489", "#c99a2e", "#8f6a15"], sealIn: "#fffaf0", sealTx: "#8a6c22", check: "#2f7d3f",
+      rib: ["#7c5a12", "#c99a2e", "#e8c46a", "#8a6a1c"] },
+    emerald: { name: "🌿 એમરોલ્ડ", ink: "#123026", soft: "#5f7d70", deep: "#0f5138", gold: "#1f7a55", gold2: "#8ed6b3",
+      bg: ["#08251d", "#0e3a2c", "#06201a"], glow: ["rgba(16,185,129,.30)", "rgba(6,182,212,.22)", "rgba(212,175,55,.18)"],
+      hatch: "#cdeee0", card: ["#f6fbf7", "#eef8f1", "#e4f2e9"], accent: "#155e42", rule: "#3d8f6c", mute: "#87a094",
+      seal: ["#b9ecd0", "#3f9f76", "#1d5f46"], sealIn: "#f4fdf8", sealTx: "#1d5f46", check: "#1f7a55",
+      rib: ["#155e42", "#3f9f76", "#8ed6b3", "#1d6b4c"] },
+    ruby:    { name: "💎 રુબી", ink: "#31101d", soft: "#7d5c66", deep: "#6b1230", gold: "#b0304f", gold2: "#f0b0c0",
+      bg: ["#2c0a18", "#4a1228", "#220712"], glow: ["rgba(236,72,153,.28)", "rgba(217,119,6,.20)", "rgba(99,102,241,.20)"],
+      hatch: "#f6d5e0", card: ["#fdf5f7", "#fbeef2", "#f7e6ec"], accent: "#8c1f3c", rule: "#c86a80", mute: "#a3868e",
+      seal: ["#f6c0cf", "#c9536f", "#8a2440"], sealIn: "#fff6f8", sealTx: "#8c1f3c", check: "#2f7d3f",
+      rib: ["#7c1230", "#c9536f", "#f0b0c0", "#8a2440"] },
+    indigo:  { name: "🔷 ઇન્ડિગો", ink: "#1b1c46", soft: "#6a6e9c", deep: "#312e81", gold: "#4f46e5", gold2: "#a5b4fc",
+      bg: ["#12132e", "#1d1f4d", "#0d0e22"], glow: ["rgba(79,70,229,.34)", "rgba(6,182,212,.24)", "rgba(244,114,182,.18)"],
+      hatch: "#dbe0ff", card: ["#f8f9ff", "#f1f3fd", "#e9ecfb"], accent: "#3730a3", rule: "#6366f1", mute: "#8f94bd",
+      seal: ["#c7d2fe", "#6366f1", "#3730a3"], sealIn: "#f7f8ff", sealTx: "#3730a3", check: "#059669",
+      rib: ["#312e81", "#6366f1", "#a5b4fc", "#3730a3"] },
+    sunset:  { name: "🌅 સનસેટ", ink: "#3a1f0b", soft: "#8a6a4c", deep: "#9a3412", gold: "#c2410c", gold2: "#fdba74",
+      bg: ["#3a1607", "#5c2408", "#2a1005"], glow: ["rgba(249,115,22,.32)", "rgba(234,179,8,.26)", "rgba(236,72,153,.20)"],
+      hatch: "#ffe4c7", card: ["#fff9f2", "#fdf1e3", "#f9e8d5"], accent: "#9a3412", rule: "#d97706", mute: "#b09579",
+      seal: ["#fed7aa", "#ea8c3a", "#9a3412"], sealIn: "#fff8f0", sealTx: "#9a3412", check: "#15803d",
+      rib: ["#9a3412", "#ea8c3a", "#fdba74", "#9a3412"] },
+    night:   { name: "🌙 મિડનાઇટ (ડાર્ક)", ink: "#eef1ff", soft: "#a8b0d8", deep: "#c4b5fd", gold: "#f0c96a", gold2: "#f7e3a8",
+      bg: ["#05070f", "#0b1024", "#04060d"], glow: ["rgba(129,140,248,.26)", "rgba(56,189,248,.18)", "rgba(240,201,106,.16)"],
+      hatch: "#2a3157", card: ["#111634", "#0e1330", "#0b1026"], accent: "#f0c96a", rule: "#8f97c8", mute: "#9aa2c8",
+      seal: ["#f7e3a8", "#d8b154", "#8f6a15"], sealIn: "#141a38", sealTx: "#f0c96a", check: "#4ade80",
+      rib: ["#8a6a1c", "#d8b154", "#f7e3a8", "#8a6a1c"] }
+  };
+  const THEME_KEYS = Object.keys(THEMES);
+  const themeName = (k) => (THEMES[String(k || "").toLowerCase()] || THEMES.royal).name;
+  let P = THEMES.royal;
+  let INK = P.ink, SOFT = P.soft, GOLD = P.gold, GOLD2 = P.gold2, DEEP = P.deep;
+  const cfgTheme = () => {
+    let k = "";
+    try { const b = (OEG.quiz && OEG.quiz.raw ? (OEG.quiz.raw().cert || {}) : {}); if (b && b.theme) k = b.theme; } catch (e) {}
+    if (!k) { const c = (OEG.state && OEG.state.config && OEG.state.config.certificate) || {}; k = c.theme || ""; }
+    return THEMES[String(k || "").toLowerCase()] || THEMES.royal;
+  };
 
   /* વિષય મુજબ પ્રશંસાની લાઈન (નામની નીચે દેખાય) */
   const PRAISE = {
@@ -157,16 +199,16 @@ OEG.cert = (() => {
     for (let i = 0; i < 40; i++) { const a = (i / 40) * Math.PI * 2; const rad = r * (i % 2 ? 0.86 : 1); c.lineTo(cx + Math.cos(a) * rad, cy + Math.sin(a) * rad); }
     c.closePath();
     const g = c.createLinearGradient(cx - r, cy - r, cx + r, cy + r);
-    g.addColorStop(0, "#f2d489"); g.addColorStop(0.5, "#c99a2e"); g.addColorStop(1, "#8f6a15");
+    g.addColorStop(0, P.seal[0]); g.addColorStop(0.5, P.seal[1]); g.addColorStop(1, P.seal[2]);
     c.fillStyle = g; c.fill();
-    c.beginPath(); c.arc(cx, cy, r * 0.68, 0, Math.PI * 2); c.fillStyle = "#fffaf0"; c.fill();
-    c.lineWidth = 3; c.strokeStyle = "#b98a1f"; c.stroke();
+    c.beginPath(); c.arc(cx, cy, r * 0.68, 0, Math.PI * 2); c.fillStyle = P.sealIn; c.fill();
+    c.lineWidth = 3; c.strokeStyle = P.gold; c.stroke();
     c.textAlign = "center"; c.fillStyle = DEEP;
     c.font = "800 " + Math.round(r * 0.44) + "px " + DISPLAY; c.fillText("OEG", cx, cy + r * 0.06);
-    c.font = "700 " + Math.round(r * 0.17) + "px " + BODY; c.fillStyle = "#8a6c22";
+    c.font = "700 " + Math.round(r * 0.17) + "px " + BODY; c.fillStyle = P.sealTx;
     c.fillText(String(label || "").toUpperCase(), cx, cy + r * 0.45);
     c.beginPath(); c.moveTo(cx - r * 0.3, cy - r * 0.34); c.lineTo(cx - r * 0.06, cy - r * 0.12); c.lineTo(cx + r * 0.34, cy - r * 0.52);
-    c.lineWidth = r * 0.12; c.strokeStyle = "#2f7d3f"; c.lineCap = "round"; c.stroke();
+    c.lineWidth = r * 0.12; c.strokeStyle = P.check; c.lineCap = "round"; c.stroke();
     c.restore();
   }
 
@@ -174,15 +216,15 @@ OEG.cert = (() => {
   const MAXW = W - 336;                       /* અંદરના પાનાની ટેક્સ્ટ પહોળાઈ */
   function backdrop(c) {
     const bg = c.createLinearGradient(0, 0, W, H);
-    bg.addColorStop(0, "#141a3c"); bg.addColorStop(0.45, "#1d2456"); bg.addColorStop(1, "#0f2036");
+    bg.addColorStop(0, P.bg[0]); bg.addColorStop(0.45, P.bg[1]); bg.addColorStop(1, P.bg[2]);
     c.fillStyle = bg; c.fillRect(0, 0, W, H);
-    const glow = [[W * 0.12, H * 0.1, W * 0.5, "rgba(99,102,241,.34)"], [W * 0.92, H * 0.94, W * 0.45, "rgba(6,182,212,.24)"], [W * 0.86, H * 0.06, W * 0.3, "rgba(217,119,6,.20)"]];
+    const glow = [[W * 0.12, H * 0.1, W * 0.5, P.glow[0]], [W * 0.92, H * 0.94, W * 0.45, P.glow[1]], [W * 0.86, H * 0.06, W * 0.3, P.glow[2]]];
     glow.forEach((g) => {
       const rad = c.createRadialGradient(g[0], g[1], 0, g[0], g[1], g[2]);
       rad.addColorStop(0, g[3]); rad.addColorStop(1, "rgba(0,0,0,0)");
       c.fillStyle = rad; c.fillRect(0, 0, W, H);
     });
-    c.save(); c.globalAlpha = 0.06; c.strokeStyle = "#dbeafe"; c.lineWidth = 1.2;
+    c.save(); c.globalAlpha = 0.06; c.strokeStyle = P.hatch; c.lineWidth = 1.2;
     for (let i = -H; i < W; i += 26) { c.beginPath(); c.moveTo(i, 0); c.lineTo(i + H, H); c.stroke(); }
     c.restore();
     rr(c, 40, 40, W - 80, H - 80, 30); c.lineWidth = 5; c.strokeStyle = GOLD2; c.stroke();
@@ -196,7 +238,7 @@ OEG.cert = (() => {
     c.restore();
     rr(c, 104, 104, W - 208, H - 208, 16);
     const card = c.createLinearGradient(104, 104, W - 104, H - 104);
-    card.addColorStop(0, "#fdfaf3"); card.addColorStop(0.5, "#fbf6ea"); card.addColorStop(1, "#f6f1e4");
+    card.addColorStop(0, P.card[0]); card.addColorStop(0.5, P.card[1]); card.addColorStop(1, P.card[2]);
     c.fillStyle = card; c.fill();
     c.save(); rr(c, 104, 104, W - 208, H - 208, 16); c.clip();
     c.globalAlpha = 0.045; c.strokeStyle = DEEP; c.lineWidth = 1.1;
@@ -205,6 +247,8 @@ OEG.cert = (() => {
   }
 
   function paint(canvas, o) {
+    P = (o && o.palette) || cfgTheme();
+    INK = P.ink; SOFT = P.soft; GOLD = P.gold; GOLD2 = P.gold2; DEEP = P.deep;
     const I = info(o);
     const c = canvas.getContext("2d");
     if (!c) return I;
@@ -235,7 +279,7 @@ OEG.cert = (() => {
       rule();
       text(I.body.presented, "400", 30, BODY, SOFT, { lines: 1, gap: 14 });
       text(I.name, "800", 86, DISPLAY, DEEP, { rule: true, gap: 6 });
-      text(I.praise, "italic 600", 30, BODY, "#7a5f1b", { lines: 2, gap: 16 });
+      text(I.praise, "italic 600", 30, BODY, P.accent, { lines: 2, gap: 16 });
       text(I.awarded, "400", 31, BODY, INK, { lines: 2, gap: 20 });
       if (I.showScore !== false && I.chips && I.chips.length) chips(I.chips);
       return B;
@@ -270,7 +314,7 @@ OEG.cert = (() => {
         c.fillText(I.site, W / 2 + 24, y + 42);
         if (I.showUrl && I.url) {
           const ul = layout(c, I.url, "600", fs * 0.44, BODY, MAXW - 210, 1);
-          c.font = fontOf("600", ul.size, BODY); c.fillStyle = "#9a7b23";
+          c.font = fontOf("600", ul.size, BODY); c.fillStyle = P.rule;
           const uw = c.measureText(ul.lines[0]).width;
           c.fillText(ul.lines[0], W / 2, y + 94);
           c.save(); c.strokeStyle = "rgba(185,138,31,.45)"; c.lineWidth = 1.3;
@@ -289,7 +333,7 @@ OEG.cert = (() => {
           rr(c, bx, y, cw, ch, 13); c.fillStyle = "rgba(42,47,107,.05)"; c.fill();
           c.lineWidth = 1.4; c.strokeStyle = "rgba(185,138,31,.4)"; c.stroke();
           c.textAlign = "center";
-          c.font = fontOf("700", Math.max(11, ch * 0.2), BODY); c.fillStyle = "#8d93ad";
+          c.font = fontOf("700", Math.max(11, ch * 0.2), BODY); c.fillStyle = P.mute;
           c.fillText(String(it.k).toUpperCase(), bx + cw / 2, y + ch * 0.36);
           const lay = layout(c, String(it.v), "800", ch * 0.36, DISPLAY, cw - 22, 1);
           c.font = fontOf("800", lay.size, DISPLAY); c.fillStyle = DEEP;
@@ -304,7 +348,7 @@ OEG.cert = (() => {
         c.font = fontOf(b.weight, b.size, b.family);
         if (b.grad) {
           const g = c.createLinearGradient(W / 2 - 340, 0, W / 2 + 340, 0);
-          g.addColorStop(0, "#7c5a12"); g.addColorStop(0.42, "#c99a2e"); g.addColorStop(0.62, "#e8c46a"); g.addColorStop(1, "#8a6a1c");
+          g.addColorStop(0, P.rib[0]); g.addColorStop(0.42, P.rib[1]); g.addColorStop(0.62, P.rib[2]); g.addColorStop(1, P.rib[3]);
           c.fillStyle = g; c.fillText(ln, W / 2, base);
           c.save(); c.lineWidth = 1.1; c.strokeStyle = "rgba(140,105,20,.35)"; c.strokeText(ln, W / 2, base); c.restore();
         } else {
@@ -315,7 +359,7 @@ OEG.cert = (() => {
           const uy = base + b.size * 0.16;
           c.save();
           const ng = c.createLinearGradient(W / 2 - tw / 2, 0, W / 2 + tw / 2, 0);
-          ng.addColorStop(0, "rgba(201,154,46,0)"); ng.addColorStop(0.18, "#c99a2e"); ng.addColorStop(0.82, "#c99a2e"); ng.addColorStop(1, "rgba(201,154,46,0)");
+          ng.addColorStop(0, "rgba(0,0,0,0)"); ng.addColorStop(0.18, P.rule); ng.addColorStop(0.82, P.rule); ng.addColorStop(1, "rgba(0,0,0,0)");
           c.fillStyle = ng; c.fillRect(W / 2 - tw / 2, uy, tw, 4);
           c.fillStyle = GOLD;
           c.beginPath(); c.arc(W / 2 - tw / 2, uy + 2, 5.5, 0, Math.PI * 2); c.fill();
@@ -331,22 +375,22 @@ OEG.cert = (() => {
     const by = H - 300;
     c.textAlign = "left"; c.textBaseline = "alphabetic";
     const dl = layout(c, I.date, "800", 30, DISPLAY, 520, 1);
-    c.font = fontOf("700", 19, BODY); c.fillStyle = "#8d93ad";
+    c.font = fontOf("700", 19, BODY); c.fillStyle = P.mute;
     c.fillText(String(I.body.date).toUpperCase(), 210, by);
     c.font = fontOf("800", dl.size, DISPLAY); c.fillStyle = INK;
     c.fillText(dl.lines[0], 210, by + 38);
     if (I.id) {
-      c.font = fontOf("700", 19, BODY); c.fillStyle = "#8d93ad";
+      c.font = fontOf("700", 19, BODY); c.fillStyle = P.mute;
       c.fillText(String(I.body.no).toUpperCase(), 210, by + 82);
       const il = layout(c, I.id, "800", 24, BODY, 520, 1);
-      c.font = fontOf("800", il.size, BODY); c.fillStyle = "#7a5f1b";
+      c.font = fontOf("800", il.size, BODY); c.fillStyle = P.accent;
       c.fillText(il.lines[0], 210, by + 110);
     }
     if (I.showSeal) seal(c, W - 246, by + 30, 84, I.body.badge);
     if (I.footer) {
       const fy = H - 150;
       const fl = layout(c, I.footer, "600", 21, BODY, W - 480, 2);
-      c.textAlign = "center"; c.font = fontOf("600", fl.size, BODY); c.fillStyle = "#9a9fb8";
+      c.textAlign = "center"; c.font = fontOf("600", fl.size, BODY); c.fillStyle = P.soft;
       fl.lines.forEach((ln, i) => c.fillText(ln, W / 2, fy + i * (fl.size * 1.3)));
     }
     return I;
@@ -448,5 +492,5 @@ OEG.cert = (() => {
     return "saved";
   }
 
-  return { W: W, H: H, info: info, paint: paint, render: render, download: download, share: share, pdfFromJpeg: pdfFromJpeg, PRAISE: PRAISE, SUBJECT_LABEL: SUBJECT_LABEL };
+  return { W: W, H: H, THEMES: THEMES, themeKeys: () => THEME_KEYS.slice(), themeName: themeName, info: info, paint: paint, render: render, download: download, share: share, pdfFromJpeg: pdfFromJpeg, PRAISE: PRAISE, SUBJECT_LABEL: SUBJECT_LABEL };
 })();
