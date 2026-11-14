@@ -11,6 +11,7 @@
      node scripts/blogger.mjs --repo x/y --pages https://h/r/   # બીજી રીપો માટે
    ============================================================ */
 import { readFileSync, writeFileSync, mkdirSync } from "node:fs";
+import { execSync } from "node:child_process";
 import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -19,7 +20,23 @@ const arg = (k, d) => { const i = process.argv.indexOf("--" + k); return i > 0 &
 
 const repo = arg("repo", "OnlineEducationGuru/OEG");
 const ref = arg("ref", "main");
-const CDN = `https://cdn.jsdelivr.net/gh/${repo}@${ref}/`;
+const CDN0 = `https://cdn.jsdelivr.net/gh/${repo}@${ref}/`;
+/* 🧊 jsDelivr @main ની કૉપિ ૭ દિવસ સુધી જૂની રહી શકે ⇒ થીમ બનાવો ત્યારે commit sha નું v= જોડો.
+   (ફાઈલ નો દરેક URL એ જ v લે ⇒ upload કરો એ જ વખતે બધું તાજું. data/*.json તો run-time પર
+   hourly bucket લે એટલે Admin નું લખાણ એક કલાક માં બ્લોગ પર પોતાથી પહોંચે.)
+   --v=<ટૅગ> આપો ⇒ એ જ વાપરે; --v=none આપો ⇒ કંઈ નહીં જોડે. */
+const VER = (() => {
+  const a = arg("v", "");
+  if (a === "none") return "";
+  if (a === "sha") { try { return execSync(`git -C ${JSON.stringify(root)} rev-parse --short=12 HEAD`, { encoding: "utf8" }).trim(); } catch (e) { return ""; } }
+  if (a) return String(a).replace(/[^\w.-]/g, "").slice(0, 24);
+  /* build નો UTC સમય (YYYYMMDDHHMM) ⇒ દર વાર બદલાય એટલે CDN પાસે એ કૉપિ નથી જ ⇒ તાજી ફાઈલ */
+  const d = new Date(), p2 = (n) => String(n).padStart(2, "0");
+  return `${d.getUTCFullYear()}${p2(d.getUTCMonth() + 1)}${p2(d.getUTCDate())}${p2(d.getUTCHours())}${p2(d.getUTCMinutes())}`;
+})();
+const CDN = VER ? CDN0 : CDN0;
+const VQ = VER ? `?v=${VER}` : "";
+const cdnUrl = (rel) => CDN0 + String(rel || "").replace(/^\.?\//, "") + VQ;
 const PAGES = arg("pages", "https://onlineeducationguru.github.io/OEG/").replace(/\/?$/, "/");
 const out = join(root, "blogger", "OEG-Blogger-Native.xml");
 
@@ -43,7 +60,7 @@ const seoLink = (u) => {
   return "";                                        /* sitemap.xml / robots.txt બ્લોગર પર અર્થહીન ⇒ લિંક કાઢી નાખો */
 };
 body = body
-  .replace(/(src|href)="((?:js|vendor|assets)\/[^"]+|styles\.css|favicon\.svg|manifest\.webmanifest)"/g, `$1="${CDN}$2"`)
+  .replace(/(src|href)="((?:js|vendor|assets)\/[^"]+|styles\.css|favicon\.svg|manifest\.webmanifest)"/g, (m0, at, p2) => `${at}="${cdnUrl(p2)}"`)
   .replace(/<a [^>]*href="((?:g|p|q)\/[^"]+|sitemap\.xml|robots\.txt)"[^>]*>\s*([^<]*?)\s*<\/a>/g, (m0, u, txt) => {
     const to = seoLink(u);
     return to ? `<a href="${to}">${txt}</a>` : "";
@@ -69,7 +86,7 @@ function fixTag(tag) {
     out.push(`${k}="${v}"`);
   }
   const hrefIdx = out.findIndex((a) => a.startsWith("href="));
-  if (hrefIdx >= 0) out[hrefIdx] = out[hrefIdx].replace(/href="(?!https?:\/\/|\/\/)([^"]*)"/, `href="${CDN}$1"`);
+  if (hrefIdx >= 0) out[hrefIdx] = out[hrefIdx].replace(/href="(?!https?:\/\/|\/\/)([^"]*)"/, (m0, p2) => `href="${CDN0}${p2}${/^assets\/^|^js\/^|^vendor\/^|styles\.css$|favicon\.svg$|manifest\.webmanifest$/.test(p2) ? VQ : ""}"`);
   return `<${nm} ${out.join(" ")}/>`;
 }
 const headLinkTags = (html.slice(html.indexOf("<head"), html.indexOf("</head>")).match(/<link\b[^>]*>/g) || [])
@@ -83,9 +100,9 @@ const want = [
   `<link rel="preconnect" href="https://www.youtube-nocookie.com"/>`,
   `<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin="anonymous"/>`,
   `<link rel="dns-prefetch" href="https://pagead2.googlesyndication.com"/>`,
-  `<link rel="icon" href="${CDN}favicon.svg" type="image/svg+xml"/>`,
-  `<link rel="manifest" href="${CDN}manifest.webmanifest"/>`,
-  `<link rel="stylesheet" href="${CDN}styles.css"/>`
+  `<link rel="icon" href="${cdnUrl("favicon.svg")}" type="image/svg+xml"/>`,
+  `<link rel="manifest" href="${cdnUrl("manifest.webmanifest")}"/>`,
+  `<link rel="stylesheet" href="${cdnUrl("styles.css")}"/>`
 ];
 const headSet = new Map();
 headLinkTags.concat(want).forEach((t) => { if (!headSet.has(byHref(t))) headSet.set(byHref(t), t); });
@@ -117,7 +134,7 @@ else console.log("   🧩 Layout slots: " + slots + " (header/sidebar/footer gad
 
 /* ---------- 3b) OEG_BASE inject (js/catalog.js → data/*.json CDN પરથી વાંચે) ---------- */
 /* ⚠️ CDATA નાં ચિહ્ન અલગ લીટીએ રાખવા — HTML પાર્સર માં `//<![CDATA[` પછી ની બાબત એક જ લીટી હોય તો ટિપ્પણી બની જાય */
-const inject = `<script>//<![CDATA[\nwindow.OEG_BASE="${CDN}";\n//]]></script>`;
+const inject = `<script>//<![CDATA[\nwindow.OEG_BASE="${CDN0}";window.OEG_V="${VER}";\n//]]></script>`;
 const firstScript = body.search(/<script\b/);
 if (firstScript < 0) { console.error("⚠️ app script મળ્યો નહીં"); process.exit(1); }
 body = body.slice(0, firstScript) + inject + body.slice(firstScript);
@@ -226,7 +243,7 @@ writeFileSync(out, xml);
   }
 }
 console.log(`${problems.length ? "❌ " : "✅ "}blogger/OEG-Blogger-Native.xml — ${(xml.length / 1024).toFixed(1)} KB  [jsdom XHTML + XML તપાસ]
-   CDN:   ${CDN}
+   CDN:   ${CDN0}${VQ ? "  (?v=" + VER + ")" : ""}
    SEO લિંક: ${pagesLinks ? "GitHub Pages પાનાં (" + PAGES + ")" : "બ્લોગર નાં app routes (host બદલાતો નહીં)"}
    પાનાં ની લિંક દાખલ: g/1.html → ${pagesLinks ? PAGES + "g/1.html" : "#/grade/1"}`);
 problems.forEach((p) => console.error("   ⚠️ " + p));

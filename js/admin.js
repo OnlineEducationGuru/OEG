@@ -220,6 +220,10 @@ OEG.admin = (() => {
         </div>
         <p class="adm-sec-note">${OEG.t("admin.countsNote")}</p>
 
+        <h4 style="margin:18px 0 6px">${OEG.t("admin.cdnTitle")}</h4>
+        <p class="adm-sec-note">${OEG.t("admin.cdnNote")}</p>
+        <p class="adm-sec-note"><button type="button" class="btn btn-outline btn-sm" id="stCdnPurge">${OEG.t("admin.cdnBtn")}</button> · <span id="stCdnMsg">—</span></p>
+
         <h4 style="margin:18px 0 6px">👁️ ${OEG.t("admin.visibility")}</h4>
         <p class="adm-sec-note">${OEG.t("admin.visibilityNote")}</p>
         <div class="tgl-grid" id="stVis"></div>
@@ -3047,6 +3051,18 @@ OEG.admin = (() => {
     if ($("stLogoUrl")) $("stLogoUrl").oninput = (e) => logoPrev(e.target.value);
     if ($("stLogoUp")) $("stLogoUp").onclick = uploadLogo;
     if ($("stLogoClear")) $("stLogoClear").onclick = () => { $("stLogoUrl").value = ""; logoPrev(""); msg("siteMsg", "🧹 ઈમોજિ પર પાછા — 💾 સેવ કરો", true); };
+    /* ---------- 🧊 jsDelivr કૉપિ તાજી કરો (બ્લોગર ⇒ સાઇટ જૂની દેખાય એ દૂર) ---------- */
+    if ($("stCdnPurge")) $("stCdnPurge").onclick = async () => {
+      const cdnBtn = $("stCdnPurge"), cdnMsg = $("stCdnMsg");
+      if (cdnBtn) { cdnBtn.disabled = true; cdnBtn.textContent = OEG.t("admin.cdnBusy"); }
+      try {
+        const cdnRes = await OEG.cdn.purge();
+        const cdnTxt = cdnRes.ok ? OEG.t("admin.cdnDone").replace("{n}", String(cdnRes.ok)) : OEG.t("admin.cdnFail");
+        if (cdnMsg) cdnMsg.textContent = cdnTxt + (OEG.cdn.isCdn() ? "" : " · 🌐 GitHub Pages");
+        msg("siteMsg", "🧊 " + cdnTxt, !!cdnRes.ok);
+      } catch (e) { if (cdnMsg) cdnMsg.textContent = OEG.t("admin.cdnFail"); }
+      if (cdnBtn) { cdnBtn.disabled = false; cdnBtn.textContent = OEG.t("admin.cdnBtn"); }
+    };
     async function uploadLogo() {
       if (!needGh()) return;
       const f = ($("stLogoFile") || {}).files && $("stLogoFile").files[0];

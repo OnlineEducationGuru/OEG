@@ -334,13 +334,16 @@
   function fitNav() {
     const el = document.getElementById("navDesktop");
     if (!el || !navTreeNow.length) return;
+    /* માપ વખતે જ કાપીએ (overflow:hidden) — measure પછી હટાવે ⇒ hover sub-menu કપાતું નથી */
+    el.classList.add("nav-measuring");
+    const done = () => { el.classList.remove("nav-measuring"); syncHeaderH(); };
     el.innerHTML = navTreeNow.map(navTopItem).join("");
     bindNav(el);
     const avail = el.clientWidth || 0;
-    if (!avail) { syncHeaderH(); return; }
+    if (!avail) { done(); return; }
     const kids = Array.prototype.slice.call(el.children);
-    if (kids.length < 2) { syncHeaderH(); return; }
-    if (el.scrollWidth <= avail + 1) { syncHeaderH(); return; }
+    if (kids.length < 2) { done(); return; }
+    if (el.scrollWidth <= avail + 1) { done(); return; }
     const gap = parseFloat(getComputedStyle(el).columnGap || "0") || 4;
     const probe = document.createElement("div");
     probe.className = "nav-link nav-more-btn";
@@ -357,14 +360,14 @@
       used += w + gap;
     }
     if (cut < 1) cut = 1;
-    if (cut >= kids.length) { syncHeaderH(); return; }
+    if (cut >= kids.length) { done(); return; }
     el.innerHTML = navTreeNow.slice(0, cut).map(navTopItem).join("") +
       `<div class="nav-grp nav-more" data-more="1">
         <button type="button" class="nav-link nav-gbtn nav-more-btn" aria-haspopup="true">વધુ ▾</button>
         <div class="nav-drop nav-drop-lg">${navTreeNow.slice(cut).map(navTopItem).join("")}</div>
       </div>`;
     bindNav(el);
-    syncHeaderH();
+    done();
   }
   function bindNav(el) {
     el.querySelectorAll(".nav-gbtn").forEach(btn => {
@@ -375,7 +378,7 @@
     });
   }
   let navResizeT;
-  window.addEventListener("resize", () => { clearTimeout(navResizeT); navResizeT = setTimeout(() => { try { fitNav(); } catch (e) { syncHeaderH(); } }, 160); });
+  window.addEventListener("resize", () => { clearTimeout(navResizeT); navResizeT = setTimeout(() => { try { fitNav(); } catch (e) { syncHeaderH(); const n = document.getElementById("navDesktop"); if (n) n.classList.remove("nav-measuring"); } }, 160); });
   window.addEventListener("load", () => { setTimeout(() => { try { fitNav(); } catch (e) {} }, 260); });
   const sideItem = (n, depth) => {
     const kids = navKids(n);

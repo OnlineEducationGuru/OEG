@@ -43,7 +43,7 @@ h1,h2,h3,h4{font-family:var(--font-display);line-height:1.25;font-weight:700}
 
 /* ---------- Header ---------- */
 .header{position:sticky;top:0;z-index:200;height:auto;min-height:56px;background:color-mix(in srgb,var(--surface) 88%,transparent);backdrop-filter:blur(14px);border-bottom:1px solid var(--border)}
-.header-inner{max-width:1400px;margin:0 auto;height:auto;display:flex;align-items:center;gap:14px;padding:7px 18px}
+.header-inner{max-width:1400px;margin:0 auto;height:auto;display:flex;align-items:center;gap:14px;padding:7px 18px;min-width:0}
 .logo{display:flex;align-items:center;gap:10px;color:var(--text);font-family:var(--font-display);font-weight:800;font-size:1.25rem;white-space:nowrap}
 .logo:hover{text-decoration:none}
 .logo-mark{width:42px;height:42px;border-radius:12px;background:var(--grad);display:grid;place-items:center;color:#fff;font-size:1.3rem;box-shadow:var(--shadow)}
@@ -839,7 +839,11 @@ body.allow-select img, body.allow-select video { -webkit-user-drag: auto; }
    📐 હેડર ઑટો-એડજસ્ટ (ગમે તેટલી ટેબ)  ·  🖼 કસ્ટમ લોગો
    👥 સભ્ય આંકડા  ·  ▶ વિડિયો પ્રેક્ષક ફિલ્ટર
    ============================================================ */
-.nav-desktop{flex:1 1 200px;overflow:hidden;gap:clamp(1px,.45vw,5px);margin-left:8px;min-width:0}
+.nav-desktop{flex:1 1 200px;overflow:visible;gap:clamp(1px,.45vw,5px);margin-left:8px;min-width:0}
+/* ⚠️ overflow:hidden અહીં મૂકવો નહીં ⇒ ટૉપ મેનુ નું hover sub-menu (.nav-drop / .nav-fly)
+   હેડર ની લાઈન ની બહાર (નીચે) ખૂલે એટલે કપાઈ જાય. માપ વખતે જ કાપીએ: */
+.nav-desktop.nav-measuring{overflow:hidden}
+.nav-measuring .nav-drop,.nav-measuring .nav-fly{visibility:hidden!important}
 .nav-link,.nav-gbtn{padding:7px clamp(5px,.6vw,12px);font-size:clamp(.75rem,.5rem + .32vw,.92rem)}
 .header-actions{gap:6px;flex-shrink:1}
 .search-box{flex:0 1 auto;min-width:0}
