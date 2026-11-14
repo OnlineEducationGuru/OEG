@@ -77,8 +77,12 @@
     const lg = document.querySelector(".logo-mark");
     if (lg && uiCfg().logoEmoji) lg.textContent = uiCfg().logoEmoji;
     document.body.classList.toggle("allow-select", !guardOn());
-    [renderNav, renderSidebar, renderFooter, renderAuthArea].forEach((f) => { try { f(); } catch (e) {} });
+    [renderNav, renderSidebar, renderFooter, renderAuthArea, paintNews, paintBell].forEach((f) => { try { f(); } catch (e) {} });
   }
+  /* 📰 બ્રેકિંગ ન્યૂઝ + 🔔 સૂચના નો બટન (js/notify.js) — ફાઈલ ન મળે તો ચૂપચાપ ચૂટી જાય */
+  function paintNews() { try { if (OEG.news) OEG.news.render(); } catch (e) {} }
+  function paintBell() { try { if (OEG.notify) OEG.notify.renderBell(); } catch (e) {} }
+  function paintChip() { try { if (OEG.notify) OEG.notify.renderChip(); } catch (e) {} }
 
   /* ---------- Shell ---------- */
   const visibleNav = NAV; /* Admin બટન હંમેશ દેખાય — ક્લિક પર માલિક-લોગિન માંગશે */
@@ -865,12 +869,23 @@
 
   function authPage(mode) {
     const isReg = mode === "register";
+    /* ✅ રજિસ્ટ્રેશન નાં નિયમ (Admin → 👥 ખાતાં માંથી) */
+    const ac = (OEG.verify && OEG.verify.cfg()) || {};
+    const vreq = {
+      phone: isReg && ac.requirePhone !== false,
+      ph: isReg ? "+91 98••• •••••" : "",
+      google: isReg && !!(OEG.verify && OEG.verify.googleOn()),
+      otp: isReg && !!(OEG.verify && OEG.verify.otpReady())
+    };
     return `<div class="form-card">
       <h2>${isReg ? "📝 " + t("page.register") : "🔑 " + t("page.login")}</h2>
       <div id="authMsg"></div>
       <form id="authForm">
         ${isReg ? `<div class="field"><label>${t("auth.name")}</label><input name="name" required autocomplete="name"></div>` : ""}
-        <div class="field"><label>${t("auth.email")}</label><input name="email" type="email" required autocomplete="email"></div>
+        <div class="field"><label>${t("auth.email")}</label><input name="email" type="email" required autocomplete="email" ${isReg ? 'data-ve="email"' : ""}>
+          ${isReg ? `<p class="f-err" id="errEmail"></p><p class="f-ok" id="okEmail"></p>` : ""}</div>
+        ${isReg ? `<div class="field"><label>📱 ${t("auth.phone")}</label><input name="phone" inputmode="tel" autocomplete="tel" ${vreq.phone ? "required" : ""} placeholder="${vreq.ph}">
+          <p class="f-err" id="errPhone"></p></div>` : ""}
         <div class="field"><label>${t("auth.password")}</label><input name="password" type="password" required minlength="6" autocomplete="${isReg ? "new-password" : "current-password"}"></div>
         ${isReg ? `<div class="field"><label>${t("auth.role")}</label><select name="role">
           <option value="student">${t("auth.student")}</option><option value="teacher">${t("auth.teacher")}</option><option value="principal">${t("auth.principal")}</option><option value="other">${t("auth.other")}</option></select></div>
@@ -878,6 +893,12 @@
           <div class="field"><label>${t("grade.pickGrade")}</label><select name="grade">${regGradeOpts()}</select></div>
           <div class="field"><label>${t("auth.subject")}</label><select name="subject">${regSubjectOpts()}</select></div>
         </div>` : ""}
+        ${isReg && vreq.google ? `<div class="v-row"><span id="gsState">⚪ ${t("v.gsiIntro")}</span>
+          <button type="button" class="btn btn-outline btn-sm" id="gsBtn">🔐 ${t("v.gsiBtn")}</button></div>` : ""}
+        ${isReg && vreq.otp ? `<div class="v-row"><span id="otState">⚪ ${t("v.otpIntro")}</span>
+          <button type="button" class="btn btn-outline btn-sm" id="otSend">${t("v.otpSend")}</button>
+          <input id="otCode" inputmode="numeric" pattern="\d*" maxlength="8" placeholder="${t("v.otpPh")}" style="width:92px;padding:5px 8px;border-radius:8px;border:1px solid var(--border)">
+          <button type="button" class="btn btn-outline btn-sm" id="otOk">${t("v.otpOk")}</button></div>` : ""}
         <button class="btn btn-brand" style="width:100%;justify-content:center" type="submit">${isReg ? t("auth.registerBtn") : t("auth.loginBtn")}</button>
       </form>
       <p style="text-align:center;margin-top:16px;font-size:.92rem"><a href="#/${isReg ? "login" : "register"}">${isReg ? t("auth.haveAccount") : t("auth.noAccount")}</a></p>
@@ -906,23 +927,103 @@
     };
     if (roleSel) { roleSel.onchange = syncRole; syncRole(); }
     const form = document.getElementById("authForm"); if (!form) return;
+
+    /* ---------- ✅ રજિસ્ટ્રેશન: ઈમેઈલ + વૉટ્સએપ નંબર ની ચકાસણી ---------- */
+    let verifiedEmail = "", phoneOk = "";
+    const q = (n) => document.querySelector('#authForm [name="' + n + '"]');
+    const setErr = (id, text) => { const el = document.getElementById(id); if (!el) return; el.textContent = text || ""; el.classList.toggle("on", !!text); };
+    const inpEmail = q("email"), inpPhone = q("phone"), okEmail = document.getElementById("okEmail");
+    const have = !!window.OEG && !!OEG.verify;
+    function checkEmail(silent) {
+      if (!inpEmail || !have || mode !== "register") return true;
+      const r = OEG.verify.email(inpEmail.value);
+      inpEmail.classList.toggle("bad", !r.ok); inpEmail.classList.toggle("good", r.ok);
+      if (r.ok) { if (okEmail) { okEmail.textContent = "✅ " + t("v.emailOk"); okEmail.classList.add("on"); } setErr("errEmail", ""); return true; }
+      if (okEmail) okEmail.classList.remove("on");
+      if (silent) return false;
+      setErr("errEmail", "❌ " + OEG.verify.msg(r.key, r.arg || r.fix || ""));
+      return false;
+    }
+    function checkPhone(silent) {
+      if (!inpPhone || !have) return true;
+      const need = OEG.verify.cfg().requirePhone !== false;
+      const v = String(inpPhone.value || "").trim();
+      if (!v && !need) return true;
+      const r = OEG.verify.phone(v);
+      inpPhone.classList.toggle("bad", !r.ok); inpPhone.classList.toggle("good", r.ok);
+      if (r.ok) { phoneOk = r.value; setErr("errPhone", ""); return true; }
+      phoneOk = "";
+      if (silent) return false;
+      setErr("errPhone", "❌ " + OEG.verify.msg(r.key, r.arg || ""));
+      return false;
+    }
+    if (inpEmail) { inpEmail.oninput = () => checkEmail(true); inpEmail.onblur = () => checkEmail(false); }
+    if (inpPhone) {
+      inpPhone.oninput = () => { const c = inpPhone.selectionStart; inpPhone.value = inpPhone.value.replace(/[^\d+ ]/g, ""); try { inpPhone.setSelectionRange(c, c); } catch (e) {} checkPhone(true); };
+      inpPhone.onblur = () => checkPhone(false);
+    }
+    /* 🔓 Google વડે ચકાસણી ⇒ ઈમેઈલ ખરેખર ચાલુ (active) અને તમારી પાસે જ હોય એની ખાતરી */
+    const gsBtn = document.getElementById("gsBtn");
+    if (gsBtn) gsBtn.onclick = async () => {
+      const st = document.getElementById("gsState");
+      gsBtn.disabled = true;
+      if (st) st.textContent = "⏳ " + t("v.gsiWait");
+      try {
+        const r = await OEG.verify.googleCheck((inpEmail || {}).value);
+        if (r.ok) {
+          verifiedEmail = r.email;
+          if (st) st.innerHTML = "✅ <b>" + OEG.esc(r.email) + "</b> · " + OEG.esc(t("v.gsiOk"));
+          gsBtn.textContent = "✔️";
+          checkEmail(false);
+        } else { verifiedEmail = ""; if (st) st.textContent = "⚪ " + OEG.verify.msg(r.key, r.arg || ""); }
+      } catch (e) { if (st) st.textContent = "⚠️ " + OEG.esc(String((e && e.message) || e)); }
+      gsBtn.disabled = false;
+    };
+    /* 🔢 વૉટ્સએપ/SMS OTP (Admin ⇒ auth.otpEndpoint ભર્યું હોય તો જ) */
+    const otSend = document.getElementById("otSend"), otOk = document.getElementById("otOk");
+    if (otSend) otSend.onclick = async () => {
+      const st = document.getElementById("otState");
+      const r = OEG.verify.phone((inpPhone || {}).value);
+      if (!r.ok) { checkPhone(false); return; }
+      try { await OEG.verify.otpSend(r.e164); if (st) st.textContent = "📨 " + t("v.otpSent"); }
+      catch (e) { if (st) st.textContent = "⚠️ " + OEG.esc(String((e && e.message) || t("v.otpFail"))); }
+    };
+    if (otOk) otOk.onclick = async () => {
+      const st = document.getElementById("otState");
+      const r = OEG.verify.phone((inpPhone || {}).value);
+      if (!r.ok) { checkPhone(false); return; }
+      const code = ((document.getElementById("otCode") || {}).value || "").trim();
+      try {
+        const v = await OEG.verify.otpCheck(r.e164, code);
+        if (v.ok) { phoneOk = r.value; if (st) st.textContent = "✅ " + t("v.otpOk"); }
+        else if (st) st.textContent = "⛔ " + OEG.verify.msg(v.key, v.arg || "");
+      } catch (e) { if (st) st.textContent = "⚠️ " + OEG.esc(String((e && e.message) || e)); }
+    };
+
     form.onsubmit = async (e) => {
       e.preventDefault();
       const fd = new FormData(e.target);
       const msgEl = document.getElementById("authMsg");
+      const fail = (m) => { if (msgEl) msgEl.innerHTML = `<div class="alert alert-error">${OEG.esc(m)}</div>`; };
+      if (mode === "register") {
+        const e1 = checkEmail(false), p1 = checkPhone(false);
+        if (!e1 || !p1) { fail(t("v.fixBelow")); if (!e1) try { inpEmail.focus(); } catch (err) {} else try { inpPhone.focus(); } catch (err) {} return; }
+        if (OEG.verify && OEG.verify.requireGoogle() && !verifiedEmail) { fail(t("v.gsiNeed")); return; }
+      }
       try {
         const res = mode === "register"
           ? await OEG.auth.register({
             name: fd.get("name"), email: fd.get("email"), password: fd.get("password"), role: fd.get("role"),
             grade: (gRow && gRow.style.display === "none") ? "all" : fd.get("grade"),
-            subject: (gRow && gRow.style.display === "none") ? "all" : fd.get("subject")
+            subject: (gRow && gRow.style.display === "none") ? "all" : fd.get("subject"),
+            phone: fd.get("phone"), verified: verifiedEmail || ""
           })
           : await OEG.auth.login({ email: fd.get("email"), password: fd.get("password") });
         renderAuthArea();
         OEG.toast((mode === "register" ? "🎉 " + t("auth.regOk") + " — " : "👋 " + t("auth.welcome") + ", ") + (res.name || res.email));
         location.hash = "#/";
       } catch (err) {
-        msgEl.innerHTML = `<div class="alert alert-error">${OEG.esc(err.message)}</div>`;
+        fail(err.message);
       }
     };
   }
@@ -1020,7 +1121,7 @@
     }
     const io = new IntersectionObserver(es => es.forEach(e => e.isIntersecting && e.target.classList.add("in")), { threshold: .08 });
     app.querySelectorAll(".reveal").forEach(el => io.observe(el));
-    [renderNav, renderSidebar, paintVisitors].forEach((f) => { try { f(); } catch (e) {} });
+    [renderNav, renderSidebar, paintVisitors, paintNews, paintBell, paintChip].forEach((f) => { try { f(); } catch (e) {} });
   }
 
   /* ---------- 🔎 SEO meta (title/desc/canonical/OG/JSON-LD) ---------- */
@@ -1182,6 +1283,7 @@
     applyTheme();
     applyI18n();
     await render();
+    try { if (OEG.notify) await OEG.notify.check("silent"); } catch (e) {}
   };
   OEG.render = render;
   OEG.applyNav = () => { try { renderNav(); renderSidebar(); } catch (e) {} };
@@ -1200,9 +1302,17 @@
     if (OEG.ads) OEG.ads.head();          // AdSense script (publisher ભર્યું હોય તો)
     await Promise.all([OEG.loadCatalog(), OEG.quiz ? OEG.quiz.load() : Promise.resolve(), OEG.views ? OEG.views.load() : Promise.resolve()]);
     OEG.auth.load();
+    try { if (OEG.auth.enforceSession) await OEG.auth.enforceSession(); } catch (e) {}   /* 🚫 બ્લોક થયેલું ખાતું ⇒ સેશન બંધ */
     applyTheme();
     applyI18n();
     render();
+    try {
+      if (OEG.notify) {
+        await OEG.notify.check("silent");
+        OEG.notify.start();
+        OEG.notify.maybeAsk();
+      }
+    } catch (e) {}
     if (OEG.state.configError) OEG.toast("⚠️ data/site-config.json માં JSON errors છે — તપાસો (દા.ત. \"emails\": [\"you@gmail.com\"] — કોટ સાથે)");
   })();
 })();

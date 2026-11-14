@@ -20,7 +20,11 @@
 | ▶️ **વિડિયો** | YouTube લિંક → એ જ પેજ પર પ્લેયર (youtube-nocookie embed). પ્લેયર પર **ફક્ત "▶ Play" બટન** — બીજો સર્વર/ડાઉનલોડ/બહાર જવાનો વિકલ્પ નહીં |
 | 📰 **બ્લોગ / પોસ્ટ** | ઈમેજ + ફાઈલ વ્યૂઅર સાથે પોસ્ટ |
 | 🔗 **ઉપયોગી લિંક્સ** | GCERT, DIKSHA, GSEB, GSBSTB + લોકપ્રિય શિક્ષક બ્લોગ્સ |
-| 🔐 **Register / Login** | શિક્ષક / વિદ્યાર્થી / આચાર્ય — ખાતાં GitHub (users.json) માં, Firebase વગર |
+| 🔐 **રજિસ્ટ્રેશન / લોગિન** | નામ+ઈમેઈલ+મોબાઈલ+પાસવર્ડ ⇒ તરત ખાતું (મંજૂરી નહીં). ફક્ત @gmail.com, ટપકું પકડો, ૧૦-અંક નો ખરો નંબર; ઈચ્છો તો Google/OTP વડે "ઈમેઈલ ચાલુ છે" એની ચકાસણી |
+| 👥 **Admin ની ખાતાં યાદી** | રજિસ્ટ્રેશન કરેલાં બધાં નું **નામ · મોબાઈલ · ઈમેઈલ** ટૅબલ માં, શોધ, CSV નિકાસ, અને **🚫 બ્લોક / ✅ અનબ્લોક** (બ્લોક ખાતું login કરે તો સંદેશ દેખાય) |
+| 📰 **બ્રેકિંગ ન્યૂઝ પટ્ટી** | હેડર ની નીચે ચાલતી પટ્ટી — Admin માંથી લખાણ/ઝડપ, અને **નવી પોસ્ટ નું ટાઈટલ આપોઆપ** જોડાય |
+| 🔔 **સૂચના (ફોન/લેપટોપ)** | નવી પોસ્ટ + Admin ની નોટિસ ⇒ browser notification (ઘંટડી + `sw.js`); ટૅપ કરો ⇒ એ જ પાનું ખૂલે |
+| 🟢 **વૉટ્સએપ પ્રસાર** | દરેક નવી પોસ્ટ નો ટૂંકો મેસેજ + લિંક એક ક્લિક માં (અથવા બધી એક સાથે) વૉટ્સએપ પર મોકલાય |
 | 🛠️ **Admin Panel** | GitHub માં ફાઈલ અપલોડ, પોસ્ટ એડિટર, વિડિયો, AdSense સેટિંગ, ફાઈલ મેનેજર |
 | 📤 **શેર** | WhatsApp / Facebook / X / Telegram + લિંક કોપી |
 | 💰 **AdSense** | દરેક પેજ પર પોલિસી-સેફ સ્લોટ (**15 જગ્યા**) — Publisher ID + **એક જ સાઇઝ** ભરો એટલે બધા સ્લોટમાં લાગુ |
@@ -147,16 +151,73 @@ node scripts/blogger.mjs --pages-links # SEO પાનાં (g/ p/ q/) GitHub P
 - "Fine-grained PAT", `github_pat_...` જેવા કોઈ શબ્દ/placeholder વિઝિટરને દેખાતા નથી — ફક્ત "સિક્રેટ કોડ".
 - 🛡️ **ભાષા/ટેક્સ્ટ સુરક્ષા (round-trip fix):** GitHub પરથી ફાઈલ વાંચતી વખતે UTF-8 સાવધાનીથી decode થાય (અગાઉ Gujarati text "mojibake" થઈ જતો — હવે `getFile` માં TextDecoder + જૂની corrupt data માં auto-repair).
 
-## 🔐 વિદ્યાર્થી / શિક્ષક / આચાર્ય Register-Login (Firebase ની જરૂર નથી)
+## 🔐 રજિસ્ટ્રેશન ▸ login ▸ Admin ની ખાતાં યાદી (Firebase ની જરૂર નથી)
 
-બધાં વિદ્યાર્થી/શિક્ષક/આચાર્ય/અન્ય નાં ખાતાં **GitHub ની `data/users.json`** માં સેવ થાય છે — કોઈ server/Firebase નહીં.
+વિદ્યાર્થી/શિક્ષક/આચાર્ય **પોતે જ રજિસ્ટ્રેશન કરે — કોઈ મંજૂરી નહીં, એકાઉન્ટ બને એટલે તરત login.**
 
-- **રજિસ્ટ્રેશન** (site પર): નામ+ઈમેઈલ+પાસવર્ડ+ભૂમિકા ભરો → વિનંતી નોંધાય → **"Admin ને મોકલો"** બટન (WhatsApp/Email) → Admin મંજૂર કરે એટલે login ચાલુ.
-  *(Static site માં visitors પોતે GitHub માં લખી શકે નહીં — એટલે મંજૂરી પગલું; અંતે વિગતો GitHub માં જ સેવ થાય.)*
-- **Admin મંજૂરી:** Admin Panel → **👥 વપરાશકર્તાઓ** → વિગત ભરી ➕ → `users.json` commit → વિદ્યાર્થી login કરી શકે.
-- **લોગિન:** બધા માટે free (કોઈ token નહીં) — પાસવર્ડ hash+salt થઈ સેવ, plain text ક્યાંય નહીં.
-- ⚠️ `users.json` public repo માં છે — નબળા/બીજી site ના પાસવર્ડ વાપરવાનું કહો.
-- 🔥 ઈચ્છો તો Firebase પણ ચાલુ રહે છે: `site-config.json` → `firebase.apiKey` ભરો.
+### ૧) રજિસ્ટ્રેશન ફોર્મ (ચકાસણી સાથે)
+ફોર્મ: નામ · ઈમેઈલ · મોબાઈલ (વૉટ્સએપ) · પાસવર્ડ · ભૂમિકા · (વિદ્યાર્થી/શિક્ષક ⇒ ધોરણ + વિષય)
+
+| નિયમ (Admin → 👥 → 🔐 માંથી બદલાય) | શું થાય |
+|---|---|
+| ફક્ત `@gmail.com` | બીજી ડોમેઈન ⇒ ❌ "ફક્ત આ ઈમેઈલ ડોમેઈન ચાલે: gmail.com" |
+| ટપકું પકડો | `haresh@gmail.co` ⇒ ❌ + સૂચના "…@gmail.com તો ઠીક?" (એક ક્લિક માં સુધારો) |
+| Gmail નાં નિયમ | ૬–૩૦ અક્ષર, ફક્ત a–z 0–9 `.` `_`, શરૂ/અંતે બિંદુ નહીં, `..` નહીં |
+| મોબાઈલ નંબર | ૧૦ અંક, ૬–૯ થી શરૂ, `+91`/`0` આપોઆપ સાફ, બીજા દેશ નો નંબર રોકાય |
+| ખોટા/બનાવટી નંબર | `1234567890`, `9876543210`, એ જ અંક વારંવાર, ૬ અંક ની સીડી ⇒ ❌ રોકાય |
+| ✅ ઈમેઈલ **ખરેખર ચાલુ** હોય | Admin ⇒ 🔐 માં **Google Client ID** ભરો ⇒ ફોર્મ પર "🔐 Google વડે ચકાસો". sign-in કરેલી Gmail જ સ્વીકારાય ⇒ ખોટું કે બંધ પડેલું ઈમેઈલ ચાલે જ નહીં (કોઈ સર્વર નહીં). "ફરજિયાત" ચેક કરો ⇒ વગર ચકાસણી રજિસ્ટ્રેશન થશે નહીં |
+| 🔢 OTP (વૈકલ્પિક) | `auth.otpEndpoint` માં webhook ભરો ⇒ વપરાશકર્તા પોતાના નંબર પર આવેલો કોડ ભરે એટલે જ ખાતું બને |
+
+> 💡 "નંબર ખરેખર ચાલુ છે?" એ બ્રાઉઝર માંથી ૧૦૦% તપાસી શકાતું નથી (એટલે format + નકલા-નંબર ના નિયમ + OTP hook). Admin ને દરેક નોંધ પર **⏳ ચકાસણી બાકી / ✅ ચકાસાયેલ** દેખાય છે.
+
+### ૨) Admin → 👥 ખાતાં: નામ · મોબાઈલ · ઈમેઈલ ની યાદી + 🚫 બ્લોક / ✅ અનબ્લોક
+- **📋 રજિસ્ટ્રેશન ની યાદી** — દરેક નોંધ: નામ, મોબાઈલ (wa.me લિંક સાથે), ઈમેઈલ, ભૂમિકા, તારીખ, હાલત + ક્રિયાઓ. ઉપર શોધ (નામ/મોબાઈલ/ઈમેઈલ) અને 📋 CSV નિકાસ.
+- **🚫 બ્લોક** ⇒ કારણ પૂછાય → એ ખાતું login કરી શકે નહીં, એને સંદેશ દેખાય:
+  *"⛔ તમારું ખાતું બંધ કરવામાં આવ્યું છે · કારણ: … · <સંપર્ક email>"*. ચાલુ સેશન હોય તો એ પણ તરત બંધ.
+- **✅ અનબ્લોક** ⇒ એ જ ખાતું ફરી login થઈ શકે. બ્લોક `data/users.json` માં (`users[].blocked` + `blockedEmails`) સેવ થાય ⇒ **બધા ઉપકરણ પર** લાગુ પડે.
+- બાકી ની ક્રિયાઓ: 🔑 પાસવર્ડ રીસેટ · 🗑 ખાતું કાઢો · ➕ નવું ખાતું (મોબાઈલ સાથે) · ➕ નોંધ થી ખાતું ખોલો · "બધાં નું ખાતું બનાવો".
+- **💾 repo માં સેવ કરો** ⇒ ઉપકરણ ની નોંધ `data/registrations.json` માં જાય (બધી Admin જગ્યા એ જ યાદી જુએ).
+- બીજા ઉપકરણ પર ની રજિસ્ટ્રેશન આપોઆપ repo માં આવી શકે નહીં (visitor પાસે GitHub token હોતો નથી) — એટલે `auth.webhook` ભરો ⇒ નોંધ તરત Google Sheet માં જાય, અને Admin ⇒ **⬇️ Sheet માંથી લાવો** એક ક્લિક માં બધી નોંધ.
+- ⚠️ repo public હોય તો આ ફાઈલ કોઈ પણ વાંચી શકે. `robots.txt` માં `/data/users.json`, `/data/registrations.json`, `/data/notice.json` Disallow કરેલાં છે (search માં ન જાય), પણ નંબર ખાનગી રાખવા હોય તો **webhook/Sheet** વાપરો.
+
+### ૩) 📰 બ્રેકિંગ ન્યૂઝ પટ્ટી (Admin → 📣)
+- હેડર ની નીચે લાલ-નારંગી પટ્ટી માં લખાણ સતત ફરતું રહે; ડાબે **🔴 તાજા સમાચાર** chip; માઉસ ફેરવો ⇒ અટકે; ✕ ⇒ આજ માટે છુપાય; ફોન પર પણ ચાલે (`prefers-reduced-motion` હોય તો ticker બંધ, સાદી યાદી).
+- Admin → 📣: પટ્ટી ચાલુ/બંધ, નામ (૩ ભાષા), ઝડપ (અક્ષર/સેકન્ડ), પોતાની લીટીઓ (`લખાણ | લિંક` દર લીટીએ), અને **"નવી પોસ્ટ નું ટાઈટલ આપોઆપ જોડો"** (કયા પ્રકાર, કેટલા દિવસ, કેટલી લીટી).
+- ⇒ **✍️ નવી પોસ્ટ પ્રકાશિત કરો એટલે એનું ટાઈટલ તરત પટ્ટી માં** (ક્લિક ⇒ એ જ પોસ્ટ `#/view/<id>`).
+
+### ૪) 🔔 સૂચના — ફોન / લેપટોપ પર
+- હેડર ની **ઘંટડી** ⇒ "ચાલુ કરો" ⇒ બ્રાઉઝર permission ⇒ પછી સિસ્ટમ નોટિફિકેશન (icon + લિંક; ટૅપ કરો ⇒ એ જ પાનું).
+- ક્યારે સૂચના: (a) **નવી પોસ્ટ** પ્રકાશિત થાય, (b) **Admin ની નોટિસ** — Admin → 📣 → ટાઈટલ/લખાણ/લિંક ભરી "📣 સૌને મોકલો" ⇒ `data/notice.json` (છેલ્લી ૧૨ યાદ રહે, કાઢી પણ શકાય).
+- તપાસ: સાઇટ ખુલ્લી હોય ત્યારે દર `pollMinutes` મિનિટે + પાનું બદલો એટલે તરત. (બ્લોગર થીમ પર ફાઈલ CDN કૅશ માંથી વાંચાય — `?ts=` લગાવેલું હોય એટલે નવી નોટિસ થોડી મિનિટ માં જ દેખાય.) GitHub Pages પર `sw.js` (service worker) નોંધાય ⇒ Android/Chrome પર પણ; Blogger થીમ પર SW બીજા origin માં નોંધાઈ શકે નહીં ⇒ એ જ સૂચના page-level Notification થી મળે.
+- ⚠️ બ્રાઉઝર **બંધ** હોય ત્યારે પણ પહોંચાડવાનું હોય તો push service (OneSignal / FCM + VAPID) જોડવું પડે — `sw.js` માં `push` listener તૈયાર મૂક્યો છે, એમાં push service ની કી/config જોડવાનું બાકી.
+
+### ૫) 🟢 નવી પોસ્ટ ⇒ વૉટ્સએપ મેસેજ (ટૂંકી વિગત + લિંક)
+- Admin → 📣 → 🟢: નંબર (દેશ કોડ સાથે — શાળા/ગ્રુપ નો નંબર), મેસેજ ફોર્મટ, "કોણને દેખાય" (Admin ▸ બધા ▸ ના).
+- દરેક નવી પોસ્ટ માટે મેસેજ આપોઆપ બને — `{icon} {title}`, ટૂંકી વિગત, લિંક ⇒ **વૉટ્સએપ પર મોકલો** (contact પસંદ કરી send) અથવા **બધી એક સાથે મોકલો**.
+- Admin login હોય ત્યારે સાઇટ પર જમણીએ નાનો પટ દેખાય (નવી પોસ્ટ ની યાદી + બટન). મોકલી દો ⇒ "મોકલ્યું" નોંધાય ⇒ બીજી વાર દેખાતું નહીં ("ફરીથી બધી બતાવો" થી પાછી યાદી).
+- ⚠️ બ્રાઉઝર માંથી **ટૅપ વગર** send કરવું WhatsApp ની નીતિ પ્રમાણે શક્ય નથી — એટલે "એક ક્લિક". સંપૂર્ણ આપોઆપ મોકલવા **WhatsApp Cloud API + webhook** જોડો.
+
+#### વૈકલ્પિક: Google Apps Script (Sheet માં નોંધ + OTP) — ૫ મિનિત કામ
+`script.google.com` ⇒ નવી Project ⇒ નીચે નો કોડ ⇒ Deploy ⇒ Web app (Execute as: Me, Access: Anyone) ⇒ એ `/exec` લિંક Admin → 👥 → 🔐 માં **webhook** ભાગે ભરો.
+
+```js
+const SHEET = "reg";                                   // Sheet નું નામ
+function doPost(e) {                                    // રજિસ્ટ્રેશન નોંધ
+  const o = JSON.parse(e.postData.contents || "{}");
+  const sh = SpreadsheetApp.getActive().getSheetByName(SHEET) || SpreadsheetApp.getActive().insertSheet(SHEET);
+  sh.appendRow([new Date(), o.name, o.email, o.phone, o.role, o.grade, o.subject, o.verified || ""]);
+  return ContentService.createTextOutput(JSON.stringify({ ok: true }));
+}
+function doGet(e) {                                     // Admin ⇒ ⬇️ Sheet માંથી લાવો
+  if ((e.parameter.action || "") !== "list") return ContentService.createTextOutput(JSON.stringify({ ok: false }));
+  const sh = SpreadsheetApp.getActive().getSheetByName(SHEET);
+  const items = sh.getDataRange().getValues().slice(1).map(r =>
+    ({ at: String(r[0]).slice(0, 10), name: r[1], email: String(r[2] || "").toLowerCase(), phone: String(r[3] || "").replace(/\D/g, "").slice(-10), role: r[4] }));
+  return ContentService.createTextOutput(JSON.stringify({ items })).setMimeType(ContentService.MimeType.JSON);
+}
+```
+
+- ઈચ્છો તો Firebase પણ ચાલુ રહે છે: `site-config.json` → `firebase.apiKey` ભરો એટલે register/login Firebase Identity Toolkit થી ચાલે.
 
 ---
 
@@ -255,7 +316,7 @@ node scripts/blogger.mjs --pages-links # SEO પાનાં (g/ p/ q/) GitHub P
 
 ## 🗂️ Admin Panel = ટૉબમાં (એક વખતે એ જ સેટિંગ)
 
-Admin પાનું ખોલો તો **ઉપર બટનની પંક્તિ** દેખાય — 🔗 કનેક્શન · ⚙️ સાઇટ સેટિંગ્સ · ✍️ મટિરિયલ · 📤 અપલોડ · 🎬 યૂટ્યુબ · 🗂️ યાદી · 🏷️ કેટેગરી · 🧭 મેનુ · 🧠 પ્રશ્નો · 🏅 પ્રમાણપત્ર · 💰 AdSense · 🔎 SEO · 👥 વપરાશકર્તા · 📁 ફાઈલો · 🛡️ એકાઉન્ટ.
+Admin પાનું ખોલો તો **ઉપર બટનની પંક્તિ** દેખાય — 🔗 કનેક્શન · ⚙️ સાઇટ સેટિંગ્સ · ✍️ મટિરિયલ · 📤 અપલોડ · 🎬 યૂટ્યુબ · 🗂️ યાદી · 🏷️ કેટેગરી · 🧭 મેનુ · 🧠 પ્રશ્નો · 🏅 પ્રમાણપત્ર · 💰 AdSense · 🔎 SEO · 👥 વપરાશકર્તા/ખાતાં · 📣 સમાચાર & સૂચના · 📁 ફાઈલો · 🛡️ એકાઉન્ટ.
 
 - કોઈ એક બટન દબાવો → **ફક્ત એ જ સેક્શન** દેખાય (બાકીનું છુપાય). પસંદગી ઉપકરણમાં યાદ રહે છે.
 - દરેક સેક્શનની ઉપર ૧ લાઈનની **સૂચના** દેખાય — શું ભરવાનું, શું થશે.
@@ -350,17 +411,24 @@ js/
   config.js           — સાઈટ કોન્ફિગ (Firebase/AdSense/GitHub)
   i18n.js             — ગુજરાતી/હિન્દી/English શબ્દકોશ
   catalog.js          — ડેટા લેયર
-  auth.js             — GitHub users.json આધારિત login (SHA-256) + optional Firebase
+  verify.js           — રજિસ્ટ્રેશન ચકાસણી: ઈમેઈલ (ફક્ત gmail) + વૉટ્સએપ નંબર + Google/OTP hook
+  auth.js             — GitHub users.json આધારિત login (SHA-256) + ખાતાં/નોંધ + બ્લોક-અનબ્લોક + optional Firebase
+  notify.js           — 📰 બ્રેકિંગ ન્યૂઝ પટ્ટી + 🔔 સૂચના + 🟢 વૉટ્સએપ પ્રસાર
   games.js            — 3 બિલ્ટ-ઈન ગેમ્સ
   github.js           — GitHub API (Contents + Git Data)
   admin.js            — Admin Panel
   app.js              — રાઉટર + પેજ રેન્ડરિંગ
 data/
   catalog.json        — બધું મટીરિયલ (Admin Panel થી અપડેટ થાય)
-  site-config.json    — રનટાઈમ કોન્ફિગ (AdSense/Firebase)
+  site-config.json    — રનટાઈમ કોન્ફિગ (AdSense/Firebase/auth/news/notify)
+  registrations.json  — રજિસ્ટ્રેશન ની યાદી (નામ/મોબાઈલ/ઈમેઈલ) — Admin જોડે સેવ
+  notice.json         — Admin ની મોકલેલી સૂચના (દર ઉપકરણ પર notification બને)
+  users.json          — ખાતાં (SHA-256 hash) + બ્લોક યાદી (blockedEmails)
 assets/fonts/         — Noto Gujarati/Devanagari, Inter, Baloo Bhai 2
+sw.js                   — સૂચના માટે service worker (GitHub Pages પર નોંધાય)
 blogger/
-  OEG-Blogger-Theme.xml — Blogger upload થીમ
+  OEG-Blogger-Native.xml — બ્લોગર માટે native થીમ (upload કરવાની ફાઈલ)
+  OEG-Blogger-Theme.xml — પુરાણી iframe થીમ
 uploads/              — Admin Panel થી અપલોડ થતી ફાઈલો (GitHub માં)
 scripts/build.mjs     — ફોન્ટ્સ કોપી સ્ક્રિપ્ટ
 scripts/seo.mjs       — સ્ટેટિક SEO પાનાં + sitemap.xml + robots.txt બિલ્ડર (npm run seo)

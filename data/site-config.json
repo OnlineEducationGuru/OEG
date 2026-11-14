@@ -552,5 +552,44 @@
       "links": true
     },
     "viewersBase": 1000000
+  },
+  "auth": {
+    "emailDomains": "gmail.com",
+    "requirePhone": true,
+    "phoneCountry": "91",
+    "checkPatterns": true,
+    "googleClientId": "",
+    "requireGoogle": false,
+    "otpEndpoint": "",
+    "webhook": "",
+    "webhookList": ""
+  },
+  "news": {
+    "enabled": true,
+    "label": {
+      "gu": "તાજા સમાચાર",
+      "hi": "ताज़ा खबर",
+      "en": "Breaking news"
+    },
+    "speed": 46,
+    "autoPosts": true,
+    "autoTypes": "post",
+    "autoDays": 45,
+    "autoCount": 6,
+    "pauseOnHover": true,
+    "dismissible": true,
+    "items": []
+  },
+  "notify": {
+    "enabled": true,
+    "bell": true,
+    "onNewPosts": true,
+    "pollMinutes": 15,
+    "askOnce": true,
+    "days": 30,
+    "waBroadcast": true,
+    "waNumber": "",
+    "waAuto": "admin",
+    "waTemplate": ""
   }
 }

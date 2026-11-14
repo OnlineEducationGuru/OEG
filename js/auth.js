@@ -2,8 +2,11 @@
    OEG Auth — GitHub Files (no Firebase)
    ------------------------------------------------------------
    સામાન્ય વપરાશકર્તા (વિદ્યાર્થી/શિક્ષક/આચાર્ય/અન્ય):
-     login → data/users.json (Admin panel થી ઉમેરાયેલાં ખાતાં)
+     login → data/users.json (Admin panel થી ઉમેરાયેલાં ખાતાં) + આ ઉપકરણ ની રજિસ્ટ્રેશન યાદી
      register → ખાતું બને એટલે તરત login (Admin ની મંજૂરી નહીં)
+       • email + વૉટ્સએપ નંબર ની ચકાસણી: OEG.verify (js/verify.js)
+       • નોંધ data/registrations.json માં સેવ કરી શકાય ⇒ Admin ને નામ/મોબાઈલ/ઈમેઈલ યાદી મળે
+       • Admin ⇒ block / unblock (data/users.json માં blocked + blockedEmails) ⇒ બ્લોક ખાતું login કરી શકે નહીં
    Admin Panel:
      ફક્ત data/admin.json માં રાખેલ email + પાસવર્ડ થી જ ખુલે
      (પાસવર્ડ SHA-256 hash સ્વરૂપે સેવ — plaintext નહીં)
@@ -11,8 +14,10 @@
 OEG.auth = (() => {
   const LS_USER = "oeg-user";
   const LS_LOCAL = "oeg-users-local";   /* રજિસ્ટ્રેશન થયેલું ખાતું (એ જ ઉપકરણે login ચાલુ રહે) */
+  const LS_REG = "oeg-reg-queue";       /* રજિસ્ટ્રેશન ની નોંધ (Admin યાદી માટે repo માં સેવ થાય) */
   const SS_ADMIN = "oeg-admin";
   const USERS_FILE = "data/users.json";
+  const REG_FILE = "data/registrations.json";
   const ADMIN_FILE = "data/admin.json";
 
   const cfg = () => OEG.state.config || {};
@@ -24,6 +29,35 @@ OEG.auth = (() => {
   const load = () => { try { OEG.state.user = JSON.parse(localStorage.getItem(LS_USER) || "null"); } catch (e) { OEG.state.user = null; } return OEG.state.user; };
   const localUsers = () => { try { const a = JSON.parse(localStorage.getItem(LS_LOCAL) || "[]"); return Array.isArray(a) ? a : []; } catch (e) { return []; } };
   const addLocalUser = (u) => { try { localStorage.setItem(LS_LOCAL, JSON.stringify(localUsers().concat([u]))); } catch (e) {} };
+  const localRegs = () => { try { const a = JSON.parse(localStorage.getItem(LS_REG) || "[]"); return Array.isArray(a) ? a : []; } catch (e) { return []; } };
+  const addLocalReg = (r) => {
+    const list = localRegs().filter((x) => norm(x.email) !== norm(r.email));
+    list.unshift(r);
+    try { localStorage.setItem(LS_REG, JSON.stringify(list.slice(0, 200))); } catch (e) {}
+  };
+  const today = () => new Date().toISOString().slice(0, 10);
+  const vk = (key, arg) => {
+    try { if (OEG.verify && OEG.verify.msg) return OEG.verify.msg(key, arg); } catch (e) {}
+    const txt = OEG.t(key);
+    return txt && txt !== key ? txt.replace("{x}", arg || "") : (arg || key);
+  };
+  /* 🔒 બ્લોક સ્થિતિ — repo નાં ખાતાં (users[].blocked), repo ની બ્લોક યાદી, અને ઉપકરણ નું ખાતું */
+  function blockState(email, doc) {
+    const em = norm(email);
+    if (!em) return { blocked: false };
+    const u = ((doc && doc.users) || []).find((x) => norm(x.email) === em);
+    if (u && u.blocked) return { blocked: true, reason: String(u.blocked === true ? "" : u.blocked) };
+    const b = ((doc && doc.blockedEmails) || []).find((x) => norm(x && x.email ? x.email : x) === em);
+    if (b) return { blocked: true, reason: String((b && b.reason) || "") };
+    const loc = localUsers().find((x) => norm(x.email) === em);
+    if (loc && loc.blocked) return { blocked: true, reason: String(loc.blocked === true ? "" : loc.blocked) };
+    return { blocked: false };
+  }
+  const blockedMsg = (st) => {
+    const why = st && st.reason ? " · " + OEG.t("auth.blockReason").replace("{x}", st.reason) : "";
+    const ce = (OEG.state.config || {}).contactEmail;
+    return "⛔ " + OEG.t("auth.blocked") + why + (ce ? " · " + ce : "");
+  };
 
   /* ---- SHA-256 (pure JS — દરેક environment માં એકજ પરિણામ) ---- */
   const K = [
@@ -87,9 +121,11 @@ OEG.auth = (() => {
     const gs = ((OEG.tax && OEG.tax().grades) || []).map(x => x.key);
     return gs.indexOf(k) >= 0 ? k : "all";
   };
-  async function makeUserRecord({ name, email, password, role, grade, subject }) {
+  async function makeUserRecord({ name, email, password, role, grade, subject, phone, verified }) {
     const salt = randSalt();
-    return { id: "u" + Date.now().toString(36), name: String(name || email).slice(0, 60), email: norm(email), role: role || "student", grade: cleanGrade(grade), subject: cleanSub(subject), salt, hash: sha256hex(salt + ":" + password), created: new Date().toISOString().slice(0, 10) };
+    const rec = { id: "u" + Date.now().toString(36), name: String(name || email).slice(0, 60), email: norm(email), role: role || "student", grade: cleanGrade(grade), subject: cleanSub(subject), phone: String(phone || "").replace(/\D/g, "").slice(-10), salt, hash: sha256hex(salt + ":" + password), created: new Date().toISOString().slice(0, 10) };
+    if (verified) rec.verified = today();
+    return rec;
   }
 
   /* ---- વપરાશકર્તા-લિસ્ટ: raw.githubusercontent (તરત અપડેટ), પછી Pages કોપી ---- */
@@ -101,10 +137,113 @@ OEG.auth = (() => {
     for (const u of urls) {
       try {
         const r = await fetch(u, { cache: "no-store" });
-        if (r.ok) { const j = await r.json(); if (j && Array.isArray(j.users)) return j; }
+        if (r.ok) {
+        const j = await r.json();
+        if (j && Array.isArray(j.users)) {
+          if (!Array.isArray(j.blockedEmails)) j.blockedEmails = [];
+          return j;
+        }
+      }
       } catch (e) {}
     }
-    return { version: 1, users: [] };
+    return { version: 2, users: [], blockedEmails: [] };
+  }
+
+  /* ---- 📋 રજિસ્ટ્રેશન ની યાદી (repo data/registrations.json + આ ઉપકરણ ની નોંધ) ----
+     Admin ને નામ / મોબાઈલ / ઈમેઈલ ની સંપૂર્ણ યાદી અહીંથી દેખાય.
+     repo ફાઈલ = બધા ઉપકરણ માટે એક જ યાદી; ઉપકરણ ની નોંધ = ફક્ત એ જ browser. */
+  async function fetchRegs() {
+    const g = cfg().github || {};
+    let doc = { v: 1, items: [] };
+    const urls = [];
+    if (g.owner && g.repo) urls.push(`https://raw.githubusercontent.com/${g.owner}/${g.repo}/${g.branch || "main"}/${REG_FILE}`);
+    urls.push(OEG.base(REG_FILE) + "?ts=" + Date.now());
+    for (const u of urls) {
+      try {
+        const r = await fetch(u, { cache: "no-store" });
+        if (r.ok) { const j = await r.json(); if (j && Array.isArray(j.items)) { doc = j; break; } }
+      } catch (e) {}
+    }
+    const items = (doc.items || []).slice();
+    const have = {};
+    items.forEach((x) => { have[norm(x.email)] = 1; });
+    const local = localRegs().filter((x) => !have[norm(x.email)]).map((x) => Object.assign({}, x, { device: 1 }));
+    return { v: 1, items, all: local.concat(items) };
+  }
+  async function saveRegs(items, message) {
+    await OEG.data.writeJson(REG_FILE, { v: 1, updated: today(), items: items || [] }, message || ("OEG: registrations " + (items || []).length));
+    return true;
+  }
+  /* webhook (Google Sheet) ભર્યું હોય તો ત્યાં ની યાદી પણ જોડી શકાય */
+  async function fetchRegsRemote() {
+    const url = String(((cfg().auth || {}).webhookList || (cfg().auth || {}).webhook || "")).trim();
+    if (!url) return [];
+    const sep = url.indexOf("?") < 0 ? "?" : "&";
+    try {
+      const r = await fetch(url + sep + "action=list", { cache: "no-store" });
+      if (!r.ok) return [];
+      const j = await r.json();
+      const list = Array.isArray(j) ? j : (j && Array.isArray(j.items) ? j.items : []);
+      return list.map((x) => ({ name: x.name || "", email: norm(x.email || x[1] || ""), phone: String(x.phone || x.mobile || x[2] || "").replace(/\D/g, "").slice(-10), role: x.role || "student", at: String(x.at || x.date || "").slice(0, 10), verified: x.verified || "", source: "sheet" }));
+    } catch (e) { return []; }
+  }
+  /* ---- 🚫 block / ✅ unblock (Admin) ---- */
+  async function writeUsersDoc(doc, message) {
+    const out = { version: 2, users: (doc.users || []).slice() };
+    if ((doc.blockedEmails || []).length) out.blockedEmails = doc.blockedEmails.slice();
+    out.updated = today();
+    await OEG.gh.putFile(USERS_FILE, JSON.stringify(out, null, 2), message);
+    return out;
+  }
+  async function setBlocked(email, on, reason) {
+    email = norm(email);
+    if (!email) throw new Error(OEG.t("auth.email"));
+    let touched = false;
+    const loc = localUsers();
+    const li = loc.findIndex((u) => norm(u.email) === email);
+    if (li >= 0) {
+      if (on) loc[li].blocked = reason || today(); else delete loc[li].blocked;
+      try { localStorage.setItem(LS_LOCAL, JSON.stringify(loc)); } catch (e) {}
+      touched = true;
+    }
+    if (OEG.gh && OEG.gh.connected()) {
+      const doc = await fetchUsers();
+      doc.blockedEmails = (doc.blockedEmails || []).slice();
+      const i = (doc.users || []).findIndex((u) => norm(u.email) === email);
+      if (i >= 0) { if (on) doc.users[i].blocked = reason || today(); else delete doc.users[i].blocked; }
+      doc.blockedEmails = doc.blockedEmails.filter((x) => norm(x && x.email ? x.email : x) !== email);
+      if (on && i < 0) doc.blockedEmails.push({ email, reason: reason || "", at: today() });
+      await writeUsersDoc(doc, "OEG: " + (on ? "block " : "unblock ") + email);
+      touched = true;
+    }
+    if (!touched) throw new Error(OEG.t("admin.notConnected"));
+    const cur = OEG.state.user;
+    if (on && cur && norm(cur.email) === email) logout();
+    return true;
+  }
+  async function blockList() {
+    const doc = await fetchUsers();
+    const out = {};
+    (doc.users || []).forEach((u) => { if (u.blocked) out[norm(u.email)] = { reason: String(u.blocked === true ? "" : u.blocked), repo: 1 }; });
+    (doc.blockedEmails || []).forEach((b) => { const k = norm(b && b.email ? b.email : b); out[k] = { reason: (b && b.reason) || "", repo: 1 }; });
+    localUsers().forEach((u) => { if (u.blocked && !out[norm(u.email)]) out[norm(u.email)] = { reason: String(u.blocked === true ? "" : u.blocked), device: 1 }; });
+    return out;
+  }
+  /* બ્લોક થયેલું ખાતું login કરી જ ન શકે ⇒ સેશન ચાલુ હોય તો તરત બંધ */
+  async function enforceSession() {
+    const u = OEG.state.user;
+    if (!u || !u.email) return false;
+    if (isFirebase()) return false;
+    try {
+      const doc = await fetchUsers();
+      const st = blockState(u.email, doc);
+      if (st.blocked) {
+        logout();
+        OEG.toast("⛔ " + blockedMsg(st));
+        return true;
+      }
+    } catch (e) {}
+    return false;
   }
 
   /* ---- Firebase (optional — key ભર્યું હોય તો જ) ---- */
@@ -118,20 +257,40 @@ OEG.auth = (() => {
   }
 
   /* ---- રજિસ્ટ્રેશન (વિદ્યાર્થી/શિક્ષક/આચાર્ય/ઓફિસ) — મંજૂરી વગર તરત login ---- */
-  async function register({ name, email, password, role, grade, subject }) {
+  async function register({ name, email, password, role, grade, subject, phone, verified }) {
     email = norm(email);
+    /* ✅ ચકાસણી (Admin → 👥 ખાતાં માંથી નિયમ): ઈમેઈલ + વૉટ્સએપ નંબર */
+    if (OEG.verify) {
+      const e = OEG.verify.email(email);
+      if (!e.ok) throw new Error(vk(e.key, e.arg || e.fix || ""));
+      email = e.value;
+      const needPhone = OEG.verify.cfg().requirePhone !== false;
+      if (needPhone || phone) {
+        const p = OEG.verify.phone(phone);
+        if (!p.ok) throw new Error(vk(p.key, p.arg || ""));
+        phone = p.value;
+      }
+      if (OEG.verify.requireGoogle() && !verified) throw new Error(OEG.t("v.gsiNeed"));
+    }
     if (isFirebase()) {
       const j = await firebaseCall("accounts:signUp", { email, password, returnSecureToken: true });
-      const user = { name, email, role, uid: j.localId, provider: "firebase" };
+      const user = { name, email, role, phone: String(phone || ""), uid: j.localId, provider: "firebase" };
       save(user); return user;
     }
     const users = await fetchUsers();
+    const bs = blockState(email, users);
+    if (bs.blocked) throw new Error(blockedMsg(bs));
     const all = (users.users || []).concat(localUsers());
     if (all.some(u => norm(u.email) === email)) throw new Error(OEG.t("auth.exists"));
-    const rec = await makeUserRecord({ name, email, password, role, grade, subject });
+    const rec = await makeUserRecord({ name, email, password, role, grade, subject, phone, verified });
     addLocalUser(rec);
-    const user = { name: rec.name, email, role: rec.role, grade: rec.grade, subject: rec.subject, provider: "local" };
+    const reg = { name: rec.name, email, phone: rec.phone || "", role: rec.role, grade: rec.grade, subject: rec.subject, at: rec.created, verified: rec.verified || "", source: "web" };
+    addLocalReg(reg);
+    const user = { name: rec.name, email, role: rec.role, grade: rec.grade, subject: rec.subject, phone: rec.phone || "", provider: "local" };
     save(user);
+    /* 🔁 webhook ભર્યું હોય (Google Sheet / Apps Script) ⇒ નોંધ તરત ત્યાં મોકલાય (બધા ઉપકરણ ની યાદી એ જ જગ્યાએ) */
+    const hook = String(((OEG.state.config || {}).auth || {}).webhook || "").trim();
+    if (hook) { try { await OEG.verify.post(hook, { type: "register", ...reg }); } catch (e) {} }
     return user;                                  /* ⇒ કોઈ Admin મંજૂરી નહીં, એકાઉન્ટ તરત ચાલુ */
   }
 
@@ -146,8 +305,10 @@ OEG.auth = (() => {
     const users = await fetchUsers();
     const u = (users.users || []).concat(localUsers()).find(x => norm(x.email) === email);
     if (!u) throw new Error(OEG.t("auth.noUser"));
+    const bs = blockState(email, users);
+    if (bs.blocked) throw new Error(blockedMsg(bs));
     if (sha256hex(u.salt + ":" + password) !== u.hash) throw new Error(OEG.t("auth.badpass"));
-    const user = { name: u.name, email, role: u.role || "user", grade: u.grade || "all", subject: cleanSub(u.subject), provider: "github" };
+    const user = { name: u.name, email, role: u.role || "user", grade: u.grade || "all", subject: cleanSub(u.subject), phone: u.phone || "", provider: "github" };
     save(user);
     return user;
   }
@@ -238,14 +399,26 @@ OEG.auth = (() => {
 
   /* ---- Admin Panel થી વપરાશકર્તા મેનેજમેન્ટ (GitHub જોડાયેલું હોવું જોઈએ) ---- */
   async function saveUsers(users, message) {
-    await OEG.gh.putFile(USERS_FILE, JSON.stringify({ version: 1, users }, null, 2), message);
+    const doc = await fetchUsers().catch(() => ({ blockedEmails: [] }));
+    await writeUsersDoc({ users, blockedEmails: doc.blockedEmails || [] }, message);
   }
-  async function addUser({ name, email, password, role, grade, subject }) {
+  async function addUser({ name, email, password, role, grade, subject, phone, verified }) {
     email = norm(email);
     const users = await fetchUsers();
     if (users.users.some(u => norm(u.email) === email)) throw new Error(OEG.t("auth.exists"));
-    users.users.push(await makeUserRecord({ name, email, password, role, grade, subject }));
-    await saveUsers(users.users, "OEG: add user " + email);
+    users.users.push(await makeUserRecord({ name, email, password, role, grade, subject, phone, verified }));
+    await writeUsersDoc(users, "OEG: add user " + email);
+    return true;
+  }
+  /* રજિસ્ટ્રેશન ની નોંધ ⇒ ખાતું (Admin ઈચ્છે તો) — પાસવર્ડ Admin પોતે ભરે */
+  async function addRegAsUser(rec, password) {
+    if (!rec || !rec.email) throw new Error(OEG.t("auth.email"));
+    await addUser({
+      name: rec.name, email: rec.email, password, phone: rec.phone, verified: rec.verified,
+      role: rec.role || "student", grade: rec.grade || "all", subject: rec.subject || "all"
+    });
+    const list = localRegs().filter((x) => norm(x.email) !== norm(rec.email));
+    try { localStorage.setItem(LS_REG, JSON.stringify(list)); } catch (e) {}
     return true;
   }
   async function removeUser(email) {
@@ -369,5 +542,6 @@ OEG.auth = (() => {
   }
 
   const SUBJECTS7 = () => ((OEG.tax && OEG.tax().gradeSubjects) || []).slice();
-  return { SUBJECTS7, register, login, logout, load, isFirebase, fetchUsers, makeUserRecord, addUser, removeUser, resetPassword, sha256hex, getAdminFile, loginAdmin, setAdminAccount, adminRecord, parseAdminCreds, adminConfigured, unlocked, lockAdmin, saveSecret, recallSecret, hasSecret, forgetSecret };
+  return { SUBJECTS7, register, login, logout, load, isFirebase, fetchUsers, makeUserRecord, addUser, removeUser, resetPassword,
+    REG_FILE, localRegs, addLocalReg, fetchRegs, saveRegs, fetchRegsRemote, setBlocked, blockList, blockState, enforceSession, addRegAsUser, writeUsersDoc, sha256hex, getAdminFile, loginAdmin, setAdminAccount, adminRecord, parseAdminCreds, adminConfigured, unlocked, lockAdmin, saveSecret, recallSecret, hasSecret, forgetSecret };
 })();

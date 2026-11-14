@@ -134,11 +134,13 @@ window.OEG_BASE="https://cdn.jsdelivr.net/gh/OnlineEducationGuru/OEG@main/";
 <script src="https://cdn.jsdelivr.net/gh/OnlineEducationGuru/OEG@main/js/youtube.js"></script>
 <script src="https://cdn.jsdelivr.net/gh/OnlineEducationGuru/OEG@main/js/ads.js"></script>
 <script src="https://cdn.jsdelivr.net/gh/OnlineEducationGuru/OEG@main/js/meta.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/OnlineEducationGuru/OEG@main/js/verify.js"></script>
 <script src="https://cdn.jsdelivr.net/gh/OnlineEducationGuru/OEG@main/js/auth.js"></script>
 <script src="https://cdn.jsdelivr.net/gh/OnlineEducationGuru/OEG@main/js/games.js"></script>
 <script src="https://cdn.jsdelivr.net/gh/OnlineEducationGuru/OEG@main/js/cert.js"></script>
 <script src="https://cdn.jsdelivr.net/gh/OnlineEducationGuru/OEG@main/js/quiz.js"></script>
 <script src="https://cdn.jsdelivr.net/gh/OnlineEducationGuru/OEG@main/js/github.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/OnlineEducationGuru/OEG@main/js/notify.js"></script>
 <script src="https://cdn.jsdelivr.net/gh/OnlineEducationGuru/OEG@main/js/admin.js"></script>
 <script src="https://cdn.jsdelivr.net/gh/OnlineEducationGuru/OEG@main/js/app.js"></script>
 <noscript>
