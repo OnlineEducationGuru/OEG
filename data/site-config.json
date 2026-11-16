@@ -571,6 +571,10 @@
     "webhook": "",
     "webhookList": ""
   },
+  "fresh": {
+    "enabled": true,
+    "minutes": 1
+  },
   "news": {
     "enabled": true,
     "label": {

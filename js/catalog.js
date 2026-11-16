@@ -180,14 +180,13 @@ OEG.base = (path) => {
   let out = base.replace(/\/+$/, "") + "/" + rel;
   /* 🧊 jsDelivr @main ની કૉપિ દિવસો સુધી જૂની રહી શકે (Ctrl+Shift+R થીય નહીં હટાય — એ browser
      નો કૅશ છે, CDN નો નહીં). એટલે CDN માર્ગે જતાં query જોડીએ:
-     · data/*.json ⇒ કલાક નો bucket ⇒ Admin નું લખાણ વધુમાં વધુ ૧ કલાક માં બ્લોગ પર પોતાથી પહોંચે
-     · બાકીની ફાઈલ (js/css/fonts) ⇒ થીમ બનાવતી વખતે નો commit-sha ટૅગ (window.OEG_V)
+     · data/*.json ⇒ fresh.minutes નો bucket (ડિફૉલ્ટ ૧ મિનિટ) ⇒ Admin નું લખાણ એ જ મિનિટ માં
+       બ્લોગ પર પોતાથી પહોંચે (OEG.freshMinutes / OEG.ttlTag)
+     · બાકીની ફાઈલ (js/css/fonts) ⇒ થીમ બનાવતી વખતે નો ટૅગ (window.OEG_V)
      GitHub Pages (OEG_BASE ખાલી) પર કંઈ જોડાતું નથી. */
   try {
     if (!/[?&](v|ts)=/.test(out)) {
-      const tag = /^data\/[\w.\-]+\.json/.test(rel)
-        ? String(Math.floor(Date.now() / 36e5))
-        : String(window.OEG_V || "");
+      const tag = /^data\/[\w.\-]+\.json/.test(rel) ? OEG.ttlTag() : String(window.OEG_V || "");
       if (tag) out += (out.indexOf("?") >= 0 ? "&" : "?") + (/^data\//.test(rel) ? "t=" : "v=") + encodeURIComponent(tag);
     }
   } catch (e) { }
@@ -197,20 +196,40 @@ OEG.base = (path) => {
 /* બ્લોગર ⇒ data/*.json jsDelivr (@main) થી લોડ કરે, પણ એ ની edge કૉપિ દિવસો સુધી જૂની
    રહી શકે (query થીય નહીં તૂટે — એ ફકત browser નો કૅશ તોડે). Admin નું લખાણ બ્લોગ પર
    પહોંચે એ માટે GitHub નું raw વાપરો: એ CORS (*) મોકલે અને ~૫ મિનિટ માં તાજું થાય. */
+/* ⏱ data ની કૉપિ કેટલી જલદી તાજી ગણાય — set data/site-config.json ⇒ fresh.{enabled,minutes}
+   (Admin → ⚙️ સાઇટ સેટિંગ્સ → 🔄 આપોઆપ તાજું). ૦/બંધ ⇒ query જોડાતું નહીં (જૂનું વર્તન). */
+OEG.freshMinutes = () => {
+  let m = 1;
+  try {
+    const f = (OEG.state.config || {}).fresh;
+    if (f) {
+      if (f.enabled === false) return 0;
+      if (f.minutes !== undefined && f.minutes !== null && f.minutes !== "") m = Number(f.minutes);
+    }
+  } catch (e) { }
+  m = Math.round(Number(m));
+  if (!isFinite(m)) m = 1;
+  return Math.min(240, Math.max(0, m));
+};
+OEG.ttlTag = () => {
+  const m = OEG.freshMinutes();
+  return m <= 0 ? "" : String(Math.floor(Date.now() / (m * 60000)));
+};
 OEG.rawBase = () => {
   const r = (OEG.cdn ? OEG.cdn.repo() : null) || {};
   return r.owner && r.repo ? "https://raw.githubusercontent.com/" + r.owner + "/" + r.repo + "/" + (r.branch || "main") + "/" : "";
 };
-/* બ્લોગર ⇒ data/*.json વાંચવા નાં URLs (ક્રમ માં). GitHub ની raw કૉપિ ~૫ મિનિટ માં તાજી થાય
-   અને એ CORS (*) મોકલે, એટલે Admin (અથવા તાજું લખેલું હોય તો) એ જ લખાણ તરત જુએ.
-   બાકી નાં વિઝિટર CDN (ઝડપી; એ જ URL કૅશ થાય) થી વાંચે ⇒ GitHub પર ભાર ન વધે. */
+/* બ્લોગર ⇒ data/*.json વાંચવા નાં URLs (ક્રમ માં). GitHub ની raw કૉપિ ~૫ મિનિટ ટકે એટલે એ સાથેય
+   bucket જોડાય ⇒ Admin નું લખાણ fresh.minutes માં બ્લોગ પર દેખાઈ જાય (reupload/purge ની રાહ નહીં).
+   jsDelivr (ઝડપી) એ fallback જ ⇒ raw નિષ્ફળ જાય (network/અવરોધ) તોય સાઈટ ચાલુ રહે. */
 OEG.dataUrls = (path) => {
   const rel = String(path == null ? "" : path).replace(/^\.?\//, "");
   const out = [];
   try {
     if (OEG.cdn && OEG.cdn.isCdn() && /^data\/[\w.\-]+\.json(\?|$)/.test(rel)) {
       const raw = OEG.rawBase();
-      if (raw) out.push(raw + rel);        /* fresh (GitHub ની edge કૉપિ ~૫ મિનિટ) */
+      const tag = OEG.ttlTag();
+      if (raw) out.push(raw + rel + (tag && rel.indexOf("?") < 0 ? "?t=" + tag : ""));
     }
   } catch (e) { }
   out.push(OEG.base(path));
@@ -218,10 +237,11 @@ OEG.dataUrls = (path) => {
 };
 OEG.dataUrl = (path) => OEG.dataUrls(path)[0];
 /* દરેક URL વારે વાંચો — પહેલો સફળ એ જીતે (fail ⇒ આગળ નો URL) */
-OEG.readUrlText = async (path) => {
+OEG.readUrlText = async (path, opts) => {
+  const cache = (opts && opts.cache) || "no-store";
   const list = OEG.dataUrls(path);
   for (let i = 0; i < list.length; i++) {
-    try { const r = await fetch(list[i], { cache: "no-store" }); if (r.ok) return await r.text(); } catch (e) { }
+    try { const r = await fetch(list[i], { cache }); if (r.ok) return await r.text(); } catch (e) { }
   }
   return null;
 };
@@ -260,6 +280,90 @@ OEG.cdn = (() => {
   return { FILES, url, purge, isCdn, repo, afterWrite };
 })();
 OEG.remote = () => { try { return !!window.OEG_BASE; } catch (e) { return false; } };
+
+/* ============================================================
+   🔄 OEG.fresh — "GitHub માં update થાય ⇒ બ્લોગ આપોઆપ તાજું"
+   ----------------------------------------------------------
+   બ્લોગર નું પાનું એક વાર ખૂલીને રહી જાય તોય નવી પોસ્ટ / Admin નો ફેરફાર દેખાઈ જાય,
+   reload કરવા ની જરૂર નહીં: દર fresh.minutes મિનિટે data ની fingerprint તપાસો (ટૅબ દેખાતી
+   હોય ત્યારે જ), બદલાઈ હોય ⇒ OEG.refreshSite() થી પાનું નવું ભરાય. લખતું હોય તો ૨૦ સેકંદ ઠેરવે.
+   ============================================================ */
+OEG.fresh = (() => {
+  const FILES = ["data/site-config.json", "data/catalog.json", "data/notice.json"];
+  let fp = "", timer = 0, busy = false, polls = 0, at = 0, last = "";
+  const hash = (s2) => { let h = 2166136261; const t = String(s2); for (let i = 0; i < t.length; i++) { h ^= t.charCodeAt(i); h = Math.imul(h, 16777619); } return (h >>> 0).toString(36); };
+  const every = () => { const m = OEG.freshMinutes(); return m <= 0 ? 0 : Math.max(1, m) * 60000; };
+  const typing = () => {
+    try { const a = document.activeElement; return !!(a && a.matches && a.matches("input,textarea,select,[contenteditable=true]")); } catch (e) { return false; }
+  };
+  /* HEAD થી `last-modified` + `content-length` (બંને CORS-safelisted headers છે ⇒ cross-originયે
+     વાંચી શકાય) ⇒ પોસ્ટ/સેટિંગ બદલાયું કે નહીં એ અડધા KB માં ખબર પડે, આખો JSON નહીં માંગવો પડે.
+     HEAD ચાલે નહીં (null/undefined) તો GET + text hash એ fallback. */
+  async function probe(u) {
+    try {
+      const r = await fetch(u, { method: "HEAD", cache: "no-store" });
+      if (!r || !r.ok) return null;
+      const lm = (r.headers && r.headers.get("last-modified")) || "";
+      const cl = (r.headers && r.headers.get("content-length")) || "";
+      return (lm || cl) ? (lm + "/" + cl) : null;
+    } catch (e) { return null; }
+  }
+  async function read() {
+    let s2 = "";
+    for (let i = 0; i < FILES.length; i++) {
+      last = FILES[i];
+      let tag = null;
+      try { tag = await probe(OEG.dataUrls(FILES[i])[0]); } catch (e) { }
+      if (!tag) {
+        const txt = await OEG.readUrlText(FILES[i], { cache: "default" });
+        tag = txt == null ? "-" : hash(txt);
+      }
+      s2 += tag + "|";
+    }
+    return hash(s2);
+  }
+  async function check(now) {
+    const need = every();
+    if (!need) return { off: true, changed: false };
+    if (!now && Date.now() - at < need - 5000) return { soon: true, changed: false };
+    if (busy) return { busy: true, changed: false };
+    busy = true; at = Date.now();
+    try {
+      const f = await read();
+      polls++;
+      const had = fp && f !== fp;
+      fp = f;
+      if (had) {
+        if (typing() || (typeof document !== "undefined" && document.hidden)) {
+          setTimeout(() => { at = 0; check(true); }, 20000);
+          return { changed: true, held: true };
+        }
+        try { if (OEG.refreshSite) await OEG.refreshSite(); } catch (e) { }
+        try { OEG.toast(OEG.t("fresh.on")); } catch (e) { }
+        return { changed: true };
+      }
+      return { changed: false };
+    } catch (e) {
+      return { changed: false, err: String((e && e.message) || e) };
+    } finally { busy = false; }
+  }
+  function reschedule() {
+    stop();
+    const need = every();
+    if (!need) return false;
+    timer = setInterval(() => { if (typeof document === "undefined" || !document.hidden) check(); }, need);
+    return true;
+  }
+  function start() { reschedule(); check(true); return !!every(); }
+  function stop() { if (timer) { clearInterval(timer); timer = 0; } }
+  /* Admin એ કંઈ લખ્યો ⇒ આ પાનાં પર તાજું છે જ; fingerprint તો GitHub પર એ પહોંચે પછી નક્કી કરીએ
+     (etle पોતા ની સામે unnecessary refresh નહીં). holdMs સુધી તપાસ ઠેરવીએ. */
+  function remember(holdMs) { fp = ""; at = Date.now() + Math.max(0, Number(holdMs === undefined ? 180000 : holdMs)); }
+  try {
+    if (typeof document !== "undefined") document.addEventListener("visibilitychange", () => { if (!document.hidden) setTimeout(() => { at = 0; check(); }, 1200); });
+  } catch (e) { }
+  return { FILES, check, start, stop, reschedule, remember, every, hash, stat: () => ({ fp, polls, every: every(), file: last }) };
+})();
 /* 🖼 થંબનેલ/ઇમેજ પ્રિલોડ — પ્લે દબાવવા પહેલાં જ પોસ્ટર ગરમ રહે */
 OEG.preload = (url, as) => {
   const u = String(url || "");
@@ -302,6 +406,7 @@ OEG.data = {
     if (!OEG.gh || !OEG.gh.connected()) throw new Error(OEG.t("admin.notConnected"));
     const r = await OEG.gh.putFile(path, JSON.stringify(obj, null, 2) + "\n", msg);
     try { if (OEG.cdn) OEG.cdn.afterWrite(path); } catch (e) { }   /* 🧊 બ્લોગર ⇒ CDN કૉપિ તાજી કરો */
+    try { if (OEG.fresh) OEG.fresh.remember(); } catch (e) { }      /* 🔄 આ પાનું તાજું છે ⇒ fingerprint hold */
     return r;
   }
 };

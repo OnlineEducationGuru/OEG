@@ -1437,6 +1437,7 @@
     applyI18n();
     await render();
     try { if (OEG.notify) await OEG.notify.check("silent"); } catch (e) {}
+    try { if (OEG.fresh) { OEG.fresh.remember(20000); OEG.fresh.reschedule(); } } catch (e) {}   /* 🔄 set કરેલી મિનિટ પ્રમાણે timer */
   };
   OEG.render = render;
   OEG.applyNav = () => { try { renderNav(); renderSidebar(); } catch (e) {} };
@@ -1472,6 +1473,8 @@
         OEG.notify.maybeAsk();
       }
     } catch (e) {}
+    /* 🔄 GitHub માં update / Admin ની નવી પોસ્ટ ⇒ બ્લોગ આપોઆપ તાજું (reload નહીં) */
+    try { if (OEG.fresh) OEG.fresh.start(); } catch (e) { }
     if (OEG.state.configError) OEG.toast("⚠️ data/site-config.json માં JSON errors છે — તપાસો (દા.ત. \"emails\": [\"you@gmail.com\"] — કોટ સાથે)");
   })();
 })();
