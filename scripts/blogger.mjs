@@ -21,18 +21,23 @@ const arg = (k, d) => { const i = process.argv.indexOf("--" + k); return i > 0 &
 const repo = arg("repo", "OnlineEducationGuru/OEG");
 const ref = arg("ref", "main");
 const CDN0 = `https://cdn.jsdelivr.net/gh/${repo}@${ref}/`;
-/* 🧊 jsDelivr @main ની કૉપિ ૭ દિવસ સુધી જૂની રહી શકે ⇒ થીમ બનાવો ત્યારે commit sha નું v= જોડો.
-   (ફાઈલ નો દરેક URL એ જ v લે ⇒ upload કરો એ જ વખતે બધું તાજું. data/*.json તો run-time પર
-   hourly bucket લે એટલે Admin નું લખાણ એક કલાક માં બ્લોગ પર પોતાથી પહોંચે.)
-   --v=<ટૅગ> આપો ⇒ એ જ વાપરે; --v=none આપો ⇒ કંઈ નહીં જોડે. */
+/* 🧊 jsDelivr @main ની કૉપિ દિવસો સુધી જૂની રહી શકે (query થીય ન તૂટે) ⇒ થીમ ની દર CDN ફાઈલ
+   સાથે v= જોડીએ. data/*.json run-time પર fresh.minutes પ્રમાણે તાજું થતું રહે એટલે એ માટે એ વાંધો નહીં.
+   --v=<ટૅગ> ⇒ એ જ વાપરે · --v=none ⇒ કંઈ નહીં જોડે · --v=sha ⇒ HEAD નો sha · --v=stamp ⇒ build સમય. */
+const stamp = () => {
+  const d = new Date(), p2 = (n) => String(n).padStart(2, "0");
+  return `${d.getUTCFullYear()}${p2(d.getUTCMonth() + 1)}${p2(d.getUTCDate())}${p2(d.getUTCHours())}${p2(d.getUTCMinutes())}`;
+};
+const gitQ = (cmd) => { try { return execSync(cmd, { encoding: "utf8" }).trim(); } catch (e) { return ""; } };
 const VER = (() => {
   const a = arg("v", "");
   if (a === "none") return "";
-  if (a === "sha") { try { return execSync(`git -C ${JSON.stringify(root)} rev-parse --short=12 HEAD`, { encoding: "utf8" }).trim(); } catch (e) { return ""; } }
+  if (a === "sha") return gitQ(`git -C ${JSON.stringify(root)} rev-parse --short=10 HEAD`) || stamp();
+  if (a === "stamp") return stamp();
   if (a) return String(a).replace(/[^\w.-]/g, "").slice(0, 24);
-  /* build નો UTC સમય (YYYYMMDDHHMM) ⇒ દર વાર બદલાય એટલે CDN પાસે એ કૉપિ નથી જ ⇒ તાજી ફાઈલ */
-  const d = new Date(), p2 = (n) => String(n).padStart(2, "0");
-  return `${d.getUTCFullYear()}${p2(d.getUTCMonth() + 1)}${p2(d.getUTCDate())}${p2(d.getUTCHours())}${p2(d.getUTCMinutes())}`;
+  /* ડિફૉલ્ટ: એવો ટૅગ જે ફકત કોડ/CSS/markup બદલાય ત્યારે બદલાય ⇒ થીમ સ્થિર રહે
+     (GitHub Actions દર push પછી થીમ rebake કરે એટલે બિનજરૂરિયાત commit ન થાય). */
+  return gitQ(`git -C ${JSON.stringify(root)} log -1 --format=%h -- index.html styles.css js`) || stamp();
 })();
 const CDN = VER ? CDN0 : CDN0;
 const VQ = VER ? `?v=${VER}` : "";

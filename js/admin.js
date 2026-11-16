@@ -224,6 +224,25 @@ OEG.admin = (() => {
         <p class="adm-sec-note">${OEG.t("admin.cdnNote")}</p>
         <p class="adm-sec-note"><button type="button" class="btn btn-outline btn-sm" id="stCdnPurge">${OEG.t("admin.cdnBtn")}</button> · <span id="stCdnMsg">—</span></p>
 
+        <h4 style="margin:18px 0 6px">${OEG.t("admin.freshTitle")}</h4>
+        <p class="adm-sec-note">${OEG.t("admin.freshNote")}</p>
+        <div class="form-row">
+          <div class="field"><label>${OEG.t("admin.freshEvery")}</label>
+            <select id="stFresh">
+              ${[1, 2, 5, 15, 30].map(n => `<option value="${n}">${n} ${OEG.t("admin.min")}</option>`).join("")}
+              <option value="0">${OEG.t("admin.freshOff")}</option>
+            </select>
+          </div>
+          <div class="field"><label>&nbsp;</label>
+            <p class="adm-sec-note" style="margin:0">
+              <button type="button" class="btn btn-outline btn-sm" id="stFreshNow">${OEG.t("admin.freshNow")}</button>
+              <a class="btn btn-outline btn-sm" id="stThemeDl" href="#">${OEG.t("admin.themeDl")}</a>
+              · <span id="stFreshMsg">—</span>
+            </p>
+          </div>
+        </div>
+        <p class="adm-sec-note">${OEG.t("admin.themeNote")}</p>
+
         <h4 style="margin:18px 0 6px">👁️ ${OEG.t("admin.visibility")}</h4>
         <p class="adm-sec-note">${OEG.t("admin.visibilityNote")}</p>
         <div class="tgl-grid" id="stVis"></div>
@@ -3063,6 +3082,28 @@ OEG.admin = (() => {
       } catch (e) { if (cdnMsg) cdnMsg.textContent = OEG.t("admin.cdnFail"); }
       if (cdnBtn) { cdnBtn.disabled = false; cdnBtn.textContent = OEG.t("admin.cdnBtn"); }
     };
+    /* ---------- 🔄 આપોઆપ તાજું (બ્લોગ ⇒ reload નહીં) ---------- */
+    const frCfg = ((OEG.state.config || {}).fresh) || {};
+    if ($("stFresh")) $("stFresh").value = String(frCfg.enabled === false ? 0 : (Math.round(Number(frCfg.minutes)) || 1));
+    if ($("stThemeDl")) {
+      const dl = $("stThemeDl");
+      let href = "blogger/OEG-Blogger-Native.xml";
+      try { const rb = OEG.rawBase ? OEG.rawBase() : ""; if (rb) href = rb + href; } catch (e) { }
+      dl.href = href; dl.setAttribute("download", "OEG-Blogger-Native.xml"); dl.target = "_blank"; dl.rel = "noopener";
+    }
+    if ($("stFreshNow")) $("stFreshNow").onclick = async () => {
+      const b = $("stFreshNow"), m2 = $("stFreshMsg");
+      if (b) b.disabled = true;
+      if (m2) m2.textContent = "…";
+      try {
+        if (!OEG.fresh || !OEG.fresh.every()) { if (m2) m2.textContent = OEG.t("admin.freshOff2"); }
+        else {
+          const r = await OEG.fresh.check(true);
+          if (m2) m2.textContent = (r && r.changed) ? OEG.t("admin.freshChg") : OEG.t("admin.freshOk");
+        }
+      } catch (e) { if (m2) m2.textContent = "❌ " + ((e && e.message) || e); }
+      if (b) b.disabled = false;
+    };
     async function uploadLogo() {
       if (!needGh()) return;
       const f = ($("stLogoFile") || {}).files && $("stLogoFile").files[0];
@@ -3104,6 +3145,8 @@ OEG.admin = (() => {
             youtube: $("socYt").value.trim(), facebook: $("socFb").value.trim(),
             instagram: $("socIg").value.trim(), telegram: $("socTg").value.trim(), whatsapp: $("socWa").value.trim()
           };
+          const fm = Math.round(Number(($("stFresh") || {}).value));
+          c.fresh = { enabled: fm > 0, minutes: fm > 0 ? fm : 0 };
           c.ui = Object.assign({}, c.ui || {}, {
             logoEmoji: $("stLogo").value.trim() || "🎓",
             accent: $("stAccent").value.trim() || "#4f46e5",
