@@ -102,6 +102,11 @@ node scripts/blogger.mjs                         # થીમ ફરી બના
 > ⚠️ `.github/workflows/blog-auto-refresh.yml` ત્યારે જ ચાલે જયારે repo ની **Settings → Actions** માં workflows on હોય;
 > એ બંધ હોય તો ઉપર નો Admin બટન / કમૅન્ડ વાપરો. થીમ ફરી upload કરવા થીય બધું તાજું થઈ જાય.
 
+> ⚙️ workflow નાં બે jobs: **🧊 purge** (મુખ્ય — કૉપિ તાજી) અને **🧩 થીમ rebake** (jsdom જોઈએ ⇒ Node **૨૨**;
+> jsdom ૩૧ નું engines એટલે જૂના Node માં import નિષ્ફળ જાય). rebake job નિષ્ફળ જયારેય run લાલ ન બતાવે
+> (`continue-on-error`) — કારણ નોંધ (Annotations) માં `::error::` થી દેખાય, અને બ્લોગ તો પહેલે થી જ તાજું રહે.
+> job 🧩 નો commit "OEG bot" થી આવે એટલે તમે કરેલા commit માં મિશ્રિત ન થાય.
+
 **થીમ નવો બનાવવો** (જયારે `index.html` નું markup બદલાય, જેમ કે નવું મેનુ પાનું):
 ```bash
 node scripts/blogger.mjs          # → blogger/OEG-Blogger-Native.xml (auto: index.html + js/** → CDN)

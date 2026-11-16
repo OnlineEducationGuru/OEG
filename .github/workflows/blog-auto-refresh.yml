@@ -29,7 +29,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: "20"
+          node-version: "22"
       - name: પૂછો ⇒ દરેક મુખ્ય ફાઈલ ની કૉપિ તાજી
         run: node scripts/purge-cdn.mjs
       - name: થોડું રાહ જોઈ બીજી વાર (edge પોપ પ્રમાણે ફેલાતું હોય)
@@ -41,17 +41,29 @@ jobs:
     name: 🧩 થીમ rebake (જરૂર હોય તો commit)
     runs-on: ubuntu-latest
     timeout-minutes: 10
+    # થીમ બનાવવા jsdom જોઈએ (jsdom ૩૧ ⇒ Node ≥ ૨૨). એ ન બને તોય બ્લોગ ચાલુ રહે
+    # (કૉપિ તો job 🧊 થી તાજી થઈ ગઈ) ⇒ એટલે continue-on-error, પણ ::error:: નોંધ રહે.
+    continue-on-error: true
     permissions:
       contents: write
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: "20"
+          # jsdom ૩૧ નું engines ⇒ Node ≥ ૨૨ ("20" આપ્યો તો import fail થાય = થીમ બનતો નહીં)
+          node-version: "22"
       - name: jsdom (થીમ બનાવવા માટે જ)
-        run: npm install --no-audit --no-fund jsdom
+        run: npm install --no-save --no-audit --no-fund jsdom
       - name: થીમ ફરી બનાવો
-        run: node scripts/blogger.mjs
+        run: |
+          node -v
+          set +e
+          out=$(node scripts/blogger.mjs 2>&1); rc=$?
+          echo "$out"
+          if [ "$rc" -ne 0 ]; then
+            echo "::error::થીમ બન્યો નહીં (exit $rc) — $(echo "$out" | tail -4 | tr '\n\r' '  ')"
+            exit "$rc"
+          fi
       - name: ફેરફાર હોય તો જ commit + push
         run: |
           git config user.name "OEG bot"

@@ -117,7 +117,9 @@ const headExtra = [...headSet.values()].join("\n");
 let JSDOM;
 try { ({ JSDOM } = await import("jsdom")); }
 catch (e) {
-  console.error("❌ jsdom મળ્યો નહીં. પહેલાં:  npm install   પછી ફરી:  node scripts/blogger.mjs");
+  console.error("❌ jsdom મળ્યો નહીં ⇒ પહેલાં:  npm install   પછી ફરી:  node scripts/blogger.mjs");
+  console.error("   (jsdom ૩૧ ⇒ Node ≥ ૨૨ જોઈએ; હાલ નો Node = " + process.versions.node + ")");
+  console.error("   કારણ: " + String((e && e.message) || e).split("\n")[0]);
   process.exit(1);
 }
 const JSDOMC = JSDOM;
