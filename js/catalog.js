@@ -329,6 +329,7 @@ OEG.fresh = (() => {
     if (busy) return { busy: true, changed: false };
     busy = true; at = Date.now();
     try {
+      try { if (OEG.shared) await OEG.shared.read(); } catch (e) { }   /* 👁 બધા નો આંક ય તાજો (વધારો નહીં કરે) */
       const f = await read();
       polls++;
       const had = fp && f !== fp;
@@ -426,37 +427,174 @@ OEG.youtubeId = (url) => {
   return null;
 };
 
-/* ---------- 👁️ Views (Most Viewed Post) ----------
-   public visit → localStorage (દર વિઝિટ ગણે), admin data/views.json માં commit કરી શકે
-   જેથી બધા વિઝિટર માટે સંખ્યા સાચી રહે. */
+/* ============================================================
+   🌐 OEG.shared — એક જ (સામાન્ય) ગણતરી બધા વિઝિટર માટે
+   ------------------------------------------------------------
+   પહેલાં ની સમસ્યા ⇒ 👁 આંક દર બ્રાઉઝર માં અલગ દેખાતો (એ ઉપકરણ ની localStorage ગણતરી
+   સંખ્યા માં ભરાતી). હવે આંક = repo નો આધાર + **shared counter** ⇒
+     · ૧ મો વિઝિટર ૧૦૦૦૦૩ જુએ ⇒ બધા ને ૧૦૦૦૦૩ જ (એ જ key, એ જ સર્વર, એ જ આંક)
+     · નવો વિઝિટર આવે ⇒ સંખ્યા વધે ⇒ બધા ને વધેલી જ દેખાય (પાનું ખુલ્લું હોય તોય ~૧ મિનિટ માં)
+     · સર્વર ન મળે (offline / ૪૨૯ / અવરોધ) ⇒ repo નો આંક જ બતાય ⇒ ક્યારેય ૦ કે ખોટો નહીં
+   સર્વિસ: Abacus (abacus.jasoncameron.dev) — મફત, sign-up નહીં, CORS ચાલે, કોઈ setup નહીં.
+     GET /hit/<ns>/<key> ⇒ ૨૦૦ { "value": N }   (વધારે + નવો આંક આપે — એ જ એક call)
+     GET /get/<ns>/<key> ⇒ ૨૦૦ { "value": N }   (વધારા વગર ફકત વાંચે; key ન હોય ⇒ ૪૦૪)
+   રેટ લિમિટ: એક IP થી ૩૦ requests / ૧૦ સેકંડ ⇒ દર પાનું-લોડ પર ફકત એ જ hit + વચ્ચે ૩ સેકંદ નો ફાસલો.
+   ============================================================ */
+OEG.shared = (() => {
+  const API = "https://abacus.jasoncameron.dev";
+  const GAP = 3000;                    /* બે requests વચ્ચે નો ડિફૉલ્ટ ફાસલો (એ જ IP ની ૩૦/૧૦સે લિમિટ બચત) */
+  const MEM = {};                      /* slot ⇒ { v, at } */
+  let lastAt = 0, inflight = {};
+
+  const clean = (s) => {
+    const t = String(s == null ? "" : s).toLowerCase().replace(/[^a-z0-9._-]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 64);
+    return t || "viewers";
+  };
+  const slot = (sub) => (sub ? "i:" + clean(sub) : "site");
+  const gap = (v) => { const n = Math.round(Number(v)); return isFinite(n) && n >= 0 ? Math.min(15000, n) : GAP; };
+  const cfg = () => {
+    const c = ((OEG.state.config || {}).count) || {};
+    const r = (OEG.cdn && OEG.cdn.repo ? OEG.cdn.repo() : null) || {};
+    const f = String(c.freq || "session");
+    return {
+      on: c.enabled !== false,
+      freq: f === "day" ? "day" : (f === "visit" ? "visit" : "session"),
+      ns: clean(c.ns || ("oeg-" + (r.owner || "oeg") + "-" + (r.repo || "site"))),
+      key: clean(c.key || "viewers"),
+      minGap: gap(c.minGap)
+    };
+  };
+  const path = (sub) => { const c = cfg(); return c.ns + "/" + (sub ? clean(sub) : c.key); };
+  const gate = (sl) => {
+    const c = cfg();
+    return "oeg.shared." + (c.freq === "day" ? "d." + new Date().toISOString().slice(0, 10) + "." : "s.") + sl;
+  };
+  const seen = (sl) => {
+    try { const k = gate(sl); return !!(sessionStorage.getItem(k) || (cfg().freq === "day" && localStorage.getItem(k))); } catch (e) { return false; }
+  };
+  const mark = (sl) => {
+    try { const k = gate(sl); sessionStorage.setItem(k, "1"); if (cfg().freq === "day") localStorage.setItem(k, "1"); } catch (e) { }
+  };
+  function paint() { try { if (OEG.paintCounts) OEG.paintCounts(); } catch (e) { } }
+
+  async function req(kind, sub) {
+    const c = cfg();
+    if (!c.on) return null;
+    const now = Date.now();
+    if (now - lastAt < c.minGap) return null;      /* વધુ પડતાં request નહીં (રેટ લિમિટ) */
+    const url = API + "/" + kind + "/" + path(sub);
+    if (inflight[url]) return inflight[url];
+    lastAt = now;
+    inflight[url] = (async () => {
+      try {
+        const r = await fetch(url, { cache: "no-store" });
+        if (!r || !r.ok) return null;                    /* ૪૦૪ (key નવો) / ૪૨૯ / network */
+        const j = await r.json();
+        const v = Number(j && j.value);
+        return isFinite(v) && v >= 0 ? Math.round(v) : null;
+      } catch (e) { return null; }
+      finally { delete inflight[url]; }
+    })();
+    return inflight[url];
+  }
+  const nap = (ms) => new Promise((r) => setTimeout(r, Math.max(0, Math.min(8000, Math.round(Number(ms) || 0)))));
+  /* પાનું ખૂલે / પોસ્ટ ખૂલે ⇒ એક જ hit (એ જ નવો આંક પરત આપે). freq=session/day ⇒ એ જ ઉપકરણ થી વારંવાર ન વધે. */
+  async function bump(sub) {
+    const c = cfg(), sl = slot(sub);
+    if (!c.on) return null;
+    if (c.freq !== "visit" && seen(sl)) { const v = value(sl); return v == null ? null : v; }
+    let v = await req("hit", sub);
+    if (v == null) {
+      const g = status().gaps;                      /* ફાસલો બાકી ⇒ એક વાર રાહ જોઈ ફરી પ્રયાસ (વિઝિટ ગુમાવો નહીં) */
+      if (g > 0 && g <= 6000) { await nap(g + 80); v = await req("hit", sub); }
+    }
+    if (v != null) { MEM[sl] = { v, at: Date.now() }; mark(sl); paint(); }
+    return v;
+  }
+  /* ફકત વાંચો (પોલ / Admin ની તપાસ) ⇒ સંખ્યા બદલાય નહીં */
+  async function read(sub) {
+    const sl = slot(sub);
+    const v = await req("get", sub);
+    if (v != null) { const p = MEM[sl] && MEM[sl].v; MEM[sl] = { v, at: Date.now() }; if (p !== v) paint(); }
+    return v;
+  }
+  /* name ⇒ "site" / "i:<id>" (અથવા સીધો item id) — બધું એક જ slot માં ભળે */
+  const norm = (name) => (!name || name === "site") ? "site" : (String(name).indexOf("i:") === 0 ? String(name) : slot(name));
+  function value(name) {
+    const m = MEM[norm(name)];
+    return m ? m.v : null;
+  }
+  /* Admin ⇒ "એવા ઉપકરણ થી કેટલી વાર ગણાઈ" + status (કૉન્સોલ/પેનલ માટે) */
+  function status() {
+    const c = cfg();
+    const m = MEM["site"];
+    return { on: c.on, freq: c.freq, ns: c.ns, key: c.key, minGap: c.minGap, api: API + "/get/" + c.ns + "/" + c.key, site: m ? m.v : null, at: m ? m.at : 0, gaps: Math.max(0, c.minGap - (Date.now() - lastAt)) };
+  }
+  function reset() { try { Object.keys(MEM).forEach(k => delete MEM[k]); } catch (e) { } }
+  return { cfg, clean, slot, path, bump, read, value, status, reset, paint, API };
+})();
+
+/* ---------- 👁️ Views — બધા વિઝિટર માટે એ જ આંક (repo આધાર + shared counter) ----------
+   repo ⇒ data/views.json { total, items:{id:n}, counter:{slots:{...}, at} }
+   · દેખાતો આંક = ui.viewersBase + total + (shared આંક - repo માં જમા થયેલ watermark)
+   · ઉપકરણ ની પોતા ની ગણતરી (localStorage) ફકત Admin "જમા" કરે ત્યારે જોડાય — બધા ને દેખાતી
+     સંખ્યા માં એ ક્યારેય ભરાય નહીં (એટલે દર બ્રાઉઝર માં અલગ આંક દેખાતો નથી). */
 OEG.views = (() => {
-  const LS = "oeg.views", DAY = 864e5, FILE = "data/views.json";
+  const LS = "oeg.views", FILE = "data/views.json", SITE = "__site";
   let map = null, base = null;
   const read = () => {
     if (map) return map;
     try { map = JSON.parse(localStorage.getItem(LS) || "{}") || {}; } catch (e) { map = {}; }
     return map;
   };
-  const write = () => { try { localStorage.setItem(LS, JSON.stringify(map)); } catch (e) {} };
+  const write = () => { try { localStorage.setItem(LS, JSON.stringify(map)); } catch (e) { } };
   async function load() {
     if (base) return base;
     base = (await OEG.data.readJson(FILE, { v: 1, items: {} })) || { v: 1, items: {} };
     if (!base.items || typeof base.items !== "object") base.items = {};
+    if (!base.counter || typeof base.counter !== "object") base.counter = {};
+    if (!base.counter.slots || typeof base.counter.slots !== "object") base.counter.slots = {};
     return base;
   }
+  const dayKey = () => "day." + new Date().toISOString().slice(0, 10);
+  let lastSeen = "", lastAt = 0;
+
+  /* repo માં જમા થયેલ watermark (shared સર્વર નો એ સમય નો આંક) */
+  const folded = (name) => {
+    const b = base || {};
+    const s = (b.counter && b.counter.slots) || {};
+    return Number(s[name] || 0) || 0;
+  };
+  /* shared સર્વર પર હાલ જે આંક છે એટલે જما થયેલ આંક ⇒ એટલે જ ફરક (ક્યારેય ઋણ નહીં) */
+  const extra = (name) => {
+    const v = OEG.shared ? OEG.shared.value(name) : null;
+    return v == null ? 0 : Math.max(0, v - folded(name));
+  };
+
+  function baseNum() {
+    const ui = (OEG.state.config && OEG.state.config.ui) || {};
+    const n = Number(ui.viewersBase);
+    return isFinite(n) && n >= 0 ? Math.round(n) : 1000000;
+  }
+  /* 👁 કુલ વિઝિટર — બધા ને એ જ (repo + shared), ઉપકરણ ની ગણતરી છૂટી */
+  function total() { return baseNum() + (Number((base || {}).total) || 0) + extra("site"); }
+  function count(id) {
+    const b = (base || {}).items || {};
+    return (Number(b[id]) || 0) + extra(OEG.shared ? OEG.shared.slot(id) : ("i:" + id));
+  }
+  function fmt(n) {
+    n = Math.round(Number(n) || 0);
+    try { return new Intl.NumberFormat("en-IN").format(n); } catch (e) { return String(n); }
+  }
+  /* આ ઉપકરણ થી થયેલી વિઝિટ (ફકત Admin ની જાણકારી / જમા કરવા માટે) */
   function hit(id) {
     if (!id) return;
     const m = read();
     m[id] = (m[id] || 0) + 1;
     write();
-    try { sessionStorage.setItem("oeg.viewed." + id, String(Date.now())); } catch (e) {}
+    try { sessionStorage.setItem("oeg.viewed." + id, String(Date.now())); } catch (e) { }
+    try { OEG.shared.bump(id); } catch (e) { }        /* ⇒ પોસ્ટ ની 👁 ય બધા ને એ જ દેખાય */
   }
-  function count(id) { return (read()[id] || 0) + ((base && base.items && base.items[id]) || 0); }
-  /* 👁 Total Viewers — દર વખતે પાનું બદલો / રીફ્રેસ કરો ⇒ +૧ (એક દિવસે એક વાર નહીં).
-     Admin → સાઇટ સેટિંગ્સ ની શરૂ આત નં સખ્યા (viewersBase) + repo નો total + આ ઉપકરણ ની ગણતરી. */
-  const SITE = "__site";
-  const dayKey = () => "day." + new Date().toISOString().slice(0, 10);
-  let lastSeen = "", lastAt = 0;
   function visit(route) {
     const now = Date.now();
     if (route && route === lastSeen && now - lastAt < 1500) return false;   /* એ જ પાનું તાત્કાલિક બાર વાર ⇒ એક જ ગણાય */
@@ -465,47 +603,81 @@ OEG.views = (() => {
     m[d] = (Number(m[d]) || 0) + 1;
     m[SITE] = (m[SITE] || 0) + 1;
     write();
+    try { OEG.shared.bump(); } catch (e) { }          /* ⇒ 👁 Total Viewers ⇒ દર વિઝિટર થી +૧ (બધા ને) */
     return true;
   }
   function todayVisits() { return Number(read()[dayKey()] || 0); }
-  function baseNum() {
-    const ui = (OEG.state.config && OEG.state.config.ui) || {};
-    const n = Number(ui.viewersBase);
-    return isFinite(n) && n >= 0 ? Math.round(n) : 1000000;
-  }
-  function total() {
-    const b = base || {}, m = read();
-    return baseNum() + (Number(b.total) || 0) + (m[SITE] || 0);
-  }
-  function fmt(n) {
-    n = Math.round(Number(n) || 0);
-    try { return new Intl.NumberFormat("en-IN").format(n); } catch (e) { return String(n); }
-  }
-  /* catalog ના દરેક item માટે aggregate → desc sort */
+  function myViews(id) { return Number((read()[id]) || 0); }
+
+  /* catalog ના દરેક item માટે aggregate → desc sort (બધા ને એ જ ક્રમ) */
   function ranked(list, n) {
-    const m = read(), b = (base && base.items) || {};
-    return (list || []).map(i => ({ item: i, n: (m[i.id] || 0) + (b[i.id] || 0) }))
+    const b = (base && base.items) || {};
+    return (list || []).map(i => ({ item: i, n: (Number(b[i.id]) || 0) + extra(OEG.shared ? OEG.shared.slot(i.id) : ("i:" + i.id)) }))
       .sort((x, y) => (y.n - x.n) || String(y.item.date || "").localeCompare(String(x.item.date || "")))
       .slice(0, n || 4);
   }
-  async function commit() {
-    const b = await load(), m = read();
+  /* Admin ⇒ સર્વિસ નો આંક repo માં જમા કરો (sargvis badh thaye to pan anko tikene rahe).
+     · દરેક slot (site / i:<id>) નું watermark = repo માં જમા થયેલ સર્વર આંક.
+     · જમા = (સર્વર નો હાલ નો આંક − watermark) ⇒ એ જ આંક બીજી વાર ક્યારેય નહીં જોડાય.
+     · ઉપકરણ (localStorage) ની ગણતરી ફકત ત્યારે જ જમા થાય, જયારે સર્વિસ બંધ/ન મળે
+       (જૂના per-device version થી migration) — બધા ને દેખાતા આંક માં એ ભળે નહીં. */
+  async function persist(force) {
+    const b = await load();
+    const sl = b.counter.slots;
+    const m = read();
+    const slotOf = (id) => (OEG.shared ? OEG.shared.slot(id) : ("i:" + id));
+    const dev = {};                                   /* slot ⇒ આ ઉપકરણ ની ગણતરી */
     Object.keys(m).forEach((k) => {
-      if (k.indexOf("day.") === 0) return;                                  /* દિવસ-કી ગણતરી માં નહીં */
-      if (k === SITE) { b.total = (Number(b.total) || 0) + m[k]; return; }  /* કુલ વિઝિટર → total */
-      b.items[k] = (b.items[k] || 0) + m[k];
+      if (String(k).indexOf("day.") === 0) return;
+      const nm = (k === SITE) ? "site" : slotOf(k);
+      dev[nm] = (Number(dev[nm]) || 0) + (Number(m[k]) || 0);
     });
-    await OEG.data.writeJson(FILE, b, "OEG: views " + Object.keys(m).length);
-    try { localStorage.removeItem(LS); map = {}; } catch (e) {}
-    return b;
+    const on = OEG.shared ? !!OEG.shared.cfg().on : false;
+    const names = { site: 1 };
+    Object.keys(dev).forEach(nm => names[nm] = 1);
+    Object.keys(sl).forEach(nm => names[nm] = 1);
+    Object.keys(b.items || {}).forEach(id => names[slotOf(id)] = 1);
+    let added = 0, folds = 0;
+    for (const nm of Object.keys(names)) {
+      const id = nm === "site" ? "" : nm.slice(2);
+      let v = OEG.shared ? OEG.shared.value(nm) : null;
+      if (v == null && OEG.shared) { await OEG.shared.read(id); v = OEG.shared.value(nm); }
+      const w0 = Number(sl[nm] || 0) || 0;
+      const fold = v != null ? Math.max(0, v - w0) : (on ? 0 : (Number(dev[nm]) || 0));
+      if (v != null && v > w0) sl[nm] = v;            /* watermark ફકત તાજા આંક સુધી આગળ જાય */
+      if (fold > 0) {
+        if (nm === "site") b.total = (Number(b.total) || 0) + fold;
+        else b.items[id] = (Number(b.items[id]) || 0) + fold;
+        added += fold; folds++;
+      }
+    }
+    const had = Object.keys(dev).length > 0;
+    if (added > 0) {
+      b.counter.at = Date.now();
+      const res = await OEG.data.writeJson(FILE, b, "OEG: 👁 " + added + " વિઝિટ જમા (repo)");
+      base = b;
+      if (had) { try { localStorage.removeItem(LS); map = {}; } catch (e) { } }
+      return { added, folds, at: b.counter.at, res: res || null };
+    }
+    if (had && (force || !on)) { try { localStorage.removeItem(LS); map = {}; } catch (e) { } }
+    return { added: 0, folds: 0, at: Number(b.counter.at || 0), clean: had };
   }
-  async function seed() {           /* admin: data/views.json માં ફક્ત placeholder */
+  /* Admin પેનલ ખોલો તો આપોઆપ જમા (૨૦+ તાજાં હોય કે છેલ્લા જમા થી ૧ દિવસ થયો હોય) */
+  async function maybePersist() {
+    const b = await load();
+    const e = extra("site");
+    const age = Date.now() - Number((b.counter && b.counter.at) || 0);
+    if (e >= 20 || (e > 0 && age > 864e5)) return await persist(true);
+    return { added: 0, folds: 0, at: Number((b.counter && b.counter.at) || 0), wait: e };
+  }
+  async function commit() { return persist(true); }
+  async function seed() {
     const b = await load();
     await OEG.data.writeJson(FILE, b, "OEG: views file");
     return b;
   }
   function reload() { base = null; map = null; return load(); }
-  return { hit, count, ranked, load, reload, commit, read, seed, visit, total, todayVisits, fmt, baseNum, LS, FILE };
+  return { hit, count, ranked, load, reload, commit, seed, persist, maybePersist, read, visit, total, extra, folded, todayVisits, myViews, fmt, baseNum, peek: () => base, LS, FILE };
 })();
 
 OEG.fileExt = (url) => {

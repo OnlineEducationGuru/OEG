@@ -202,6 +202,31 @@ OEG.admin = (() => {
             <p class="adm-sec-note">${OEG.t("admin.viewersBaseNote")}</p></div>
         </div>
 
+        <h4 style="margin:14px 0 6px">${OEG.t("admin.cntTitle")}</h4>
+        <p class="adm-sec-note">${OEG.t("admin.cntNote")}</p>
+        <div class="form-row">
+          <div class="field"><label>${OEG.t("admin.cntFreq")}</label>
+            <select id="stCntFreq">
+              <option value="session">${OEG.t("admin.cntFreqSession")}</option>
+              <option value="day">${OEG.t("admin.cntFreqDay")}</option>
+              <option value="visit">${OEG.t("admin.cntFreqVisit")}</option>
+            </select>
+            <label style="display:flex;gap:8px;align-items:center;margin-top:8px;font-weight:600">
+              <input type="checkbox" id="stCntOn" checked> ${OEG.t("admin.cntOn")}
+            </label>
+          </div>
+          <div class="field">
+            <label>${OEG.t("admin.cntNs")}</label><input id="stCntNs" placeholder="${OEG.t("admin.cntAuto")}" value="${OEG.esc(((cfg.count || {}).ns) || "")}">
+            <label style="margin-top:6px">${OEG.t("admin.cntKey")}</label><input id="stCntKey" placeholder="viewers" value="${OEG.esc(((cfg.count || {}).key) || "")}">
+          </div>
+        </div>
+        <p class="adm-sec-note">
+          <button type="button" class="btn btn-outline btn-sm" id="stCntNow">${OEG.t("admin.cntNow")}</button>
+          <button type="button" class="btn btn-outline btn-sm" id="stCntSync">${OEG.t("admin.cntSync")}</button>
+          · <span id="stCntMsg">—</span>
+        </p>
+        <p class="adm-sec-note" id="stCntSum" style="opacity:.85"></p>
+
         <h4 style="margin:18px 0 6px">${OEG.t("admin.logoTitle")}</h4>
         <p class="adm-sec-note">${OEG.t("admin.logoNote")}</p>
         <div class="form-row">
@@ -3091,6 +3116,45 @@ OEG.admin = (() => {
       try { const rb = OEG.rawBase ? OEG.rawBase() : ""; if (rb) href = rb + href; } catch (e) { }
       dl.href = href; dl.setAttribute("download", "OEG-Blogger-Native.xml"); dl.target = "_blank"; dl.rel = "noopener";
     }
+    /* ---------- 👁 સામાન્ય ગણતરી (બધા વિઝિટર ને એ જ આંક) ---------- */
+    const ctCfg = (OEG.state.config || {}).count || {};
+    if ($("stCntFreq")) $("stCntFreq").value = ctCfg.freq === "day" || ctCfg.freq === "visit" ? ctCfg.freq : "session";
+    if ($("stCntOn")) $("stCntOn").checked = ctCfg.enabled !== false;
+    const cntSum = () => {
+      const el = $("stCntSum");
+      if (!el) return;
+      try {
+        const st = OEG.shared.status(), b = OEG.views.peek ? OEG.views.peek() : null;
+        const live = st.site == null ? "—" : OEG.views.fmt(st.site);
+        const repo = OEG.views.fmt((OEG.views.baseNum() + Number(((b || {}).total) || 0)) || 0);
+        el.textContent = OEG.t("admin.cntShow").replace("{n}", OEG.views.fmt(OEG.views.total())) +
+          " · " + OEG.t("admin.cntLive").replace("{n}", live) + " · " + OEG.t("admin.cntRepo").replace("{n}", repo);
+      } catch (e) { el.textContent = ""; }
+    };
+    cntSum();
+    if ($("stCntNow")) $("stCntNow").onclick = async () => {
+      const m2 = $("stCntMsg"); if (m2) m2.textContent = "…";
+      try {
+        const v = await OEG.shared.read();
+        const st = OEG.shared.status();
+        if (!st.on) { if (m2) m2.textContent = OEG.t("admin.cntOff2"); }
+        else if (v == null) { if (m2) m2.textContent = "⚠️ " + OEG.t("admin.cntOff"); }
+        else { if (m2) m2.textContent = "✅ " + OEG.t("admin.cntLive").replace("{n}", OEG.views.fmt(v)); }
+      } catch (e) { if (m2) m2.textContent = "❌ " + ((e && e.message) || e); }
+      cntSum();
+    };
+    if ($("stCntSync")) $("stCntSync").onclick = async () => {
+      const b = $("stCntSync"), m2 = $("stCntMsg");
+      if (b) { b.disabled = true; b.textContent = "⏳"; }
+      if (m2) m2.textContent = "…";
+      try {
+        const r = await OEG.views.persist(true);
+        if (m2) m2.textContent = (r && r.added) ? OEG.t("admin.cntOk").replace("{n}", String(r.added)) : OEG.t("admin.cntNone");
+      } catch (e) { if (m2) m2.textContent = "❌ " + ((e && e.message) || e); }
+      if (b) { b.disabled = false; b.textContent = OEG.t("admin.cntSync"); }
+      cntSum();
+    };
+    try { OEG.views.maybePersist().then((r) => { if (r && r.added) cntSum(); }).catch(() => { }); } catch (e) { }
     if ($("stFreshNow")) $("stFreshNow").onclick = async () => {
       const b = $("stFreshNow"), m2 = $("stFreshMsg");
       if (b) b.disabled = true;
@@ -3147,6 +3211,15 @@ OEG.admin = (() => {
           };
           const fm = Math.round(Number(($("stFresh") || {}).value));
           c.fresh = { enabled: fm > 0, minutes: fm > 0 ? fm : 0 };
+          const ctOld = ((OEG.state.config || {}).count) || {};
+          c.count = {
+            enabled: !!($("stCntOn") && $("stCntOn").checked),
+            freq: (($("stCntFreq") || {}).value || "session"),
+            ns: (($("stCntNs") || {}).value || "").trim(),
+            key: (($("stCntKey") || {}).value || "").trim()
+          };
+          /* આડંડ કૉન્ફિગ નો ફાસલો (minGap) દબાવો નહીં */
+          if (isFinite(Number(ctOld.minGap)) && Number(ctOld.minGap) >= 0) c.count.minGap = Math.max(0, Math.min(15000, Math.round(Number(ctOld.minGap))));
           c.ui = Object.assign({}, c.ui || {}, {
             logoEmoji: $("stLogo").value.trim() || "🎓",
             accent: $("stAccent").value.trim() || "#4f46e5",

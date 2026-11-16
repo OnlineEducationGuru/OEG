@@ -571,6 +571,12 @@
     "webhook": "",
     "webhookList": ""
   },
+  "count": {
+    "enabled": true,
+    "freq": "session",
+    "ns": "",
+    "key": ""
+  },
   "fresh": {
     "enabled": true,
     "minutes": 1
