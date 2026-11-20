@@ -39,8 +39,15 @@ const VER = (() => {
      (GitHub Actions દર push પછી થીમ rebake કરે એટલે બિનજરૂરિયાત commit ન થાય). */
   return gitQ(`git -C ${JSON.stringify(root)} log -1 --format=%h -- index.html styles.css js`) || stamp();
 })();
-const CDN = VER ? CDN0 : CDN0;
-const VQ = VER ? `?v=${VER}` : "";
+/* 🌱 એવરગ્રીન થીમ (ડિફૉલ્ટ): થીમ માં ફકત markup ની કૉપિ + નાનો loader હોય છે, અને
+   પાનું ખૂલે એટલે loader repo (jsDelivr → unpkg → raw) થી તાજું index.html + js/*.js + CSS લાવે.
+   ⇒ GitHub માં push કરો એટલે બ્લોગર આપોઆપ નવું બતાવે, થીમ ફરી upload કરવાનું ક્યારેય નહીં.
+   --inline આપો તો જૂનો રસ્તો (બધું થીમ માં જ ભરીને) વાપરે. */
+const EVERGREEN = !process.argv.includes("--inline");
+const CDN = CDN0;
+const VQ = EVERGREEN ? "" : (VER ? `?v=${VER}` : "");
+const UNPKG0 = `https://unpkg.com/${repo}@${ref}/`;
+const RAW0 = `https://raw.githubusercontent.com/${repo}/${ref}/`;
 const cdnUrl = (rel) => CDN0 + String(rel || "").replace(/^\.?\//, "") + VQ;
 const PAGES = arg("pages", "https://onlineeducationguru.github.io/OEG/").replace(/\/?$/, "/");
 const out = join(root, "blogger", "OEG-Blogger-Native.xml");
@@ -50,6 +57,17 @@ const html = readFileSync(join(root, "index.html"), "utf8");
 const b0 = html.indexOf("<body>"), b1 = html.lastIndexOf("</body>");
 if (b0 < 0 || b1 < 0) { console.error("index.html માં <body> મળ્યું નહીં"); process.exit(1); }
 let body = html.slice(b0 + 6, b1).trim();
+
+/* ---------- 1b) એવરગ્રીન ⇒ markup માં થી <script> કાઢી નાખો (એ તો loader લાવશે) ---------- */
+const SCRIPTS = [];
+if (EVERGREEN) {
+  body = body.replace(/<script[^>]*\bsrc=["']([^"']+)["'][^>]*>\s*<\/script>/g, (m0, src) => {
+    SCRIPTS.push(String(src).replace(/^\.?\//, ""));
+    return "";
+  });
+  body = body.replace(/<script[\s\S]*?<\/script>/g, "");      /* inline script થીમ માં ભરવાના નહીં */
+  if (!SCRIPTS.length) { console.error("⚠️ index.html માં કોઈ js/*.js મળ્યું નહીં ⇒ થીમ બન્યો નહીં"); process.exit(1); }
+}
 
 /* ---------- 2) local path → CDN (જાવાસ્ક્રિપ્ટ/CSS/ઈમેજ) અને SEO પાનાં → GitHub Pages ---------- */
 const pagesLinks = process.argv.includes("--pages-links");
@@ -132,19 +150,44 @@ const JSDOMC = JSDOM;
 
 /* 🧩 બ્લોગર ના Layout માં “Add a Gadget” ચાલે એ માટે void sections (header / sidebar / footer) */
 const sect = (id, cls) => `<b:section class='${cls}' id='${id}' showaddelement='yes'></b:section>`;
+const SLOT_DEF = [["oeg-top", "header", "afterbegin"], ["oeg-side", "#sidebar", "afterbegin"], ["oeg-foot", "footer", "beforeend"]];
+const SLOTS_OUT = [];
 let slots = 0;
-if (/<\/header>/.test(body)) { body = body.replace(/<\/header>/, (m0) => m0 + sect("oeg-top", "oeg-top")); slots++; }
-if (/<aside[^>]*id=["']?sidebar/.test(body)) { body = body.replace(/(<aside[^>]*id=["']?sidebar["']?[^>]*>)/, (m0) => m0 + sect("oeg-side", "oeg-side")); slots++; }
-if (/<\/footer>/.test(body)) { body = body.replace(/<\/footer>/, (m0) => sect("oeg-foot", "oeg-foot") + m0); slots++; }
+if (EVERGREEN) {
+  /* એવરગ્રીન: sections shell નાં sibling રહે (loader એને તાજા markup નાં header/sidebar/footer માં ખસેડે) */
+  [["oeg-top", /<header\b/.test(body)], ["oeg-side", /id=["']?sidebar/.test(body)], ["oeg-foot", /<footer\b/.test(body)]].forEach((x) => {
+    if (x[1]) { SLOTS_OUT.push(sect(x[0], x[0])); slots++; }
+  });
+} else {
+  if (/<\/header>/.test(body)) { body = body.replace(/<\/header>/, (m0) => m0 + sect("oeg-top", "oeg-top")); slots++; }
+  if (/<aside[^>]*id=["']?sidebar/.test(body)) { body = body.replace(/(<aside[^>]*id=["']?sidebar["']?[^>]*>)/, (m0) => m0 + sect("oeg-side", "oeg-side")); slots++; }
+  if (/<\/footer>/.test(body)) { body = body.replace(/<\/footer>/, (m0) => sect("oeg-foot", "oeg-foot") + m0); slots++; }
+}
 if (!slots) console.warn("   ⚠️ Layout slots (header/sidebar/footer gadget જગ્યા) ઉમેરી શકાયા નહીં");
 else console.log("   🧩 Layout slots: " + slots + " (header/sidebar/footer gadget જગ્યા)");
 
-/* ---------- 3b) OEG_BASE inject (js/catalog.js → data/*.json CDN પરથી વાંચે) ---------- */
+/* ---------- 3b) એવરગ્રીન loader + shell ---------- */
 /* ⚠️ CDATA નાં ચિહ્ન અલગ લીટીએ રાખવા — HTML પાર્સર માં `//<![CDATA[` પછી ની બાબત એક જ લીટી હોય તો ટિપ્પણી બની જાય */
-const inject = `<script>//<![CDATA[\nwindow.OEG_BASE="${CDN0}";window.OEG_V="${VER}";\n//]]></script>`;
-const firstScript = body.search(/<script\b/);
-if (firstScript < 0) { console.error("⚠️ app script મળ્યો નહીં"); process.exit(1); }
-body = body.slice(0, firstScript) + inject + body.slice(firstScript);
+const cdata = (js) => `<script type="text/javascript">//<![CDATA[\n${js}\n//]]></script>`;
+let LOADER = "";
+if (EVERGREEN) {
+  let lsrc = readFileSync(join(root, "js", "blogger-loader.js"), "utf8").replace(/^[\s\S]*?\*\/\n/, "");
+  const cfgObj = {
+    cdn: CDN0, hosts: [CDN0, UNPKG0, RAW0], raw: RAW0, pages: PAGES,
+    fb: SCRIPTS, slots: SLOT_DEF, pagesLinks: pagesLinks, shell: "oeg-shell"
+  };
+  const re = /var CFG = \{[\s\S]*?\n {2}\};/;
+  if (!re.test(lsrc)) { console.error("⚠️ js/blogger-loader.js માં `var CFG = {...};` મળ્યું નહીં ⇒ થીમ બન્યો નહીં"); process.exit(1); }
+  lsrc = lsrc.replace(re, "var CFG = " + JSON.stringify(cfgObj) + ";");
+  if (/<\/script>|\]\]>/.test(lsrc)) { console.error("⚠️ loader માં </script> કે ]]> રહ્યું છે (CDATA નુકસાનકારક)"); process.exit(1); }
+  LOADER = lsrc;
+  body = `<div id="oeg-boot" class="oeg-boot"><span class="oeg-boot-in">🎓 <b>Online Education Guru</b> — લોડ થાય છે…</span></div><div id="oeg-shell" class="oeg-shell">${body}</div>`;
+} else {
+  const inject = cdata(`window.OEG_BASE="${CDN0}";window.OEG_V="${VER}";`);
+  const firstScript = body.search(/<script\b/);
+  if (firstScript < 0) { console.error("⚠️ app script મળ્યો નહીં"); process.exit(1); }
+  body = body.slice(0, firstScript) + inject + body.slice(firstScript);
+}
 
 /* ---------- 5) બ્લોગર ની પોસ્ટ્સ (SEO + ટિપ્પણી + ફીડ) ---------- */
 const blog = `
@@ -173,6 +216,14 @@ const skin = `<![CDATA[
 /* </Group> */
 /* 🌗 થીમ સાથે ચાલે — રંગ js/styles.css નાં CSS variable માંથી (ડાર્ક ⇒ ઘેરું, લાઈટ ⇒ 🎨) */
 html{color-scheme:light}
+/* 🌱 એવરગ્રીન થીમ: shell ⇒ markup નો wrapper (layout માં ફેર ન પડે) + લોડ થાય ત્યાર ની પટ્ટી */
+#oeg-shell{display:contents}
+.oeg-boot{position:fixed;left:14px;bottom:14px;z-index:9999;font-family:'Noto Sans Gujarati',system-ui,Segoe UI,sans-serif}
+.oeg-boot-in{display:inline-block;background:var(--surface,#fff);border:1px solid var(--border,#e3e6f0);border-radius:999px;padding:7px 14px;font-size:.85rem;color:var(--muted,#5b5f7a);box-shadow:0 6px 18px rgba(20,24,60,.12)}
+.oeg-boot.oeg-boot-err{background:#fff4f4;border-color:#f3c6c6;color:#8c2222}
+.oeg-boot a{color:var(--brand,#4f46e5)}
+@media (prefers-reduced-motion:no-preference){.oeg-boot-in{animation:oegPulse 1.4s ease-in-out infinite}}
+@keyframes oegPulse{0%,100%{opacity:.55}50%{opacity:1}}
 html[data-theme="dark"]{color-scheme:dark}
 body{margin:0!important;background:var(--bg,#f6f7fb);color:var(--text,#171a2b);transition:background .3s,color .3s}
 /* બ્લોગર નું પોતા નું bar સાઇટ નું fixed header ઢાંકે નહીં */
@@ -202,6 +253,8 @@ const doc = `<!--
   ============================================================
   આપોઆપ બન્યું  scripts/blogger.mjs થી  ⇒  index.html નું markup + js/** + data/** CDN પરથી.
   અપલોડ: Blogger → Theme → Restore → Upload (પહેલાં Backup જરૂરી!).
+  🌱 એવરગ્રીન: આ થીમ ફકત એક જ વાર લગાવવો — પાનું ખૂલે એટલે loader repo થી તાજું
+     markup + CSS + js લાવે એટલે ફરી upload કરવાનું ક્યારેય નહીં.
   પછી આખી સાઇટ બ્લોગર ના સરનામા પર જ ચાલે: હોમ, પાઠ્યપુસ્તક, સ્વાધ્યાયપોથી, ક્વિઝ,
   વિડિયો, રમત, બ્લોગ, Admin Panel — બધું.
   સાઇટ નું સરનામું બદલાતું નથી ⇒ browser માં ફક્ત બ્લોગર (અને custom domain) દેખાય.
@@ -224,14 +277,17 @@ ${headExtra}
 </head>
 <body>
 ${body}
+${SLOTS_OUT.join("\n")}
 ${blog}
+${LOADER ? cdata(LOADER) : ""}
 </body>
 </html>
 `;
 
 /* ---------- 7) તપાસ (બ્લોગર નો parser strict છે) ---------- */
 const problems = [];
-if ((xml.match(/&(?!(amp|lt|gt|quot|apos|#\d+|#x[0-9a-fA-F]+);)/g) || []).length) problems.push("બિન-એસ્કેપ & છે");
+const noCdata = xml.replace(/<!\[CDATA\[[\s\S]*?\]\]>/g, "");   /* CDATA માં & / < સલામત છે ⇒ એ બહાર ની બાબત તપાસો */
+if ((noCdata.match(/&(?!(amp|lt|gt|quot|apos|#\d+|#x[0-9a-fA-F]+);)/g) || []).length) problems.push("બિન-એસ્કેપ & છે");
 if ((() => { const re = /<!--([\s\S]*?)-->/g; let m; while ((m = re.exec(xml))) if (m[1].includes("--")) return true; return false; })()) problems.push("XML comment માં double-hyphen છે");
 if (/<(img|br|hr|input|link|meta)\b[^>]*[^/]>/.test(xml)) problems.push("void tag self-close નથી (/> લાગે)");
 mkdirSync(join(root, "blogger"), { recursive: true });
@@ -250,6 +306,7 @@ writeFileSync(out, xml);
   }
 }
 console.log(`${problems.length ? "❌ " : "✅ "}blogger/OEG-Blogger-Native.xml — ${(xml.length / 1024).toFixed(1)} KB  [jsdom XHTML + XML તપાસ]
+   🌱 ${EVERGREEN ? "એવરગ્રીન ⇒ markup/CSS/JS repo થી લવાય (" + SCRIPTS.length + " ફાઈલ) — ફરી upload કરવાનું નહીં" : "inline (--inline) ⇒ markup બદલાય ત્યારે ફરી upload કરવો પડે"}
    CDN:   ${CDN0}${VQ ? "  (?v=" + VER + ")" : ""}
    SEO લિંક: ${pagesLinks ? "GitHub Pages પાનાં (" + PAGES + ")" : "બ્લોગર નાં app routes (host બદલાતો નહીં)"}
    પાનાં ની લિંક દાખલ: g/1.html → ${pagesLinks ? PAGES + "g/1.html" : "#/grade/1"}`);

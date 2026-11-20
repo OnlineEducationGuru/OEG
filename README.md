@@ -64,9 +64,29 @@
 3. **Setting → Permissions → Bloggers → +Add authors** માં તમારું email રાખો (એ જ email થી Admin login થશે).
 4. થઈમ માં ૪ `<b:section>` છે ⇒ **Blogger → Layout** માં હવે Header / Sidebar / Footer જગ્યા માં **Add a Gadget** ચાલે
    (Label, Link List, HTML/JavaScript, AdSense gadget વગેરે — એ સાઈટ ની ડિઝાઇન પ્રમાણે સજાય).
-5. જુઓ → બ્લોગર પર આખી સાઈટ ચાલે. CSS/JS/JSON ફાઈલો jsDelivr CDN પરથી આવે છે
-   (`https://cdn.jsdelivr.net/gh/OnlineEducationGuru/OEG@main/`), એટલે **નવો XML ફરી upload કરવાની જરૂર નથી** —
-   GitHub માં push કરો (અથવા Admin Panel માં save કરો) ⇒ બ્લોગર ની સાઈટ પણ થોડી મિનિટ માં નવી દેખાશે.
+5. જુઓ → બ્લોગર પર આખી સાઈટ ચાલે. **બધું જ** (markup + CSS + js/*.js + `data/*.json`) દર પાનું ખૂલે
+   repo થી લવાય (`https://cdn.jsdelivr.net/gh/OnlineEducationGuru/OEG@main/`), એટલે **આ એક જ વાર ની વાત છે** —
+   GitHub માં push કરો (અથવા Admin Panel માં save કરો) ⇒ બ્લોગર ની સાઈટ થોડી મિનિટ માં નવી દેખાશે,
+   XML ફરી upload કરવાનું **ક્યારેય નહીં** (🌱 એવરગ્રીન થીમ — નીચે જુઓ).
+
+### 🌱 એવરગ્રીન થીમ — ફરી upload કરવા ની જરૂર ક્યારેય નહીં
+
+થેમ ફાઈલ માં હવે સાઇટ નું markup ફકત **પહેલી પેઇન્ટ ની કૉપિ (snapshot)** તરીકે હોય છે, અને
+પાનું ખૂલે એટલે `js/blogger-loader.js` (થીમ માં ભરાયેલો નાનો loader) repo થી **તાજું `index.html`** લાવીને:
+
+1. એનું markup `#oeg-shell` માં ભરે (snapshot બદલાય ⇒ નવું મેનુ/નવું પાનું તરત દેખાય),
+2. head ની CSS/ફોન્ટ લિંક તાજા `?b=<૧૦ મિનિટ નો ટૅગ>` સાથે બદલે (બ્રાઉઝર નો કૉપિ જૂનો ન રહે),
+3. `js/*.js` ફાઈલ ક્રમ થી લાદે (config → i18n → … → app) — થીમ માં `<script src>` જ નથી, એટલે પિન થયેલી જૂની ફાઈલ દબાયા કરતું નહીં,
+4. બ્લોગર ના Layout gadget (Header/Sidebar/Footer) ને તાજા markup નાં ઠેકાણે ખસેડે, અને
+5. `g/1.html` જાતી SEO લિંક ને બ્લોગર પ્રમાણે `#/grade/1` માં ફેરવે.
+
+**કઈ also:** jsDelivr ન મળે તો loader આપોઆપ `unpkg.com` → `raw.githubusercontent.com` પર જાય
+(raw માંથી js લાદવાનું MIME કારણ થી ટાળે); ત્રણેય ન મળે તો snapshot markup + થીમ માં ની ફાઈલ યાદી થી
+પાનું ચાલુ રહે (ક્યારેય ખાલી ન દેખાય), અને એક ફાઈલ ટેંગાય તો ૧૨ સેકંડ પછી આગળ વધી નીચે પટ્ટી માં **↻ ફરી પ્રયત્ન** બતાવે.
+
+એટલે **ફેરફાર કોઈ પણ જગ્યા થી થાય (GitHub push / Admin ⇒ 💾), બ્લોગર એ આપોઆપ લાવે**.
+જરૂર પડે તો જૂનો રસ્તો યે રહ્યો છે: `node scripts/blogger.mjs --inline` (બધું થીમ માં જ ભરે — markup બદલાય એટલે ફરી upload પડે).
+ચકાસણી: `node scripts/check-blogger.mjs` (jsdom માં થીમ ખરેખર ચલાવીને બતાવે છે કે નવું markup/js/CSS upload વગર આવી જાય).
 
 ### 🔄 બ્લોગ આપોઆપ તાજું — કંઈ કરવાનું નહીં (ડિફૉલ્ટ માં જ ચાલુ)
 
@@ -78,7 +98,8 @@
 | Admin ⇒ પોસ્ટ · ક્વિઝ · સેટિંગ્સ · સમાચાર · ખાતાં નું લખાણ | **~૧ મિનિટ** (`data/*.json` GitHub ની raw કૉપિ થી + `?t=` bucket; લખેલી ફાઈલ નો purge આપોઆપ) | કંઈ નહીં |
 | પાનું ખુલ્લું જ રહે (વપરાશકર્તા ફરી ન ખોલે) | **~૧ મિનિટ** માં પાનું જાતેય તાજું ભરાય (`OEG.fresh` ⇒ fingerprint poll ⇒ `OEG.refreshSite`) | કંઈ નહીં |
 | `js/**` · `styles.css` (કોડ/CSS) | **~૧–૨ મિનિટ** (workflow નો job 🧊 ⇒ jsDelivr ની કૉપિ તાજી) | કંઈ નહીં (Actions on હોય તો) |
-| `index.html` નું markup (નવું મેનુ પાનું વગેરે) | થીમ ફરી બની repo માં commit થાય (job 🧩), પણ બ્લોગ ને એ **upload** કરવો પડે | એક વાર: Admin → ⚙️ → **⬇ થીમ ફાઈલ લાવો** ⇒ Blogger → Theme → **Restore** |
+| `index.html` નું markup (નવું મેનુ પાનું વગેરે) | **~૧–૨ મિનિટ** — થીમ નો 🌱 loader દર વખતે repo નું તાજું markup લાવે | કંઈ નહીં |
+| `js/blogger-loader.js` (લોડર જ) | થીમ માં ભરાયેલો હોય ⇒ એ ફાઈલ જૂની રહે (બીજું બધું તાજું ચાલતું રહે) | ક્યારેય કોઈ ફેરફાર કરવો ન પડે એવું સાદું રાખ્યું |
 
 **તપાસ નો સમય બદલવો** — Admin → ⚙️ સાઇટ સેટિંગ્સ → 🔄 **આપોઆપ તાજું**: `૧ / ૨ / ૫ / ૧૫ / ૩૦ મિનિટ` કે `બંધ`.
 એ જ set `data/site-config.json` માં `fresh: { "enabled": true, "minutes": 1 }` માં લખાય (બધા પાનાં પર લાગુ).
