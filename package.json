@@ -5,10 +5,11 @@
   "main": "index.js",
   "scripts": {
     "build": "node scripts/build.mjs",
-    "check": "node scripts/check-views.mjs",
+    "check": "node scripts/check-views.mjs && node scripts/check-blogger.mjs",
     "seo": "node scripts/seo.mjs",
     "quiz": "python3 scripts/mkquiz.py",
-    "start": "node scripts/build.mjs && python3 -m http.server 8080 --bind 0.0.0.0"
+    "start": "node scripts/build.mjs && python3 -m http.server 8080 --bind 0.0.0.0",
+    "check:blogger": "node scripts/check-blogger.mjs"
   },
   "repository": {
     "type": "git",

@@ -4,8 +4,9 @@ name: 🔄 બ્લોગ આપોઆપ તાજું (CDN purge + થી�
 # દિવસો સુધી રાખે (query — `?v=` / `?t=` — થીય એ કૉપિ ન તૂટે, એ ફકત browser નો કૉપિ તોડે) ⇒ push કરો છતાં બ્લોગ પર
 # જૂનું દેખાઈ શકે. એટલે દર push પછી:
 #   job ૧ (purge) ⇒ બધી મુખ્ય ફાઈલ ની jsDelivr કૉપિ તાજી (બ્લોગ ને ફકત refresh કરવો પડે)
-#   job ૨ (theme) ⇒ થીમ ફરી બનાવીને repo માં commit (ફાઈલ બદલાઈ હોય તો જ) ⇒ બ્લોગ પર upload
-#                   કરવા ની જરૂર ફકત markup બદલાય ત્યારે પડે.
+#   job ૨ (theme) ⇒ થીમ ફરી બનાવીને repo માં commit (ફાઈલ બદલાઈ હોય તો જ).
+#                   🌱 થીમ એવરગ્રીન છે એટલે એ commit ફકત repo ની ફાઈલ તાજી રાખે — Blogger માં
+#                   ફરી upload કરવાનું ક્યારેય નહીં (પાનું ખૂલે એટલે js/blogger-loader.js repo થી લાવે).
 # Admin ⇒ બ્લોગ નું લખાણ આ બંને વગરય તાજું દેખાય (js/catalog.js ⇒ GitHub raw + ?t= bucket
 # અને OEG.fresh ⇒ પાનું જાતેય તપાસે). data/ નો ફેરફાર થી એકલો commit નહીં બદલાય.
 on:
@@ -35,7 +36,7 @@ jobs:
       - name: થોડું રાહ જોઈ બીજી વાર (edge પોપ પ્રમાણે ફેલાતું હોય)
         run: |
           sleep 20
-          node scripts/purge-cdn.mjs js/i18n.js js/catalog.js js/app.js js/auth.js js/notify.js js/admin.js styles.css data/site-config.json data/catalog.json
+          node scripts/purge-cdn.mjs index.html js/i18n.js js/catalog.js js/app.js js/auth.js js/notify.js js/admin.js styles.css data/site-config.json data/catalog.json
 
   theme:
     name: 🧩 થીમ rebake (જરૂર હોય તો commit)
