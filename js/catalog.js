@@ -442,9 +442,15 @@ OEG.youtubeId = (url) => {
    ============================================================ */
 OEG.shared = (() => {
   const API = "https://abacus.jasoncameron.dev";
-  const GAP = 3000;                    /* બે requests વચ્ચે નો ડિફૉલ્ટ ફાસલો (એ જ IP ની ૩૦/૧૦સે લિમિટ બચત) */
+  const GAP = 400;                     /* બે requests વચ્ચે નો ડિફૉલ્ટ ફાસલો (સર્વિસ ની ૩૦/૧૦સે લિમિટ થી ઓછો ⇒ દર પાનું ખૂલે ગણાય) */
   const MEM = {};                      /* slot ⇒ { v, at } */
+  const TS = "oeg.shared.ts";           /* છેલ્લી request નો સમય ⇒ એ જ બ્રાઉઝર ની દરેક ટૅબ મળીને એ જ ફાસલો પાળે */
   let lastAt = 0, inflight = {};
+  const lastAny = () => {
+    let st = 0;
+    try { st = Number(localStorage.getItem(TS) || 0) || 0; } catch (e) { }
+    return Math.max(lastAt, st);
+  };
 
   const clean = (s) => {
     const t = String(s == null ? "" : s).toLowerCase().replace(/[^a-z0-9._-]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 64);
@@ -455,10 +461,10 @@ OEG.shared = (() => {
   const cfg = () => {
     const c = ((OEG.state.config || {}).count) || {};
     const r = (OEG.cdn && OEG.cdn.repo ? OEG.cdn.repo() : null) || {};
-    const f = String(c.freq || "session");
+    const f = String(c.freq || "visit");          /* ડિફૉલ્ટ ⇒ દર વાર પાનું ખૂલે / રીફ્રેસ થાય એટલે +૧ (બધા ને) */
     return {
       on: c.enabled !== false,
-      freq: f === "day" ? "day" : (f === "visit" ? "visit" : "session"),
+      freq: f === "day" ? "day" : (f === "session" ? "session" : "visit"),
       ns: clean(c.ns || ("oeg-" + (r.owner || "oeg") + "-" + (r.repo || "site"))),
       key: clean(c.key || "viewers"),
       minGap: gap(c.minGap)
@@ -481,10 +487,11 @@ OEG.shared = (() => {
     const c = cfg();
     if (!c.on) return null;
     const now = Date.now();
-    if (now - lastAt < c.minGap) return null;      /* વધુ પડતાં request નહીં (રેટ લિમિટ) */
+    if (now - lastAny() < c.minGap) return null;   /* વધુ પડતાં request નહીં (રેટ લિમિટ ⇒ એ જ બ્રાઉઝર ની દરેક ટૅબ સાથે મળીને) */
     const url = API + "/" + kind + "/" + path(sub);
     if (inflight[url]) return inflight[url];
     lastAt = now;
+    try { localStorage.setItem(TS, String(now)); } catch (e) { }
     inflight[url] = (async () => {
       try {
         const r = await fetch(url, { cache: "no-store" });
@@ -498,15 +505,18 @@ OEG.shared = (() => {
     return inflight[url];
   }
   const nap = (ms) => new Promise((r) => setTimeout(r, Math.max(0, Math.min(8000, Math.round(Number(ms) || 0)))));
-  /* પાનું ખૂલે / પોસ્ટ ખૂલે ⇒ એક જ hit (એ જ નવો આંક પરત આપે). freq=session/day ⇒ એ જ ઉપકરણ થી વારંવાર ન વધે. */
+  /* પાનું ખૂલે / પોસ્ટ ખૂલે ⇒ એક જ hit (એ જ નવો આંક પરત આપે).
+     freq=visit (ડિફૉલ્ટ) ⇒ દર વાર ગણાય · freq=session/day ⇒ એ જ ઉપકરણ થી વારંવાર ન વધે. */
   async function bump(sub) {
     const c = cfg(), sl = slot(sub);
     if (!c.on) return null;
     if (c.freq !== "visit" && seen(sl)) { const v = value(sl); return v == null ? null : v; }
     let v = await req("hit", sub);
-    if (v == null) {
-      const g = status().gaps;                      /* ફાસલો બાકી ⇒ એક વાર રાહ જોઈ ફરી પ્રયાસ (વિઝિટ ગુમાવો નહીં) */
-      if (g > 0 && g <= 6000) { await nap(g + 80); v = await req("hit", sub); }
+    for (let i = 0; v == null && i < 3; i++) {      /* ફાસલો બાકી ⇒ રાહ જોઈ ફરી પ્રયાસ (કોઈ વિઝિટ ગુમાવો નહીં) */
+      const g = status().gaps;
+      if (!(g > 0) || g > 6000) break;
+      await nap(g + 60);
+      v = await req("hit", sub);
     }
     if (v != null) { MEM[sl] = { v, at: Date.now() }; mark(sl); paint(); }
     return v;
@@ -528,7 +538,7 @@ OEG.shared = (() => {
   function status() {
     const c = cfg();
     const m = MEM["site"];
-    return { on: c.on, freq: c.freq, ns: c.ns, key: c.key, minGap: c.minGap, api: API + "/get/" + c.ns + "/" + c.key, site: m ? m.v : null, at: m ? m.at : 0, gaps: Math.max(0, c.minGap - (Date.now() - lastAt)) };
+    return { on: c.on, freq: c.freq, ns: c.ns, key: c.key, minGap: c.minGap, api: API + "/get/" + c.ns + "/" + c.key, site: m ? m.v : null, at: m ? m.at : 0, gaps: Math.max(0, c.minGap - (Date.now() - lastAny())) };
   }
   function reset() { try { Object.keys(MEM).forEach(k => delete MEM[k]); } catch (e) { } }
   return { cfg, clean, slot, path, bump, read, value, status, reset, paint, API };
@@ -603,7 +613,7 @@ OEG.views = (() => {
     m[d] = (Number(m[d]) || 0) + 1;
     m[SITE] = (m[SITE] || 0) + 1;
     write();
-    try { OEG.shared.bump(); } catch (e) { }          /* ⇒ 👁 Total Viewers ⇒ દર વિઝિટર થી +૧ (બધા ને) */
+    try { OEG.shared.bump(); } catch (e) { }          /* ⇒ 👁 Total Viewers ⇒ દર પાનું ખૂલે / રીફ્રેસ થી +૧ (બધા ને એ જ આંક) */
     return true;
   }
   function todayVisits() { return Number(read()[dayKey()] || 0); }

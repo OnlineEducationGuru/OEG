@@ -573,7 +573,7 @@
   },
   "count": {
     "enabled": true,
-    "freq": "session",
+    "freq": "visit",
     "ns": "",
     "key": ""
   },
